@@ -1,7 +1,7 @@
 export default function Code() {
   return (
-    <div className="w-full grid items-center justify-center">
-      <p className="font-mono text-xs">code</p>
+    <div className="w-full flex flex-col items-start justify-start gap-2">
+      <p className="font-mono text-sm">code</p>
     </div>
   );
 }

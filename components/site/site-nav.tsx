@@ -6,7 +6,6 @@ export default function SiteNav() {
     // { href: "/", label: "Home" },
     { href: "/sound", label: "sound" },
     { href: "/code", label: "code" },
-    // { href: "/login", label: "login" },
   ];
 
   return (
