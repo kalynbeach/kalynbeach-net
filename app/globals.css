@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
+/* body {
   font-family: Arial, Helvetica, sans-serif;
-}
+} */
 
 @layer base {
   :root {
@@ -32,7 +32,22 @@ body {
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --radius: 0.25rem;
+
+    --kb-smoke-50: 0 0% 96%;
+    --kb-smoke-100: 0 0% 91%;
+    --kb-smoke-200: 0 0% 82%;
+    --kb-smoke-300: 0 0% 69%;
+    --kb-smoke-400: 0 0% 53%;
+    --kb-smoke-500: 0 0% 43%;
+    --kb-smoke-600: 0 0% 37%;
+    --kb-smoke-700: 0 0% 31%;
+    --kb-smoke-800: 0 0% 27%;
+    --kb-smoke-900: 0 0% 24%;
+    --kb-smoke-950: 0 0% 8%;
+
+    --kb-blue: 214 100% 50%;
+    --kb-green: 114 97% 46%;
   }
   .dark {
     --background: 0 0% 3.9%;
