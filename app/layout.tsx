@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
+import ThemeProvider from "@/components/site/theme-provider";
+import SiteHeader from "@/components/site/site-header";
+import SiteFooter from "@/components/site/site-footer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,7 +30,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          'container grid min-h-screen bg-background font-sans antialiased',
+          "container w-full min-h-screen grid grid-rows-layout-root md:grid-rows-layout-root-md bg-background font-sans antialiased",
           geistSans.variable,
           geistMono.variable
         )}
@@ -39,7 +41,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <SiteHeader />
           {children}
+          <SiteFooter />
         </ThemeProvider>
       </body>
     </html>

@@ -63,7 +63,12 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+			gridTemplateRows: {
+        'layout-root': '64px minmax(320px, 1fr) 64px',
+        'layout-root-md': '80px minmax(512px, 1fr) 80px',
+        'wave-player': '128px 128px',
+      },
   	}
   },
   plugins: [require("tailwindcss-animate")],
