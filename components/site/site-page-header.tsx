@@ -8,7 +8,7 @@ type Props = {
 export default function SitePageHeader({ title, components }: Props) {
   return (
     <div className="site-page-header w-full flex flex-row items-start justify-between">
-      <p className="text-lg font-mono font-medium tracking-wide">
+      <p className="text-xl font-mono font-medium tracking-wide">
         {title}
       </p>
       {components}

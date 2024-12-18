@@ -11,6 +11,13 @@ export default {
 		container: {
 			center: true,
 			padding: '1rem',
+			screens: {
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        // xl: '1280px',
+        // "2xl": "1400px",
+      },
 		},
   	extend: {
 			fontFamily: {
@@ -61,7 +68,7 @@ export default {
 				kb: {
 					'blue': 'hsl(var(--kb-blue))',
 					'green': 'hsl(var(--kb-green))',
-					
+
 				}
   		},
   		borderRadius: {
@@ -70,8 +77,8 @@ export default {
   			sm: 'calc(var(--radius) - 4px)'
   		},
 			gridTemplateRows: {
-        'layout-root': '64px minmax(320px, 1fr) 64px',
-        'layout-root-md': '80px minmax(512px, 1fr) 80px',
+        'layout-root': '80px minmax(320px, 1fr) 80px',
+        'layout-root-md': '96px minmax(512px, 1fr) 96px',
         'wave-player': '128px 128px',
       },
   	}
