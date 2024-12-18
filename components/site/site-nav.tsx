@@ -11,7 +11,7 @@ export default function SiteNav() {
   const pages = [
     { href: "/sound", label: "sound" },
     { href: "/code", label: "code" },
-    // { href: "/dashboard", label: "dashboard" },
+    { href: "/dashboard", label: "dashboard" },
   ];
 
   return (

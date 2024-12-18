@@ -1,17 +1,16 @@
-import { signIn } from "@/auth";
+import { signOut } from "@/auth";
 import { Button } from "@/components/ui/button";
-import { redirect } from "next/dist/server/api-utils";
 
-export default function SignIn() {
+export default function SignOut() {
   return (
     <form
       action={async () => {
         "use server";
-        await signIn("github", { redirectTo: "/dashboard" });
+        await signOut();
       }}
     >
       <Button type="submit" variant="outline" size="sm" className="">
-        sign in
+        sign out
       </Button>
     </form>
   );
