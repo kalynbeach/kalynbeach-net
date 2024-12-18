@@ -8,7 +8,7 @@ type Props = {
 export default function SiteUser({ user }: Props) {
   return (
     <div className="site-user">
-      <Avatar>
+      <Avatar className="w-8 h-8 border border-muted-foreground rounded-full">
         <AvatarImage src={user.image ?? ""} />
         <AvatarFallback>KB</AvatarFallback>
       </Avatar>

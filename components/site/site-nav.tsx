@@ -14,13 +14,13 @@ export default function SiteNav() {
   ];
 
   return (
-    <nav className="site-nav w-fit flex flex-row items-center justify-between gap-4">
+    <nav className="site-nav w-fit flex flex-row items-center justify-between gap-3">
       {pages.map((page) => (
         <Link
           key={page.href}
           href={page.href}
           className={cn(
-            "text-xs font-mono tracking-wide",
+            "text-sm font-mono tracking-wide",
             "transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green",
             `${pathname === page.href ? 'text-kb-blue dark:text-kb-green' : ''}`
           )}
