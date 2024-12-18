@@ -57,7 +57,12 @@ export default {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
+				kb: {
+					'blue': 'hsl(var(--kb-blue))',
+					'green': 'hsl(var(--kb-green))',
+					
+				}
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

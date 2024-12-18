@@ -5,7 +5,7 @@ import SiteNav from "./site-nav";
 export default function SiteHeader() {
   return (
     <header className="site-header w-full flex flex-row items-center justify-between">
-      <div className="flex flex-row items-center gap-2">
+      <div className="flex flex-row items-center gap-3">
         <Image
           src="/icon.svg"
           alt="kb"
