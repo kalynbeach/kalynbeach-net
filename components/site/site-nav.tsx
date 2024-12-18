@@ -9,8 +9,8 @@ export default function SiteNav() {
 
   // TODO: configure nav pages based on auth session?
   const pages = [
-    { href: "/sound", label: "sound" },
     { href: "/code", label: "code" },
+    { href: "/sound", label: "sound" },
     { href: "/dashboard", label: "dashboard" },
   ];
 

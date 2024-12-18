@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
-import SignIn from "@/components/site/sign-in";
-import SignOut from "@/components/site/sign-out";
+import SiteSignIn from "@/components/site/site-sign-in";
+import SiteSignOut from "@/components/site/site-sign-out";
 import SiteUser from "@/components/site/site-user";
 
 export default async function SiteAuth() {
@@ -11,12 +11,12 @@ export default async function SiteAuth() {
       {!session?.user ? (
         <div className="w-full flex flex-row items-center justify-between gap-2">
           <p className="text-xs font-mono font-medium">Protected Route</p>
-          <SignIn />
+          <SiteSignIn />
         </div>
       ) : (
         <div className="w-full flex flex-row items-center justify-between gap-2">
           <SiteUser user={session.user} />
-          <SignOut />
+          <SiteSignOut />
         </div>
       )}
     </div>

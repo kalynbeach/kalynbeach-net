@@ -1,12 +1,12 @@
 import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
-import { redirect } from "next/dist/server/api-utils";
 
-export default function SignIn() {
+export default function SiteSignIn() {
   return (
     <form
       action={async () => {
         "use server";
+        // TODO: redirect to protected route that redirected to `/login` (`/dashboard` or `/sound`)
         await signIn("github", { redirectTo: "/dashboard" });
       }}
     >
