@@ -1,22 +1,23 @@
 # Notes
 
-## Design
+## TODOs
 
-### Fonts
+- [ ] Integrate `kalynbeach-io-postgres` (Postgres database)
+  - [ ] Add and setup `drizzle-orm` and `drizzle-kit`
+  - [ ] Add and setup `/db` directory and files (connection, schema, etc.)
+- [ ] Add and setup `@vercel/analytics` and `@vercel/speed-insights`
+- [ ] Add and setup `@react-three/fiber` and `@react-three/drei`
+- [ ] Bring over previous `WavePlayer` components to use in rewrite
+- [ ] Write unit tests
 
-### Colors
-
----
-
-## App
+## Application
 
 ### Routes & Pages
 
 - `/`: `Home` page
 - `/code`: `Code` page
 - `/sound`: `Sound` page
-- `/auth`
-  - `/signin`: `SignIn` page
+- `/login`: `Login` page
 - `/(admin)`
   - `/dashboard`: `Dashboard` page
   - `/settings`: `Settings` page
@@ -29,9 +30,9 @@
 
 - `useWavePlayer`
 
----
-
 ## Database
+
+**`kalynbeach-io-postgres`**
 
 ### Stack
 
@@ -40,14 +41,3 @@
 - Drizzle Kit
 
 ### Tables
-
-#### Initial Tables
-
-- `users`: Users (primarily for protected routes)
-- `sounds`: Music file data objects
-- `projects`: Code projects (repositories)
-
-#### Future Tables
-
-- `photos`: Personal photo data objects
-- `posts`: Blog posts
