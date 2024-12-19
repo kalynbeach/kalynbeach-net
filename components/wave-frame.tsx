@@ -23,18 +23,16 @@ export default function WaveFrame() {
   }
 
   return (
-    <div className="wave-frame w-fit flex flex-col gap-2 border rounded-md p-2">
-      <p className="text-xs font-mono font-medium">WaveFrame</p>
+    <div className="wave-frame w-full sm:w-96 flex flex-col gap-2 border rounded-md p-2">
+      <div className="flex flex-row justify-between items-center">
+        <p className="text-sm font-mono font-medium">WaveFrame</p>
+        <p className="text-[10px] font-mono">{audioState.status}</p>
+      </div>
       <AudioDevices
         devices={audioDevices}
         selectedDeviceId={selectedAudioDevice?.deviceId ?? null}
         onDeviceChange={handleDeviceChange}
       />
-      {audioState.context && audioState.analyzer && (
-        <div>
-          {/* <p>Audio State: {JSON.stringify(audioState)}</p> */}
-        </div>
-      )}
     </div>
   );
 }

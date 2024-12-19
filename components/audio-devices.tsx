@@ -9,10 +9,10 @@ type Props = {
 
 export default function AudioDevices({ devices, selectedDeviceId, onDeviceChange }: Props) {
   return (
-    <div className="audio-devices w-fit flex flex-col items-start justify-start gap-2 border rounded-md p-2">
-      <Label htmlFor="audio-device" className="text-xs font-mono font-medium">AudioDevices</Label>
+    <div className="audio-devices w-full flex flex-col items-start justify-start gap-2 border rounded-md p-2">
+      <Label htmlFor="audio-device" className="text-xs font-mono">AudioDevices</Label>
       <Select value={selectedDeviceId || undefined} onValueChange={onDeviceChange}>
-        <SelectTrigger id="audio-device" className="w-64">
+        <SelectTrigger id="audio-device" className="w-full">
           <SelectValue placeholder="Select audio input" />
         </SelectTrigger>
         <SelectContent>
