@@ -1,41 +1,64 @@
 "use client";
 
-import React, { createContext, useContext, useRef, useCallback } from 'react';
-import type { AudioState } from '@/lib/types';
+import React, { createContext, useContext, useRef, useCallback, use, cache } from "react";
+import type { AudioState } from "@/lib/types";
 
 interface AudioContextValue {
-  getAudioContext: () => AudioContext | null;
-  initializeAudioContext: () => AudioContext;
+  audioContext: AudioContext;
+  getAnalyzer: () => AnalyserNode | null;
+  createAnalyzer: () => AnalyserNode;
   cleanup: () => void;
 }
 
 const AudioContextInstance = createContext<AudioContextValue | null>(null);
 
+// Cache the promise creation with browser check
+const createAudioContext = cache(async () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  return new (window.AudioContext || (window as any).webkitAudioContext)();
+});
+
+// Create a stable promise instance
+const audioContextPromise = typeof window !== 'undefined' ? createAudioContext() : Promise.resolve(null);
+
 export function AudioContextProvider({ children }: { children: React.ReactNode }) {
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioContext = use(audioContextPromise) as AudioContext;
+  const analyzerRef = useRef<AnalyserNode | null>(null);
 
-  const getAudioContext = useCallback(() => {
-    return audioContextRef.current;
+  const getAnalyzer = useCallback(() => {
+    return analyzerRef.current;
   }, []);
 
-  const initializeAudioContext = useCallback(() => {
-    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-      audioContextRef.current = new AudioContext();
+  const createAnalyzer = useCallback(() => {
+    if (!analyzerRef.current) {
+      analyzerRef.current = audioContext.createAnalyser();
+      analyzerRef.current.fftSize = 2048;
     }
-    return audioContextRef.current;
-  }, []);
+    return analyzerRef.current;
+  }, [audioContext]);
 
   const cleanup = useCallback(() => {
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
+    if (analyzerRef.current) {
+      analyzerRef.current.disconnect();
+      analyzerRef.current = null;
     }
-  }, []);
+    if (audioContext?.state !== 'closed') {
+      audioContext?.close();
+    }
+  }, [audioContext]);
+
+  // Don't render anything on the server
+  if (typeof window === 'undefined') {
+    return <>{children}</>;
+  }
 
   return (
     <AudioContextInstance.Provider value={{ 
-      getAudioContext, 
-      initializeAudioContext,
+      audioContext,
+      getAnalyzer,
+      createAnalyzer,
       cleanup 
     }}>
       {children}
@@ -43,10 +66,10 @@ export function AudioContextProvider({ children }: { children: React.ReactNode }
   );
 }
 
-export const useAudioContext = () => {
+export function useAudioContext() {
   const context = useContext(AudioContextInstance);
   if (!context) {
-    throw new Error('useAudioContext must be used within an AudioContextProvider');
+    throw new Error("useAudioContext must be used within an AudioContextProvider");
   }
   return context;
-};
+}

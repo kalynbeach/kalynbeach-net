@@ -8,11 +8,11 @@ export function useAudioDevices() {
     async function getAudioDevices() {
       try {
         const mediaDevices = await navigator.mediaDevices.enumerateDevices();
-        const audioDevices = mediaDevices.filter((device) => device.kind === "audiooutput");
+        const audioDevices = mediaDevices.filter((device) => device.kind === "audioinput");
         setAudioDevices(audioDevices);
         if (audioDevices.length > 0 && !selectedAudioDevice) {
-          // TODO: set initial device based on user preferences
-          setSelectedAudioDevice(audioDevices[0]);
+          const defaultDevice = audioDevices.find(device => device.deviceId === 'default') || audioDevices[0];
+          setSelectedAudioDevice(defaultDevice);
         }
       } catch (error) {
         console.error("[useAudioDevices] Error enumerating devices:", error);
@@ -20,7 +20,11 @@ export function useAudioDevices() {
     }
 
     getAudioDevices();
-  }, []); // TODO: make sure this dep is correct
+    navigator.mediaDevices.addEventListener('devicechange', getAudioDevices);
+    return () => {
+      navigator.mediaDevices.removeEventListener('devicechange', getAudioDevices);
+    };
+  }, [selectedAudioDevice]);
 
   return {
     audioDevices,

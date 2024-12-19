@@ -1,12 +1,15 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useTransition, useDeferredValue } from "react";
 import { useAudioDevices } from "./use-audio-devices";
-import type { AudioState } from "@/lib/types";
 import { useAudioContext } from "@/contexts/audio-context";
+import type { AudioState } from "@/lib/types";
 
 export function useAudio() {
-  const { getAudioContext, initializeAudioContext } = useAudioContext();
+  const { audioContext, getAnalyzer, createAnalyzer, cleanup: contextCleanup } = useAudioContext();
   const { audioDevices, selectedAudioDevice, setSelectedAudioDevice } = useAudioDevices();
+  const [isPending, startTransition] = useTransition();
+  
   const audioStateRef = useRef<AudioState>({
+    status: 'idle',
     context: null,
     stream: null,
     analyzer: null,
@@ -20,74 +23,64 @@ export function useAudio() {
     if (audioStateRef.current.stream) {
       audioStateRef.current.stream.getTracks().forEach(track => track.stop());
     }
-    const context = getAudioContext();
-    if (context && context.state === 'running') {
-      context.suspend();
+    if (audioContext.state === 'running') {
+      audioContext.suspend();
     }
     const newState = {
       ...audioStateRef.current,
+      status: 'idle' as const,
       stream: null,
       analyzer: null,
     };
     audioStateRef.current = newState;
     setAudioState(newState);
-  }, [getAudioContext]);
+  }, [audioContext]);
 
   const initializeAudio = useCallback(async () => {
     if (!selectedAudioDevice) return;
 
-    const existingContext = getAudioContext();
-    if (existingContext && audioStateRef.current.stream && existingContext.state !== "closed") {
-      if (existingContext.state === "suspended") {
-        await existingContext.resume();
+    startTransition(async () => {
+      try {
+        cleanup();
+        const analyzer = createAnalyzer();
+        
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { 
+            deviceId: selectedAudioDevice.deviceId,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          }
+        });
+
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyzer);
+        
+        await audioContext.resume();
+
+        const newState = {
+          status: 'active' as const,
+          context: audioContext,
+          analyzer,
+          stream,
+          timeData: new Float32Array(analyzer.fftSize),
+          frequencyData: new Float32Array(analyzer.frequencyBinCount),
+        };
+        audioStateRef.current = newState;
+        setAudioState(newState);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error("Failed to initialize audio"));
+        cleanup();
       }
-      return;
-    }
+    });
+  }, [selectedAudioDevice, cleanup, createAnalyzer, audioContext]);
 
-    try {
-      cleanup();
-
-      const context = initializeAudioContext();
-      const analyzer = context.createAnalyser();
-      analyzer.fftSize = 2048;
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { 
-          deviceId: selectedAudioDevice.deviceId,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        }
-      });
-
-      const source = context.createMediaStreamSource(stream);
-      source.connect(analyzer);
-      
-      await context.resume();
-
-      const newState = {
-        context,
-        analyzer,
-        stream,
-        timeData: new Float32Array(analyzer.fftSize),
-        frequencyData: new Float32Array(analyzer.frequencyBinCount),
-      };
-      audioStateRef.current = newState;
-      setAudioState(newState);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to initialize audio"));
-      cleanup();
-    }
-  }, [selectedAudioDevice, cleanup, getAudioContext, initializeAudioContext]);
-
-  // Single effect for initialization and cleanup
   useEffect(() => {
     initializeAudio();
     return cleanup;
   }, [selectedAudioDevice, initializeAudio, cleanup]);
 
-  // Device change monitoring
   useEffect(() => {
     const handleDeviceChange = () => {
       if (selectedAudioDevice && 
@@ -102,11 +95,14 @@ export function useAudio() {
     };
   }, [audioDevices, selectedAudioDevice, initializeAudio]);
 
+  const deferredAudioState = useDeferredValue(audioState);
+
   return {
     audioDevices,
     selectedAudioDevice,
     setSelectedAudioDevice,
-    audioState,
+    audioState: deferredAudioState,
     error,
+    isPending,
   };
 }
