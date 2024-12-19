@@ -1,13 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useRef, useCallback, use, cache } from "react";
-import type { AudioState } from "@/lib/types";
+import React, { createContext, useContext, useRef, useCallback, use, cache, useEffect } from "react";
 
 interface AudioContextValue {
   audioContext: AudioContext;
-  getAnalyzer: () => AnalyserNode | null;
   createAnalyzer: () => AnalyserNode;
-  cleanup: () => void;
 }
 
 const AudioContextInstance = createContext<AudioContextValue | null>(null);
@@ -27,26 +24,12 @@ export function AudioContextProvider({ children }: { children: React.ReactNode }
   const audioContext = use(audioContextPromise) as AudioContext;
   const analyzerRef = useRef<AnalyserNode | null>(null);
 
-  const getAnalyzer = useCallback(() => {
-    return analyzerRef.current;
-  }, []);
-
   const createAnalyzer = useCallback(() => {
     if (!analyzerRef.current) {
       analyzerRef.current = audioContext.createAnalyser();
       analyzerRef.current.fftSize = 2048;
     }
     return analyzerRef.current;
-  }, [audioContext]);
-
-  const cleanup = useCallback(() => {
-    if (analyzerRef.current) {
-      analyzerRef.current.disconnect();
-      analyzerRef.current = null;
-    }
-    if (audioContext?.state !== 'closed') {
-      audioContext?.close();
-    }
   }, [audioContext]);
 
   // Don't render anything on the server
@@ -57,9 +40,7 @@ export function AudioContextProvider({ children }: { children: React.ReactNode }
   return (
     <AudioContextInstance.Provider value={{ 
       audioContext,
-      getAnalyzer,
-      createAnalyzer,
-      cleanup 
+      createAnalyzer
     }}>
       {children}
     </AudioContextInstance.Provider>

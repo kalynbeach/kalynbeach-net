@@ -4,7 +4,7 @@ import { useAudioContext } from "@/contexts/audio-context";
 import type { AudioState } from "@/lib/types";
 
 export function useAudio() {
-  const { audioContext, getAnalyzer, createAnalyzer, cleanup: contextCleanup } = useAudioContext();
+  const { audioContext, createAnalyzer } = useAudioContext();
   const { audioDevices, selectedAudioDevice, setSelectedAudioDevice } = useAudioDevices();
   const [isPending, startTransition] = useTransition();
   
