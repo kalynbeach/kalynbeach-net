@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { cn } from "@/lib/utils";
 import ThemeProvider from "@/components/site/theme-provider";
-import { AudioContextProvider } from "@/contexts/audio-context";
 import SiteHeader from "@/components/site/site-header";
 import SiteFooter from "@/components/site/site-footer";
 import "./globals.css";
@@ -42,11 +41,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AudioContextProvider>
-            <SiteHeader />
-            {children}
-            <SiteFooter />
-          </AudioContextProvider>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
         </ThemeProvider>
       </body>
     </html>
