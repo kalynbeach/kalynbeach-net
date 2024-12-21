@@ -2,12 +2,9 @@
 
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
-import {
-  SoundContextProvider,
-  useSoundDevices,
-  useSoundStream,
-} from "@/contexts/sound-context";
-import AudioDevices from "./audio-devices";
+import { useSoundDevices } from "@/hooks/sound/use-sound-devices";
+import { useSoundStream } from "@/hooks/sound/use-sound-stream";
+// import AudioDevices from "./audio-devices";
 
 // const WaveFrame = dynamic(() => import("./wave-frame"), { ssr: false });
 
