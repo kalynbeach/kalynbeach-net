@@ -1,60 +1,143 @@
 "use client";
 
-import * as THREE from "three";
-import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import { Line } from "@react-three/drei";
+import { useEffect, useRef, useCallback } from "react";
 import { useWaveformData } from "@/hooks/sound/use-waveform-data";
-import type { VisualizerProps } from "@/lib/types";
 
-export default function Waveform({ analyser, isInitialized }: VisualizerProps) {
-  const lineRef = useRef<any>(null);
+type WaveformProps = {
+  analyser: AnalyserNode | null;
+  isInitialized: boolean;
+  backgroundColor?: string;
+  lineColor?: string;
+};
+
+export default function Waveform({
+  analyser,
+  isInitialized,
+  backgroundColor = '#000000',
+  lineColor = '#ffffff'
+}: WaveformProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const contextRef = useRef<CanvasRenderingContext2D | null>(null);
+  const animationRef = useRef<number | null>(null);
   const getWaveformData = useWaveformData(analyser, isInitialized);
-  
-  const points = useMemo(() => {
-    console.log("[Waveform] analyser:", analyser);
-    if (!analyser?.frequencyBinCount) return [];
-    return Array.from({ length: analyser.frequencyBinCount }, (_, i) => 
-      new THREE.Vector3(
-        (i / analyser.frequencyBinCount) * 4 - 2,
-        0,
-        0
-      )
-    );
-  }, [analyser]);
 
-  useFrame(() => {
-    if (!isInitialized || !analyser || !lineRef.current || points.length === 0) return;
+  // Memoize canvas setup to avoid unnecessary recalculations
+  const setupCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return false;
 
-    try {
-      const waveformData = getWaveformData();
-      if (!waveformData?.length) return;
+    // Set canvas size based on its display size to prevent scaling
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
 
-      // Update existing points instead of creating new ones
-      points.forEach((point, i) => {
-        if (i < waveformData.length) {
-          point.y = ((waveformData[i] / 128.0) - 1) * 2;
-        }
-      });
+    const context = canvas.getContext('2d', {
+      alpha: false, // Optimization: disable alpha when not needed
+      desynchronized: true // Potential performance boost on supported browsers
+    });
+    if (!context) return false;
 
-      // Update the line's points directly
-      lineRef.current.geometry.setFromPoints(points);
-    } catch (error) {
-      console.error('Error updating waveform:', error);
+    // Store context in ref for reuse
+    contextRef.current = context;
+    
+    // Set initial styles
+    context.lineWidth = 2;
+    context.strokeStyle = lineColor;
+    
+    return true;
+  }, [lineColor]);
+
+  // Memoize draw function to prevent recreating on each render
+  const draw = useCallback(() => {
+    if (!analyser || !isInitialized || !contextRef.current || !canvasRef.current) {
+      return;
     }
-  });
 
-  if (!analyser || !isInitialized || points.length === 0) return null;
+    const context = contextRef.current;
+    const canvas = canvasRef.current;
+    const dataArray = getWaveformData();
+    
+    if (!dataArray?.length) return;
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+    const sliceWidth = WIDTH / dataArray.length;
+
+    // Clear previous frame using fillRect (faster than clearRect)
+    context.fillStyle = backgroundColor;
+    context.fillRect(0, 0, WIDTH, HEIGHT);
+
+    // Begin new path for waveform
+    context.beginPath();
+    
+    // Draw waveform
+    let x = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const v = dataArray[i] / 128.0;
+      const y = (v * HEIGHT) / 2;
+
+      if (i === 0) {
+        context.moveTo(x, y);
+      } else {
+        context.lineTo(x, y);
+      }
+
+      x += sliceWidth;
+    }
+
+    context.lineTo(WIDTH, HEIGHT / 2);
+    context.stroke();
+
+    // Request next frame
+    animationRef.current = requestAnimationFrame(draw);
+  }, [analyser, isInitialized, backgroundColor, getWaveformData]);
+
+  // Handle animation lifecycle
+  useEffect(() => {
+    let isActive = true;
+
+    const startAnimation = () => {
+      if (!setupCanvas()) return;
+
+      const animate = () => {
+        if (!isActive) return;
+        draw();
+      };
+
+      animate();
+    };
+
+    if (analyser && isInitialized) {
+      startAnimation();
+    }
+
+    // Cleanup function
+    return () => {
+      isActive = false;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      // Clear canvas context reference
+      contextRef.current = null;
+    };
+  }, [analyser, isInitialized, setupCanvas, draw]);
+
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (setupCanvas() && analyser && isInitialized) {
+        draw();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [analyser, isInitialized, setupCanvas, draw]);
 
   return (
-    <>
-      <Line
-        ref={lineRef}
-        points={points}
-        color="#00ff00"
-        lineWidth={1}
-      />
-      <ambientLight intensity={0.5} />
-    </>
+    <div className="waveform w-full h-full border rounded-md">
+      <canvas ref={canvasRef} className="size-full" />
+    </div>
   );
 }

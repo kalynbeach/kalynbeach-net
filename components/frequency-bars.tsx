@@ -1,8 +1,8 @@
 "use client";
 
+import * as THREE from "three";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import * as THREE from "three";
 import { useFrequencyData } from "@/hooks/sound/use-frequency-data";
 import type { VisualizerProps } from "@/lib/types";
 

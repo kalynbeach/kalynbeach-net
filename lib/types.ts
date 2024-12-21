@@ -6,6 +6,11 @@ export interface SoundDevicesData {
 
 export interface SoundContextValue {
   audioContext: AudioContext | null;
+  status: AudioStatus;
+  error: AudioError | null;
+  initialize: () => Promise<void>;
+  suspend: () => Promise<void>;
+  resume: () => Promise<void>;
 }
 
 export interface SoundStreamData {
@@ -34,3 +39,5 @@ export type AudioState = {
   timeData: Float32Array;
   frequencyData: Float32Array;
 };
+
+export type AudioStatus = 'idle' | 'initializing' | 'active' | 'suspended' | 'error';
