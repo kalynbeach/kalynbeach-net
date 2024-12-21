@@ -12,3 +12,23 @@ export type AudioState = {
   timeData: Float32Array;
   frequencyData: Float32Array;
 };
+
+export interface SoundDevicesData {
+  devices: MediaDeviceInfo[];
+  selectedDevice: string;
+  setSelectedDevice: (deviceId: string) => void;
+}
+
+export interface SoundContextValue {
+  audioContext: AudioContext | null;
+}
+
+export interface SoundStreamData {
+  analyser: AnalyserNode | null;
+  isInitialized: boolean;
+}
+
+export interface VisualizerProps {
+  analyser: AnalyserNode | null;
+  isInitialized: boolean;
+}
