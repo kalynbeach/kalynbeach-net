@@ -1,3 +1,5 @@
+export type SoundStatus = "idle" | "loading" | "active" | "suspended" | "error";
+
 export interface SoundDevicesData {
   devices: MediaDeviceInfo[];
   selectedDevice: string;
@@ -6,8 +8,8 @@ export interface SoundDevicesData {
 
 export interface SoundContextValue {
   audioContext: AudioContext | null;
-  status: AudioStatus;
-  error: AudioError | null;
+  status: SoundStatus;
+  error: SoundError | null;
   initialize: () => Promise<void>;
   suspend: () => Promise<void>;
   resume: () => Promise<void>;
@@ -23,14 +25,13 @@ export interface VisualizerProps {
   isInitialized: boolean;
 }
 
-// NOTE: Previous audio (sound) types
-
-export type AudioError = {
+export type SoundError = {
   code: "DEVICE_ACCESS_DENIED" | "DEVICE_NOT_FOUND" | "INITIALIZATION_FAILED";
   message: string;
   originalError?: Error;
 };
 
+// NOTE: Previous audio (sound) type
 export type AudioState = {
   status: "idle" | "loading" | "active" | "error";
   context: AudioContext | null;
@@ -39,5 +40,3 @@ export type AudioState = {
   timeData: Float32Array;
   frequencyData: Float32Array;
 };
-
-export type AudioStatus = 'idle' | 'initializing' | 'active' | 'suspended' | 'error';

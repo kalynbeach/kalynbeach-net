@@ -30,30 +30,12 @@ export default function SoundBlock() {
             isInitialized && "text-kb-blue dark:text-kb-green"
           )}
         >
-          {isInitialized ? "active" : "idle"}
+          {isInitialized ? "active" : "loading"}
         </Badge>
-        {/* <p className={cn("font-mono text-[10px]", isInitialized ? "text-kb-blue dark:text-kb-green" : "")}>
-          {isInitialized ? "active" : "idle"}
-        </p> */}
       </div>
       <Suspense fallback={<div>loading...</div>}>
         <Waveform analyser={analyser} isInitialized={isInitialized} />
       </Suspense>
-      {/* <Suspense fallback={<div>loading...</div>}>
-        <SoundDevices
-          devices={devices}
-          selectedDeviceId={selectedDevice}
-          onDeviceChange={setSelectedDevice}
-        />
-      </Suspense> */}
-      {/* <ul className="flex flex-col gap-1 border rounded-md p-2">
-        {devices.map((device) => (
-          <li key={device.deviceId} className="text-xs font-mono">
-            {device.label}
-          </li>
-        ))}
-      </ul> */}
-      {/* TODO: integrate AudioDevices (as refactored `SoundDevices` component) */}
     </div>
   );
 }

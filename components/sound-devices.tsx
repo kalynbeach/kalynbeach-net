@@ -1,5 +1,4 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Badge } from "./ui/badge";
 
 type Props = {
@@ -10,11 +9,10 @@ type Props = {
 
 export default function SoundDevices({ devices, selectedDeviceId, onDeviceChange }: Props) {
   return (
-    <div className="audio-devices font-mono w-full sm:w-80 md:w-96 flex flex-row items-center justify-between gap-2 border rounded-md p-2">
-      {/* <Label htmlFor="audio-device" className="text-xs font-mono">devices</Label> */}
+    <div className="sound-devices font-mono w-full sm:w-80 md:w-96 flex flex-row items-center justify-between gap-2 border rounded-md p-2">
       <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
-        <SelectTrigger id="audio-device" className="w-full">
-          <SelectValue placeholder="Select audio input" />
+        <SelectTrigger id="sound-device" className="w-full">
+          <SelectValue placeholder="Select sound input" />
         </SelectTrigger>
         <SelectContent className="font-mono text-sm">
           {devices.map((device) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import type { SoundContextValue, AudioStatus, AudioError } from "@/lib/types";
+import type { SoundContextValue, SoundStatus, SoundError } from "@/lib/types";
 
 export const FFT_SIZE = 2048;
 export const SMOOTHING_TIME_CONSTANT = 0.8;
@@ -20,12 +20,12 @@ export const SoundContext = createContext<SoundContextValue | null>(null);
 
 export function SoundContextProvider({ children }: { children: React.ReactNode }) {
   const [audioContext] = useState<AudioContext | null>(getAudioContext);
-  const [status, setStatus] = useState<AudioStatus>('idle');
-  const [error, setError] = useState<AudioError | null>(null);
+  const [status, setStatus] = useState<SoundStatus>('idle');
+  const [error, setError] = useState<SoundError | null>(null);
 
   const initialize = async () => {
     try {
-      setStatus('initializing');
+      setStatus("loading");
       if (!audioContext) {
         throw new Error('AudioContext not available');
       }
