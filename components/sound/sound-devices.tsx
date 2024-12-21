@@ -1,5 +1,11 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "./ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "../ui/badge";
 
 type Props = {
   devices: MediaDeviceInfo[];
@@ -7,7 +13,11 @@ type Props = {
   onDeviceChange: (deviceId: string) => void;
 };
 
-export default function SoundDevices({ devices, selectedDeviceId, onDeviceChange }: Props) {
+export default function SoundDevices({
+  devices,
+  selectedDeviceId,
+  onDeviceChange,
+}: Props) {
   return (
     <div className="sound-devices font-mono w-full sm:w-80 md:w-96 flex flex-row items-center justify-between gap-2 border rounded-md p-2">
       <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
@@ -16,7 +26,11 @@ export default function SoundDevices({ devices, selectedDeviceId, onDeviceChange
         </SelectTrigger>
         <SelectContent className="font-mono text-sm">
           {devices.map((device) => (
-            <SelectItem key={device.deviceId} value={device.deviceId} className="rounded-md">
+            <SelectItem
+              key={device.deviceId}
+              value={device.deviceId}
+              className="rounded-md"
+            >
               {device.label || `Device ${device.deviceId.slice(0, 5)}`}
             </SelectItem>
           ))}

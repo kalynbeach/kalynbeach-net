@@ -5,10 +5,10 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useSoundDevices } from "@/hooks/sound/use-sound-devices";
 import { useSoundStream } from "@/hooks/sound/use-sound-stream";
-import SoundDevices from "@/components/sound-devices";
-import { Badge } from "./ui/badge";
+import SoundDevices from "@/components/sound/sound-devices";
+import { Badge } from "../ui/badge";
 
-const Waveform = dynamic(() => import("@/components/waveform"), { ssr: false });
+const Waveform = dynamic(() => import("@/components/sound/waveform"), { ssr: false });
 
 export default function SoundBlock() {
   const { devices, selectedDevice, setSelectedDevice } = useSoundDevices();
