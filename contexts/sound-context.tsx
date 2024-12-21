@@ -18,59 +18,63 @@ function getAudioContext() {
 
 export const SoundContext = createContext<SoundContextValue | null>(null);
 
-export function SoundContextProvider({ children }: { children: React.ReactNode }) {
+export function SoundContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [audioContext] = useState<AudioContext | null>(getAudioContext);
-  const [status, setStatus] = useState<SoundStatus>('idle');
+  const [status, setStatus] = useState<SoundStatus>("idle");
   const [error, setError] = useState<SoundError | null>(null);
 
   const initialize = async () => {
     try {
       setStatus("loading");
       if (!audioContext) {
-        throw new Error('AudioContext not available');
+        throw new Error("AudioContext not available");
       }
       await audioContext.resume();
-      setStatus('active');
+      setStatus("active");
       setError(null);
     } catch (err) {
       setError({
-        code: 'INITIALIZATION_FAILED',
-        message: 'Failed to initialize audio context',
-        originalError: err as Error
+        code: "INITIALIZATION_FAILED",
+        message: "Failed to initialize audio context",
+        originalError: err as Error,
       });
-      setStatus('error');
+      setStatus("error");
     }
   };
 
   const suspend = async () => {
     try {
-      if (audioContext?.state === 'running') {
+      if (audioContext?.state === "running") {
         await audioContext.suspend();
-        setStatus('suspended');
+        setStatus("suspended");
       }
     } catch (err) {
       setError({
-        code: 'INITIALIZATION_FAILED',
-        message: 'Failed to suspend audio context',
-        originalError: err as Error
+        code: "INITIALIZATION_FAILED",
+        message: "Failed to suspend audio context",
+        originalError: err as Error,
       });
-      setStatus('error');
+      setStatus("error");
     }
   };
 
   const resume = async () => {
     try {
-      if (audioContext?.state === 'suspended') {
+      if (audioContext?.state === "suspended") {
         await audioContext.resume();
-        setStatus('active');
+        setStatus("active");
       }
     } catch (err) {
       setError({
-        code: 'INITIALIZATION_FAILED',
-        message: 'Failed to resume audio context',
-        originalError: err as Error
+        code: "INITIALIZATION_FAILED",
+        message: "Failed to resume audio context",
+        originalError: err as Error,
       });
-      setStatus('error');
+      setStatus("error");
     }
   };
 
@@ -81,21 +85,21 @@ export function SoundContextProvider({ children }: { children: React.ReactNode }
     const initContext = async () => {
       try {
         // Check if we need user interaction first
-        if (audioContext.state === 'suspended') {
-          setStatus('suspended');
+        if (audioContext.state === "suspended") {
+          setStatus("suspended");
         } else {
           await initialize();
         }
       } catch (err) {
-        console.error('Failed to initialize AudioContext:', err);
-        setStatus('error');
+        console.error("Failed to initialize AudioContext:", err);
+        setStatus("error");
       }
     };
 
     initContext();
 
     return () => {
-      if (audioContext?.state === 'running') {
+      if (audioContext?.state === "running") {
         suspend();
       }
     };
@@ -107,38 +111,40 @@ export function SoundContextProvider({ children }: { children: React.ReactNode }
 
     const handleStateChange = () => {
       switch (audioContext.state) {
-        case 'running':
-          setStatus('active');
+        case "running":
+          setStatus("active");
           setError(null);
           break;
-        case 'suspended':
-          setStatus('suspended');
+        case "suspended":
+          setStatus("suspended");
           break;
-        case 'closed':
-          setStatus('error');
+        case "closed":
+          setStatus("error");
           setError({
-            code: 'INITIALIZATION_FAILED',
-            message: 'Audio context was closed'
+            code: "INITIALIZATION_FAILED",
+            message: "Audio context was closed",
           });
           break;
       }
     };
 
-    audioContext.addEventListener('statechange', handleStateChange);
+    audioContext.addEventListener("statechange", handleStateChange);
     return () => {
-      audioContext.removeEventListener('statechange', handleStateChange);
+      audioContext.removeEventListener("statechange", handleStateChange);
     };
   }, [audioContext]);
 
   return (
-    <SoundContext.Provider value={{ 
-      audioContext,
-      status,
-      error,
-      initialize,
-      suspend,
-      resume
-    }}>
+    <SoundContext.Provider
+      value={{
+        audioContext,
+        status,
+        error,
+        initialize,
+        suspend,
+        resume,
+      }}
+    >
       {children}
     </SoundContext.Provider>
   );
@@ -147,7 +153,9 @@ export function SoundContextProvider({ children }: { children: React.ReactNode }
 export function useSoundContext(): SoundContextValue {
   const context = useContext(SoundContext);
   if (!context) {
-    throw new Error("useSoundContext must be used within a SoundContextProvider");
+    throw new Error(
+      "useSoundContext must be used within a SoundContextProvider"
+    );
   }
   return context;
 }

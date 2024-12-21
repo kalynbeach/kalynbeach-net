@@ -13,8 +13,8 @@ type WaveformProps = {
 export default function Waveform({
   analyser,
   isInitialized,
-  backgroundColor = '#000000',
-  lineColor = '#ffffff'
+  backgroundColor = "#000000",
+  lineColor = "#ffffff",
 }: WaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -31,32 +31,37 @@ export default function Waveform({
     canvas.width = rect.width;
     canvas.height = rect.height;
 
-    const context = canvas.getContext('2d', {
+    const context = canvas.getContext("2d", {
       alpha: false, // Optimization: disable alpha when not needed
-      desynchronized: true // Potential performance boost on supported browsers
+      desynchronized: true, // Potential performance boost on supported browsers
     });
     if (!context) return false;
 
     // Store context in ref for reuse
     contextRef.current = context;
-    
+
     // Set initial styles
     context.lineWidth = 2;
     context.strokeStyle = lineColor;
-    
+
     return true;
   }, [lineColor]);
 
   // Memoize draw function to prevent recreating on each render
   const draw = useCallback(() => {
-    if (!analyser || !isInitialized || !contextRef.current || !canvasRef.current) {
+    if (
+      !analyser ||
+      !isInitialized ||
+      !contextRef.current ||
+      !canvasRef.current
+    ) {
       return;
     }
 
     const context = contextRef.current;
     const canvas = canvasRef.current;
     const dataArray = getWaveformData();
-    
+
     if (!dataArray?.length) return;
 
     const WIDTH = canvas.width;
@@ -69,7 +74,7 @@ export default function Waveform({
 
     // Begin new path for waveform
     context.beginPath();
-    
+
     // Draw waveform
     let x = 0;
     for (let i = 0; i < dataArray.length; i++) {
@@ -131,8 +136,8 @@ export default function Waveform({
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [analyser, isInitialized, setupCanvas, draw]);
 
   return (

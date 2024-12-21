@@ -30,13 +30,3 @@ export type SoundError = {
   message: string;
   originalError?: Error;
 };
-
-// NOTE: Previous audio (sound) type
-export type AudioState = {
-  status: "idle" | "loading" | "active" | "error";
-  context: AudioContext | null;
-  analyzer: AnalyserNode | null;
-  stream: MediaStream | null;
-  timeData: Float32Array;
-  frequencyData: Float32Array;
-};

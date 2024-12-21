@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useSoundDevices } from "@/hooks/sound/use-sound-devices";
 import { useSoundStream } from "@/hooks/sound/use-sound-stream";
 import SoundDevices from "@/components/sound/sound-devices";
-import { Badge } from "../ui/badge";
+import { Badge } from "@/components/ui/badge";
 
 const Waveform = dynamic(() => import("@/components/sound/waveform"), { ssr: false });
 
