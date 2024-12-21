@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -19,12 +20,15 @@ export default function SoundDevices({
   onDeviceChange,
 }: Props) {
   return (
-    <div className="sound-devices font-mono w-full sm:w-80 md:w-96 flex flex-row items-center justify-between gap-2 border rounded-md p-2">
+    <div className="sound-devices relative w-full sm:w-80 md:w-96 flex flex-row items-center justify-between gap-2 border border-border/80 rounded-md p-2">
       <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
-        <SelectTrigger id="sound-device" className="w-full">
+        <SelectTrigger id="sound-device" className="w-full font-mono font-medium border-input">
           <SelectValue placeholder="Select sound input" />
         </SelectTrigger>
-        <SelectContent className="font-mono text-sm">
+        <SelectContent
+          position="popper"
+          className="font-mono text-sm w-full"
+        >
           {devices.map((device) => (
             <SelectItem
               key={device.deviceId}
@@ -36,7 +40,11 @@ export default function SoundDevices({
           ))}
         </SelectContent>
       </Select>
-      <Badge variant="outline" className="font-bold">
+      <Badge variant="outline" className={cn(
+        "font-mono font-medium",
+        devices.length > 0 && "text-kb-blue dark:text-kb-green",
+        "bg-neutral-100/10 dark:bg-neutral-900/50",
+      )}>
         {devices.length}
       </Badge>
     </div>

@@ -8,9 +8,11 @@ export default function Sound() {
     <div className="w-full flex flex-col items-start justify-start gap-4">
       <SitePageHeader title="sound" />
       <SoundContextProvider>
-        <Suspense fallback={<div>loading...</div>}>
-          <SoundBlock />
-        </Suspense>  
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <Suspense fallback={<div>loading...</div>}>
+            <SoundBlock />
+          </Suspense>
+        </div>
       </SoundContextProvider>
     </div>
   );

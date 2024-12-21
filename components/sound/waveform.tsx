@@ -13,7 +13,7 @@ type WaveformProps = {
 export default function Waveform({
   analyser,
   isInitialized,
-  backgroundColor = "#000000",
+  backgroundColor = "#090909",
   lineColor = "#ffffff",
 }: WaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -141,7 +141,7 @@ export default function Waveform({
   }, [analyser, isInitialized, setupCanvas, draw]);
 
   return (
-    <div className="waveform w-full h-full border rounded-md">
+    <div className="waveform w-full h-full border border-border/80 rounded-md">
       <canvas ref={canvasRef} className="size-full" />
     </div>
   );
