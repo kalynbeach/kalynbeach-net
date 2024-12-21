@@ -4,9 +4,10 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSoundDevices } from "@/hooks/sound/use-sound-devices";
 import { useSoundStream } from "@/hooks/sound/use-sound-stream";
-// import AudioDevices from "./audio-devices";
 
-// const WaveFrame = dynamic(() => import("./wave-frame"), { ssr: false });
+const Canvas = dynamic(() => import("@/components/canvas"), { ssr: false });
+const Waveform = dynamic(() => import("@/components/waveform"), { ssr: false });
+const FrequencyBars = dynamic(() => import("@/components/frequency-bars"), { ssr: false });
 
 export default function SoundBlock() {
   const { devices, selectedDevice, setSelectedDevice } = useSoundDevices();
@@ -28,11 +29,14 @@ export default function SoundBlock() {
             </li>
           ))}
         </ul>
-        {/* <AudioDevices
-          devices={devices}
-          selectedDeviceId={selectedDevice}
-          onDeviceChange={setSelectedDevice}
-        /> */}
+        <Suspense fallback={<div>loading...</div>}>
+          <div className="w-64 h-64">
+            <Canvas>
+              {/* <Waveform analyser={analyser} isInitialized={isInitialized} /> */}
+              <FrequencyBars analyser={analyser} isInitialized={isInitialized} />
+            </Canvas>
+          </div>
+        </Suspense>
       </div>
     </div>
   );
