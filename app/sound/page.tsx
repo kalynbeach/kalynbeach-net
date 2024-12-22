@@ -7,13 +7,15 @@ export default function Sound() {
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4">
       <SitePageHeader title="sound" />
-      <SoundContextProvider>
-        <div className="w-full h-full flex flex-col items-center justify-center">
-          <Suspense fallback={<div>loading...</div>}>
-            <SoundBlock />
-          </Suspense>
-        </div>
-      </SoundContextProvider>
+      <div className="w-full h-full flex flex-col items-center justify-center">
+        <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+          <SoundContextProvider>
+            <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+              <SoundBlock />
+            </Suspense>
+          </SoundContextProvider>
+        </Suspense>
+      </div>
     </div>
   );
 }

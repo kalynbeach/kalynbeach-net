@@ -36,9 +36,7 @@ export default function SoundBlock() {
           </Badge>
         </div>
       </div>
-      <Suspense fallback={<div>loading...</div>}>
-        <Waveform analyser={analyser} isInitialized={isInitialized} />
-      </Suspense>
+      <Waveform analyser={analyser} isInitialized={isInitialized} />
     </div>
   );
 }
