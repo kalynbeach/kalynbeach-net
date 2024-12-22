@@ -142,7 +142,7 @@ export default function Waveform({
 
   return (
     <div className="waveform w-full h-full border border-border/80 rounded-md">
-      <canvas ref={canvasRef} className="size-full" />
+      <canvas ref={canvasRef} className="size-full rounded-md" />
     </div>
   );
 }
