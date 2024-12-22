@@ -30,21 +30,23 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "container w-full min-h-screen grid grid-rows-layout-root md:grid-rows-layout-root-md bg-background font-sans antialiased",
+          "relative min-h-screen bg-background font-sans antialiased",
           geistSans.variable,
           geistMono.variable
         )}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-        </ThemeProvider>
+        <div className="container w-full min-h-screen grid grid-rows-layout-root md:grid-rows-layout-root-md">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+          </ThemeProvider>
+        </div>
       </body>
     </html>
   );

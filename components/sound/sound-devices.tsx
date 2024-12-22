@@ -1,0 +1,52 @@
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
+type Props = {
+  devices: MediaDeviceInfo[];
+  selectedDeviceId: string;
+  onDeviceChange: (deviceId: string) => void;
+};
+
+export default function SoundDevices({
+  devices,
+  selectedDeviceId,
+  onDeviceChange,
+}: Props) {
+  return (
+    <div className="sound-devices relative w-full flex flex-row items-center justify-between gap-2 border border-border/80 rounded-md p-2">
+      <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
+        <SelectTrigger id="sound-device" className="w-80 sm:w-80 md:w-full font-mono font-medium border-input">
+          <SelectValue placeholder="Select sound input" />
+        </SelectTrigger>
+        <SelectContent
+          position="popper"
+          className="font-mono text-sm w-80 sm:w-80 md:w-full"
+        >
+          {devices.map((device) => (
+            <SelectItem
+              key={device.deviceId}
+              value={device.deviceId}
+              className="rounded-md"
+            >
+              {device.label || `Device ${device.deviceId.slice(0, 5)}`}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Badge variant="outline" className={cn(
+        "font-mono",
+        devices.length > 0 && "text-kb-blue dark:text-kb-green",
+        "bg-neutral-100/10 dark:bg-neutral-900/50",
+      )}>
+        {devices.length}
+      </Badge>
+    </div>
+  );
+}
