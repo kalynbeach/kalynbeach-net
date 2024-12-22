@@ -1,6 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { SoundContextProvider, useSoundContext } from '@/contexts/sound-context';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+import {
+  SoundContextProvider,
+  useSoundContext,
+} from "@/contexts/sound-context";
 
 // Mock AudioContext
 class MockAnalyserNode {
@@ -13,7 +16,7 @@ class MockAnalyserNode {
 }
 
 class MockAudioContext {
-  state: AudioContextState = 'suspended';
+  state: AudioContextState = "suspended";
   createAnalyser = vi.fn(() => new MockAnalyserNode());
   createMediaStreamSource = vi.fn(() => ({
     connect: vi.fn(),
@@ -29,7 +32,7 @@ class MockAudioContext {
 
   removeEventListener(type: string, callback: Function) {
     this.listeners = this.listeners.filter(
-      l => l.type !== type || l.callback !== callback
+      (l) => l.type !== type || l.callback !== callback
     );
   }
 
@@ -37,15 +40,15 @@ class MockAudioContext {
   simulateStateChange(newState: AudioContextState) {
     this.state = newState;
     this.listeners
-      .filter(l => l.type === 'statechange')
-      .forEach(l => l.callback());
+      .filter((l) => l.type === "statechange")
+      .forEach((l) => l.callback());
   }
 }
 
 // Setup global mocks
-vi.stubGlobal('AudioContext', MockAudioContext);
+vi.stubGlobal("AudioContext", MockAudioContext);
 
-describe('SoundContext', () => {
+describe("SoundContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -54,41 +57,41 @@ describe('SoundContext', () => {
     vi.resetAllMocks();
   });
 
-  describe('SoundContextProvider', () => {
+  describe("SoundContextProvider", () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <SoundContextProvider>{children}</SoundContextProvider>
     );
 
-    it('should initialize with suspended status', () => {
+    it("should initialize with suspended status", () => {
       const { result } = renderHook(() => useSoundContext(), { wrapper });
 
-      expect(result.current.status).toBe('suspended');
+      expect(result.current.status).toBe("suspended");
       expect(result.current.error).toBeNull();
       expect(result.current.audioContext).toBeInstanceOf(MockAudioContext);
     });
 
-    it('should handle initialization', async () => {
+    it("should handle initialization", async () => {
       const { result } = renderHook(() => useSoundContext(), { wrapper });
 
       await act(async () => {
         await result.current.initialize();
         if (result.current.audioContext instanceof MockAudioContext) {
-          result.current.audioContext.simulateStateChange('running');
+          result.current.audioContext.simulateStateChange("running");
         }
       });
 
-      expect(result.current.status).toBe('active');
+      expect(result.current.status).toBe("active");
       expect(result.current.audioContext?.resume).toHaveBeenCalled();
     });
 
-    it('should handle suspend', async () => {
+    it("should handle suspend", async () => {
       const { result } = renderHook(() => useSoundContext(), { wrapper });
 
       // First initialize
       await act(async () => {
         await result.current.initialize();
         if (result.current.audioContext instanceof MockAudioContext) {
-          result.current.audioContext.simulateStateChange('running');
+          result.current.audioContext.simulateStateChange("running");
         }
       });
 
@@ -96,22 +99,22 @@ describe('SoundContext', () => {
       await act(async () => {
         await result.current.suspend();
         if (result.current.audioContext instanceof MockAudioContext) {
-          result.current.audioContext.simulateStateChange('suspended');
+          result.current.audioContext.simulateStateChange("suspended");
         }
       });
 
-      expect(result.current.status).toBe('suspended');
+      expect(result.current.status).toBe("suspended");
       expect(result.current.audioContext?.suspend).toHaveBeenCalled();
     });
 
-    it('should handle resume', async () => {
+    it("should handle resume", async () => {
       const { result } = renderHook(() => useSoundContext(), { wrapper });
 
       // First initialize and suspend
       await act(async () => {
         await result.current.initialize();
         if (result.current.audioContext instanceof MockAudioContext) {
-          result.current.audioContext.simulateStateChange('suspended');
+          result.current.audioContext.simulateStateChange("suspended");
         }
       });
 
@@ -119,21 +122,21 @@ describe('SoundContext', () => {
       await act(async () => {
         await result.current.resume();
         if (result.current.audioContext instanceof MockAudioContext) {
-          result.current.audioContext.simulateStateChange('running');
+          result.current.audioContext.simulateStateChange("running");
         }
       });
 
-      expect(result.current.status).toBe('active');
+      expect(result.current.status).toBe("active");
       expect(result.current.audioContext?.resume).toHaveBeenCalled();
     });
 
-    it('should handle initialization errors', async () => {
+    it("should handle initialization errors", async () => {
       const { result } = renderHook(() => useSoundContext(), { wrapper });
 
       // Mock resume to fail
       if (result.current.audioContext instanceof MockAudioContext) {
-        result.current.audioContext.resume = vi.fn(() => 
-          Promise.reject(new Error('Mock error'))
+        result.current.audioContext.resume = vi.fn(() =>
+          Promise.reject(new Error("Mock error"))
         );
       }
 
@@ -145,30 +148,30 @@ describe('SoundContext', () => {
         }
       });
 
-      expect(result.current.status).toBe('error');
+      expect(result.current.status).toBe("error");
       expect(result.current.error).toEqual({
-        code: 'INITIALIZATION_FAILED',
-        message: 'Failed to initialize audio context',
+        code: "INITIALIZATION_FAILED",
+        message: "Failed to initialize audio context",
         originalError: expect.any(Error),
       });
     });
 
-    it('should handle state changes', async () => {
+    it("should handle state changes", async () => {
       const { result } = renderHook(() => useSoundContext(), { wrapper });
 
       await act(async () => {
         if (result.current.audioContext instanceof MockAudioContext) {
-          result.current.audioContext.simulateStateChange('running');
+          result.current.audioContext.simulateStateChange("running");
         }
       });
 
-      expect(result.current.status).toBe('active');
+      expect(result.current.status).toBe("active");
     });
 
-    it('should throw error when used outside provider', () => {
+    it("should throw error when used outside provider", () => {
       expect(() => {
         renderHook(() => useSoundContext());
-      }).toThrow('useSoundContext must be used within a SoundContextProvider');
+      }).toThrow("useSoundContext must be used within a SoundContextProvider");
     });
   });
 });
