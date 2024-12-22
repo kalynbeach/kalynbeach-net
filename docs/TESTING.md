@@ -2,99 +2,66 @@
 
 ## Sound Context and Hooks Testing Report
 
-### SoundContext (`sound-context.tsx`)
+### Current Test Coverage
 
-#### Key Testing Areas
+#### SoundContext (`sound-context.tsx`) - ✅ Implemented
 
-1. **Context Initialization**
-   - Test initial state values (audioContext, status, error)
-   - Verify context creation and provider wrapping
-   - Test error handling when AudioContext is not available
+- Tests initial context state (suspended status)
+- Tests initialization and state transitions
+- Tests suspend/resume functionality
+- Tests error handling
+- Tests context provider boundaries
+- Tests state change event handling
 
-2. **State Management**
-   - Test state transitions (idle → loading → active)
-   - Verify error state handling
-   - Test suspend/resume functionality
+#### Sound Hooks
 
-3. **AudioContext Lifecycle**
-   - Test initialization on mount
-   - Verify cleanup on unmount
-   - Test state change event handling
+##### useSoundDevices (`use-sound-devices.ts`) - ✅ Implemented
 
-4. **Error Scenarios**
-   - Test initialization failures
-   - Verify error object structure
-   - Test recovery from error states
+- Tests initial empty state
+- Tests device enumeration and filtering
+- Tests default device selection
+- Tests device change handling
+- Tests error handling (permission denial)
+- Tests cleanup of event listeners
 
-### Sound Hooks
+##### useSoundDeviceStream (`use-sound-device-stream.ts`) - ✅ Implemented
 
-#### useSoundDevices (`use-sound-devices.ts`)
+- Tests initial state
+- Tests stream and analyzer initialization
+- Tests cleanup on unmount
+- Tests device switching behavior
+- Tests error handling
+- Tests interaction with SoundContext
 
-1. **Device Enumeration**
-   - Test successful device listing
-   - Verify device filtering (audioinput only)
-   - Test default device selection
+##### useWaveformData (`use-waveform-data.ts`) - ✅ Implemented
 
-2. **Device Changes**
-   - Test devicechange event handling
-   - Verify state updates on device changes
-   - Test cleanup of event listeners
+- Tests null analyzer handling
+- Tests uninitialized state
+- Tests data array updates
+- Tests analyzer changes
 
-3. **Error Handling**
-   - Test permission denial scenarios
-   - Verify error handling when media devices are unavailable
+##### useFrequencyData (`use-frequency-data.ts`) - ✅ Implemented
 
-#### useSoundDeviceStream (`use-sound-device-stream.ts`)
+- Tests null analyzer handling
+- Tests uninitialized state
+- Tests data array updates
+- Tests analyzer changes
 
-1. **Stream Initialization**
-   - Test successful stream creation
-   - Verify analyzer node configuration
-   - Test source node connection
+### Test Implementation Details
 
-2. **Cleanup Handling**
-   - Test proper cleanup of media streams
-   - Verify disconnection of audio nodes
-   - Test cleanup on unmount
-
-3. **State Management**
-   - Test isInitialized state changes
-   - Verify interaction with SoundContext
-   - Test device switching
-
-#### useWaveformData and useFrequencyData (`use-waveform-data.ts`, `use-frequency-data.ts`)
-
-1. **Data Processing**
-   - Test data array initialization
-   - Verify data updates
-   - Test performance with different FFT sizes
-
-2. **Error Cases**
-   - Test behavior with null analyzer
-   - Verify handling of uninitialized state
-
-### Testing Strategy
-
-#### Unit Tests
-
-- Use Bun and Vitest for component and hook testing
-- Implement mock AudioContext and MediaDevices
-- Test individual functions and state updates
-
-#### Integration Tests
-
-- Test interaction between context and hooks
-- Verify audio pipeline setup
-- Test complete user flows
-
-#### Mock Requirements
+#### Mock Implementations
 
 1. **AudioContext Mock**
 
    ```typescript
    class MockAudioContext {
-     state: AudioContextState
-     createAnalyser(): AnalyserNode
-     createMediaStreamSource(): MediaStreamAudioSourceNode
+     state: AudioContextState;
+     createAnalyser(): MockAnalyserNode;
+     createMediaStreamSource(): MockAudioSourceNode;
+     resume(): Promise<void>;
+     suspend(): Promise<void>;
+     addEventListener(type: string, callback: EventListener): void;
+     removeEventListener(type: string, callback: EventListener): void;
    }
    ```
 
@@ -102,30 +69,82 @@
 
    ```typescript
    const mockMediaDevices = {
-     getUserMedia: async () => MockMediaStream,
-     enumerateDevices: async () => MediaDeviceInfo[],
-     addEventListener: (event: string, handler: Function) => void
+     getUserMedia: vi.fn(() => Promise.resolve(new MockMediaStream())),
+     enumerateDevices: vi.fn(() => Promise.resolve(mockDevices)),
+     addEventListener: vi.fn(),
+     removeEventListener: vi.fn(),
+   };
+   ```
+
+3. **AnalyserNode Mock**
+
+   ```typescript
+   class MockAnalyserNode {
+     fftSize: number;
+     frequencyBinCount: number;
+     minDecibels: number;
+     maxDecibels: number;
+     smoothingTimeConstant: number;
+     connect(): void;
+     disconnect(): void;
+     getByteTimeDomainData(array: Uint8Array): void;
+     getByteFrequencyData(array: Uint8Array): void;
    }
    ```
 
-### Test Environment Setup
+#### Test Environment
 
-- Configure Bun/Vitest with DOM environment
-- Set up necessary polyfills for Web Audio API
-- Implement test utilities for common audio operations
+- Using Vitest for test runner
+- Using React Testing Library for hook testing
+- Using vi.mock() for dependency mocking
+- Using vi.spyOn() for method spying
 
-### Considerations
+### Future Testing Considerations
 
-1. **Browser Compatibility**
-   - Test across different browsers
-   - Verify fallback behaviors
+1. **Integration Testing**
+   - [ ] Test complete audio pipeline from device selection to visualization
+   - [ ] Test interaction between multiple hooks in real-world scenarios
+   - [ ] Test performance with real audio data
 
-2. **Performance Testing**
-   - Measure memory usage
-   - Test with different FFT sizes
-   - Verify cleanup effectiveness
+2. **Browser Compatibility**
+   - [ ] Test in different browser environments
+   - [ ] Test fallback behaviors
+   - [ ] Test vendor prefixes and API differences
 
-3. **User Interaction**
-   - Test permission flows
-   - Verify device selection
-   - Test suspend/resume behaviors
+3. **Performance Testing**
+   - [ ] Test memory usage patterns
+   - [ ] Test cleanup effectiveness
+   - [ ] Test with different FFT sizes
+   - [ ] Test with high-frequency updates
+
+4. **Error Recovery**
+   - [ ] Test recovery from device disconnection
+   - [ ] Test recovery from permission changes
+   - [ ] Test recovery from context state changes
+
+### Running Tests
+
+```bash
+# Run tests once
+vitest run
+
+# Run tests in watch mode
+vitest
+
+# Run tests with coverage
+vitest run --coverage
+```
+
+### Test File Structure
+
+```
+tests/
+├── contexts/
+│   └── sound-context.test.tsx
+└── hooks/
+    └── sound/
+        ├── use-sound-devices.test.ts
+        ├── use-sound-device-stream.test.tsx
+        ├── use-waveform-data.test.ts
+        └── use-frequency-data.test.ts
+```
