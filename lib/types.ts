@@ -30,3 +30,16 @@ export type SoundError = {
   message: string;
   originalError?: Error;
 };
+
+export interface WavePlayerTrack {
+  id: number;
+  title: string;
+  artist: string;
+  record: string;
+  src: string;
+  image: {
+    src: string;
+    alt: string;
+  };
+  isLoop: boolean;
+}
