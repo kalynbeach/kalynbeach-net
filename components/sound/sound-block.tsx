@@ -4,7 +4,7 @@ import { Suspense, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useSoundDevices } from "@/hooks/sound/use-sound-devices";
-import { useSoundStream } from "@/hooks/sound/use-sound-stream";
+import { useSoundDeviceStream } from "@/hooks/sound/use-sound-device-stream";
 import SoundDevices from "@/components/sound/sound-devices";
 import { Badge } from "@/components/ui/badge";
 
@@ -12,7 +12,7 @@ const Waveform = dynamic(() => import("@/components/sound/waveform"), { ssr: fal
 
 export default function SoundBlock() {
   const { devices, selectedDevice, setSelectedDevice } = useSoundDevices();
-  const { analyser, isInitialized } = useSoundStream(selectedDevice);
+  const { analyser, isInitialized } = useSoundDeviceStream(selectedDevice);
 
   return (
     <div className="sound-block w-full flex flex-col items-start justify-start gap-2 border border-border/70 rounded-md p-2">
@@ -36,7 +36,10 @@ export default function SoundBlock() {
           </Badge>
         </div>
       </div>
-      <Waveform analyser={analyser} isInitialized={isInitialized} />
+      <Waveform
+        analyser={analyser}
+        isInitialized={isInitialized}
+      />
     </div>
   );
 }

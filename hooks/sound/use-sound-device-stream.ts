@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { FFT_SIZE, SMOOTHING_TIME_CONSTANT, useSoundContext } from "@/contexts/sound-context";
 import type { SoundStreamData } from "@/lib/types";
 
-export function useSoundStream(deviceId: string): SoundStreamData {
+export function useSoundDeviceStream(deviceId: string): SoundStreamData {
   const [isInitialized, setIsInitialized] = useState(false);
   const { audioContext, status, initialize } = useSoundContext();
   const analyserRef = useRef<AnalyserNode | null>(null);
