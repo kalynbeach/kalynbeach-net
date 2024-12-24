@@ -12,10 +12,10 @@ export default function Sound() {
         <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
           <SoundContextProvider>
             <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-              <WavePlayer />
+              <SoundBlock />
             </Suspense>
             <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-              <SoundBlock />
+              <WavePlayer />
             </Suspense>
           </SoundContextProvider>
         </Suspense>
