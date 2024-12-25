@@ -1,4 +1,7 @@
-import { WavePlayerTrack } from "@/lib/types";
+"use client";
+
+import type { WavePlayerTrack } from "@/lib/types";
+import { useWavePlayer } from "@/hooks/wave-player/use-wave-player";
 import {
   Card,
   CardContent,
@@ -13,6 +16,8 @@ type WavePlayerProps = {
 };
 
 export default function WavePlayer({ tracks }: WavePlayerProps) {
+  // TODO: integrate `useWavePlayer` hook
+
   return (
     <Card className="wave-player aspect-[5/7] w-full md:w-[320px] lg:w-[360px] flex flex-col gap-2 rounded p-2">
       <CardHeader className="wave-player-header font-mono h-[15%] justify-evenly space-y-0 border rounded p-2">

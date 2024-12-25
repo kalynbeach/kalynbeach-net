@@ -1,45 +1,40 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
-import dynamic from "next/dynamic";
-import { cn } from "@/lib/utils";
-import { useSoundDevices } from "@/hooks/sound/use-sound-devices";
-import { useSoundDeviceStream } from "@/hooks/sound/use-sound-device-stream";
-import SoundDevices from "@/components/sound/sound-devices";
-import { Badge } from "@/components/ui/badge";
-
-const Waveform = dynamic(() => import("@/components/sound/waveform"), { ssr: false });
+import { Suspense, useEffect, useState } from "react";
+import WaveFrame from "@/components/sound/wave-frame";
+import WavePlayer from "@/components/wave-player/wave-player";
+// import {
+//   Tabs,
+//   TabsContent,
+//   TabsList,
+//   TabsTrigger,
+// } from "@/components/ui/tabs";
 
 export default function SoundBlock() {
-  const { devices, selectedDevice, setSelectedDevice } = useSoundDevices();
-  const { analyser, isInitialized } = useSoundDeviceStream(selectedDevice);
-
   return (
-    <div className="sound-block w-full flex flex-col items-start justify-start gap-2 border border-border/70 rounded-md p-2">
-      <div className="w-full flex flex-col-reverse sm:flex-row justify-between sm:items-center gap-2">
-        <SoundDevices
-          devices={devices}
-          selectedDeviceId={selectedDevice}
-          onDeviceChange={setSelectedDevice}
-        />
-        <div className="w-full flex flex-row items-center justify-end">
-          <Badge
-            variant="outline"
-            className={cn(
-              "w-16 sm:w-20 justify-center",
-              "font-mono text-[10px] sm:text-xs",
-              isInitialized && "text-kb-blue dark:text-kb-green",
-              isInitialized && "bg-neutral-100/10 dark:bg-neutral-900/50",
-            )}
-          >
-            {isInitialized ? "active" : "loading"}
-          </Badge>
-        </div>
-      </div>
-      <Waveform
-        analyser={analyser}
-        isInitialized={isInitialized}
-      />
+    <div className="sound-block w-full flex flex-col items-center justify-start gap-4">
+      <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+        <WaveFrame />
+      </Suspense>
+      <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+        <WavePlayer />
+      </Suspense>
+      {/* <Tabs defaultValue="wave-player" className="w-full h-full font-mono text-sm">
+        <TabsList>
+          <TabsTrigger value="wave-player">WavePlayer</TabsTrigger>
+          <TabsTrigger value="wave-frame">WaveFrame</TabsTrigger>
+        </TabsList>
+        <TabsContent value="wave-player" className="flex items-center justify-center">
+          <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+            <WavePlayer />
+          </Suspense>
+        </TabsContent>
+        <TabsContent value="wave-frame">
+          <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+            <WaveFrame />
+          </Suspense>
+        </TabsContent>
+      </Tabs> */}
     </div>
   );
 }
