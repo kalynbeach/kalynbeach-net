@@ -43,3 +43,5 @@ export interface WavePlayerTrack {
   };
   isLoop: boolean;
 }
+
+export type WavePlayerPlaylist = WavePlayerTrack[];
