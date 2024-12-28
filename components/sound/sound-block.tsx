@@ -1,6 +1,5 @@
-"use client";
-
-import { Suspense, useEffect, useState } from "react";
+import { Suspense  } from "react";
+import { getWavePlayerTracks } from "@/lib/actions";
 import WaveFrame from "@/components/sound/wave-frame";
 import WavePlayer from "@/components/wave-player/wave-player";
 // import {
@@ -10,14 +9,18 @@ import WavePlayer from "@/components/wave-player/wave-player";
 //   TabsTrigger,
 // } from "@/components/ui/tabs";
 
-export default function SoundBlock() {
+export default async function SoundBlock() {
+  const tracks = await getWavePlayerTracks();
+
   return (
     <div className="sound-block w-full flex flex-col items-center justify-start gap-4">
-      <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+      {/* <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
         <WaveFrame />
-      </Suspense>
+      </Suspense> */}
       <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-        <WavePlayer />
+        <WavePlayer
+          tracks={tracks}
+        />
       </Suspense>
       {/* <Tabs defaultValue="wave-player" className="w-full h-full font-mono text-sm">
         <TabsList>

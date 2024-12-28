@@ -31,7 +31,42 @@ export type SoundError = {
   originalError?: Error;
 };
 
-export interface WavePlayerTrack {
+export type WavePlayerState = {
+  status: "idle" | "loading" | "ready" | "playing" | "paused" | "error";
+  currentTrack: WavePlayerTrack | null;
+  currentTime: number;
+  duration: number;
+  volume: number;
+  isLoop: boolean;
+  isShuffle: boolean;
+  error: Error | null;
+};
+
+export type WavePlayerContextValue = {
+  audioContext: AudioContext | null;
+  analyserNode: AnalyserNode | null;
+  gainNode: GainNode | null;
+  sourceNode: AudioBufferSourceNode | null;
+  state: WavePlayerState;
+  controls: WavePlayerControls;
+  playlist: WavePlayerPlaylist;
+  initialize: () => Promise<void>;
+  cleanup: () => void;
+};
+
+export type WavePlayerControls = {
+  play: () => Promise<void>;
+  pause: () => void;
+  stop: () => void;
+  seek: (time: number) => void;
+  setVolume: (level: number) => void;
+  next: () => Promise<void>;
+  previous: () => Promise<void>;
+  toggleLoop: () => void;
+  toggleShuffle: () => void;
+};
+
+export type WavePlayerTrack = {
   id: number;
   title: string;
   artist: string;
@@ -42,6 +77,6 @@ export interface WavePlayerTrack {
     alt: string;
   };
   isLoop: boolean;
-}
+};
 
 export type WavePlayerPlaylist = WavePlayerTrack[];

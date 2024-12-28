@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import SitePageHeader from "@/components/site/site-page-header";
 import { SoundContextProvider } from "@/contexts/sound-context";
+import { WavePlayerProvider } from "@/contexts/wave-player-context";
 import SoundBlock from "@/components/sound/sound-block";
 
 export default function Sound() {
@@ -10,7 +11,9 @@ export default function Sound() {
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
           <SoundContextProvider>
-            <SoundBlock />
+            <WavePlayerProvider>
+              <SoundBlock />
+            </WavePlayerProvider>
           </SoundContextProvider>
         </Suspense>
       </div>
