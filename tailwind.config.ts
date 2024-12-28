@@ -22,7 +22,8 @@ export default {
   	extend: {
 			fontFamily: {
         sans: ['var(--font-geist-sans)'],
-        mono: ['var(--font-geist-mono)'],
+        // mono: ['var(--font-geist-mono)'],
+        mono: ['var(--font-berkeley-mono)'],
       },
   		colors: {
   			background: 'hsl(var(--background))',
