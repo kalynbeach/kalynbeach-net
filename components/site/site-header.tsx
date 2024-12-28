@@ -14,7 +14,7 @@ export default function SiteHeader() {
           className="w-8 h-8 rounded-full"
           priority
         />
-        <Link href="/" className="text-lg font-mono tracking-wide">
+        <Link href="/" className="text-lg font-mono font-semibold">
           kalynbeach
         </Link>
       </div>

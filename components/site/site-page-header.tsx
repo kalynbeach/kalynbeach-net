@@ -1,5 +1,3 @@
-// import SignIn from "@/components/site/sign-in";
-
 type Props = {
   title: string;
   components?: React.ReactNode;
@@ -8,9 +6,9 @@ type Props = {
 export default function SitePageHeader({ title, components }: Props) {
   return (
     <div className="site-page-header w-full flex flex-row items-start justify-between">
-      <p className="text-xl font-mono font-medium tracking-wide">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-mono font-medium uppercase">
         {title}
-      </p>
+      </h1>
       {components}
     </div>
   );
