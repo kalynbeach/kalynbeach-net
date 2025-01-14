@@ -5,7 +5,7 @@ import SoundBlock from "@/components/sound/sound-block";
 
 export default function Sound() {
   return (
-    <div className="w-full flex flex-col items-start justify-start gap-4">
+    <div className="w-full flex flex-col items-start justify-start gap-4 py-4">
       <SitePageHeader title="sound" />
       <div className="w-full h-full flex flex-col items-center justify-center">
         <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>

@@ -9,9 +9,9 @@ export default function SiteHeader() {
         <Image
           src="/icon.svg"
           alt="kb"
-          width={32}
-          height={32}
-          className="w-8 h-8 rounded-full"
+          width={36}
+          height={36}
+          className="w-9 h-9 rounded-full"
           priority
         />
         <Link href="/" className="text-lg sm:text-xl font-mono font-bold dark:font-normal">

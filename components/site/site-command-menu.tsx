@@ -41,8 +41,8 @@ export default function SiteCommandMenu({ pages }: SiteCommandMenuProps) {
   return (
     <div className="site-command-menu">
       <p className="font-mono font-medium text-xs text-muted-foreground leading-none">
-        <kbd className="h-5 pointer-events-none select-none inline-flex flex-row items-center gap-0.5 rounded-md border bg-muted/50 px-1 opacity-100">
-          <span className="text-xs">⌘</span>k
+        <kbd className="h-5 pointer-events-none select-none inline-flex flex-row justify-center items-center gap-0.5 rounded-md border bg-muted/50 px-1 opacity-100">
+          <span className="text-xs">⌘</span>K
         </kbd>
       </p>
       <CommandDialog open={open} onOpenChange={setOpen}>

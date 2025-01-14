@@ -16,13 +16,13 @@ export default function SiteNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="site-nav w-fit flex flex-row items-center justify-between gap-3 sm:gap-4">
+    <nav className="site-nav w-fit flex flex-row items-center justify-between gap-3 sm:gap-5">
       {pages.slice(1).map((page) => (
         <Link
           key={page.route}
           href={page.route}
           className={cn(
-            "text-sm font-mono font-semibold dark:font-normal",
+            "text-xs sm:text-sm font-mono font-semibold dark:font-normal",
             "transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green",
             `${pathname === page.route ? "text-kb-blue dark:text-kb-green" : ""}`
           )}
