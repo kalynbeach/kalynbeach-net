@@ -27,7 +27,7 @@ export default function SoundBlock() {
             variant="outline"
             className={cn(
               "w-16 sm:w-20 justify-center",
-              "font-mono font-bold text-[10px] sm:text-xs",
+              "font-mono font-bold dark:font-normal text-[10px] sm:text-xs",
               isInitialized && "text-kb-blue dark:text-kb-green",
               isInitialized && "bg-neutral-100/10 dark:bg-neutral-900/50",
             )}

@@ -21,7 +21,7 @@ export default function SiteNav() {
           key={page.href}
           href={page.href}
           className={cn(
-            "text-sm font-mono font-semibold",
+            "text-sm font-mono font-semibold dark:font-normal",
             "transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green",
             `${pathname === page.href ? "text-kb-blue dark:text-kb-green" : ""}`
           )}
