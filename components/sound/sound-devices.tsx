@@ -20,14 +20,14 @@ export default function SoundDevices({
   onDeviceChange,
 }: Props) {
   return (
-    <div className="sound-devices relative w-full flex flex-row items-center justify-between gap-2 border border-border/80 rounded-md p-2">
+    <div className="sound-devices relative w-full flex flex-row items-center justify-between gap-2">
       <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
-        <SelectTrigger id="sound-device" className="w-full sm:w-80 md:w-full font-mono font-bold dark:font-normal border-input">
+        <SelectTrigger id="sound-device" className="w-full sm:w-80 md:w-full font-mono font-bold dark:font-normal border-primary">
           <SelectValue placeholder="Select sound input" />
         </SelectTrigger>
         <SelectContent
           position="popper"
-          className="font-mono text-sm w-full sm:w-80 md:w-full"
+          className="font-mono text-sm w-full sm:w-80 md:w-full border-primary/60"
         >
           {devices.map((device) => (
             <SelectItem
@@ -41,7 +41,7 @@ export default function SoundDevices({
         </SelectContent>
       </Select>
       <Badge variant="outline" className={cn(
-        "font-mono font-bold dark:font-normal",
+        "font-mono font-bold dark:font-medium border-primary",
         devices.length > 0 && "text-kb-blue dark:text-kb-green",
         "bg-neutral-100/10 dark:bg-neutral-900/50",
       )}>
