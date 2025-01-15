@@ -141,7 +141,7 @@ export default function Waveform({
   }, [analyser, isInitialized, setupCanvas, draw]);
 
   return (
-    <div className="waveform w-full h-full border border-primary rounded-md">
+    <div className="waveform w-full h-full border border-primary/60">
       <canvas ref={canvasRef} className="size-full rounded-md" />
     </div>
   );
