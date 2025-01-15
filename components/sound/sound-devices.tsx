@@ -21,25 +21,7 @@ export default function SoundDevices({
 }: Props) {
   return (
     <div className="sound-devices relative w-full flex flex-row items-center justify-end gap-2">
-      <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
-        <SelectTrigger id="sound-device" className="w-[340px] sm:w-full max-w-[512px] font-mono font-bold dark:font-normal border-primary/60">
-          <SelectValue placeholder="Select sound input" />
-        </SelectTrigger>
-        <SelectContent
-          position="popper"
-          className="font-mono text-sm w-fit sm:w-full border-primary/60"
-        >
-          {devices.map((device) => (
-            <SelectItem
-              key={device.deviceId}
-              value={device.deviceId}
-              className="font-mono font-semibold dark:font-normal rounded-md cursor-pointer"
-            >
-              {device.label || `Device ${device.deviceId.slice(0, 5)}`}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {/* Device Count */}
       <Badge variant="outline" className={cn(
         "size-9 justify-center items-center",
         "text-base sm:text-sm font-mono font-bold dark:font-medium border-primary/30",
@@ -48,6 +30,35 @@ export default function SoundDevices({
       )}>
         {devices.length}
       </Badge>
+      {/* Device Selector */}
+      <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
+        <SelectTrigger id="sound-device" className="w-[340px] sm:w-full max-w-[420px] font-mono font-bold dark:font-medium border-primary/60">
+          <SelectValue placeholder="Select sound input" />
+        </SelectTrigger>
+        <SelectContent
+          position="popper"
+          align="start"
+          className="font-mono text-sm w-[340px] sm:w-full max-w-[420px] border-primary/60"
+        >
+          {devices.map((device) => (
+            <SelectItem
+              key={device.deviceId}
+              value={device.deviceId}
+              className="font-mono font-semibold dark:font-medium cursor-pointer"
+            >
+              {device.label || `Device ${device.deviceId.slice(0, 5)}`}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {/* <Badge variant="outline" className={cn(
+        "size-9 justify-center items-center",
+        "text-base sm:text-sm font-mono font-bold dark:font-medium border-primary/30",
+        devices.length > 0 && "text-kb-blue dark:text-kb-green",
+        "bg-neutral-100/10 dark:bg-neutral-900/50",
+      )}>
+        {devices.length}
+      </Badge> */}
     </div>
   );
 }

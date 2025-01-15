@@ -17,11 +17,6 @@ export default function SoundBlock() {
   return (
     <div className="sound-block w-full flex flex-col items-start justify-start gap-2 border border-primary rounded-md p-2">
       <div className="w-full flex flex-col sm:flex-row sm:items-center gap-2">
-        {/* <SoundDevices
-          devices={devices}
-          selectedDeviceId={selectedDevice}
-          onDeviceChange={setSelectedDevice}
-        /> */}
         <div className="w-fit sm:w-full flex flex-row items-center justify-end sm:justify-normal">
           <Badge
             variant="outline"
