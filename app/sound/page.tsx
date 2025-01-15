@@ -10,9 +10,7 @@ export default function Sound() {
       <div className="w-full h-full flex flex-col items-center justify-center">
         <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
           <SoundContextProvider>
-            <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-              <SoundBlock />
-            </Suspense>
+            <SoundBlock />
           </SoundContextProvider>
         </Suspense>
       </div>
