@@ -11,7 +11,7 @@ const Scene = dynamic(() => import('@/components/rtf/scene'), { ssr: false });
 export default function ThreeCanvas() {
   return (
     <SceneProvider>
-      <div className="relative w-full h-full border border-primary">
+      <div className="relative w-full h-full border-2 border-primary">
         <SceneControls />
         <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
           <Scene />
