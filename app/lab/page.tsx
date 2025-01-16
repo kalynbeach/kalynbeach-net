@@ -10,7 +10,6 @@ export default function Lab() {
         <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
           <ThreeCanvas />
         </Suspense>
-        {/* <ThreeCanvas /> */}
       </div>
     </div>
   );
