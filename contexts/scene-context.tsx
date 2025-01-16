@@ -2,7 +2,7 @@
 
 import { createContext, useState, ReactNode, useContext } from "react"
 
-type SceneType = "sphere" | "cube"
+type SceneType = "sphere" | "torus"
 
 interface SceneContextType {
   currentScene: SceneType

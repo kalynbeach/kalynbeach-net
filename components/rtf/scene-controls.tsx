@@ -6,10 +6,10 @@ export default function SceneControls() {
   const { currentScene, setCurrentScene } = useSceneContext();
 
   return (
-    <div className="absolute top-4 left-4 z-10 border border-primary/90 p-3">
+    <div className="absolute top-4 left-4 z-10 border border-primary/90 bg-card p-3">
       <RadioGroup
         value={currentScene}
-        onValueChange={(value) => setCurrentScene(value as 'sphere' | 'cube')}
+        onValueChange={(value) => setCurrentScene(value as 'sphere' | 'torus')}
         className="font-mono"
       >
         <div className="flex items-center space-x-2">
@@ -17,8 +17,8 @@ export default function SceneControls() {
           <Label htmlFor="sphere">sphere</Label>
         </div>
         <div className="flex items-center space-x-2">
-          <RadioGroupItem value="cube" id="cube" />
-          <Label htmlFor="cube">cube</Label>
+          <RadioGroupItem value="torus" id="torus" />
+          <Label htmlFor="torus">torus</Label>
         </div>
       </RadioGroup>
     </div>
