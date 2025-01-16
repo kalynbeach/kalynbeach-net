@@ -18,11 +18,11 @@ export default function SceneControls() {
           <Label
             htmlFor="sphere"
             className={cn(
-              "font-mono font-bold cursor-pointer", 
+              "font-mono font-bold dark:font-medium cursor-pointer", 
               currentScene === "sphere" && "text-kb-blue dark:text-kb-green"
             )}
           >
-            sphere
+            Sphere
           </Label>
         </div>
         <div className="flex items-center space-x-2">
@@ -30,11 +30,11 @@ export default function SceneControls() {
           <Label
             htmlFor="torus"
             className={cn(
-              "font-mono font-bold cursor-pointer",
+              "font-mono font-bold dark:font-medium cursor-pointer",
               currentScene === "torus" && "text-kb-blue dark:text-kb-green"
             )}
           >
-            torus
+            Torus
           </Label>
         </div>
       </RadioGroup>
