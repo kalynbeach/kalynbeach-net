@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest"
+    "test": "vitest",
+    "format": "bunx prettier . --write",
+    "format:check": "bunx prettier . --check"
   },
   "dependencies": {
     "@auth/core": "^0.37.4",
@@ -15,11 +17,14 @@
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-dropdown-menu": "^2.1.4",
     "@radix-ui/react-label": "^2.1.1",
+    "@radix-ui/react-radio-group": "^1.2.2",
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-toggle": "^1.1.1",
+    "@radix-ui/react-toggle-group": "^1.1.1",
     "@radix-ui/react-visually-hidden": "^1.1.1",
-    "@react-three/drei": "^9.121.1",
-    "@react-three/fiber": "^9.0.0-rc.3",
+    "@react-three/drei": "^9.121.2",
+    "@react-three/fiber": "^9.0.0-rc.4",
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
     "class-variance-authority": "^0.7.1",
@@ -43,20 +48,32 @@
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.0",
     "@types/bun": "^1.1.16",
-    "@types/node": "^22.10.6",
+    "@types/node": "^22.10.7",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
+    "@types/three": "^0.172.0",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/web-worker": "^2.1.8",
     "babel-plugin-react-compiler": "^19.0.0-beta-e552027-20250112",
     "eslint": "^9.18.0",
     "eslint-config-next": "15.1.4",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^10.0.1",
     "jsdom": "^26.0.0",
     "postcss": "^8.5.1",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.10",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.8"
+  },
+  "prettier": {
+    "semi": true,
+    "tabWidth": 2,
+    "singleQuote": false,
+    "trailingComma": "es5",
+    "plugins": [
+      "prettier-plugin-tailwindcss"
+    ]
   }
 }

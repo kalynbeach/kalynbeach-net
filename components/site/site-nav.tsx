@@ -10,6 +10,7 @@ const pages: SiteNavPage[] = [
   { label: "home", route: "/" },
   { label: "code", route: "/code" },
   { label: "sound", route: "/sound" },
+  { label: "lab", route: "/lab" },
 ];
 
 export default function SiteNav() {
