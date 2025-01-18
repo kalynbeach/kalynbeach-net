@@ -107,6 +107,7 @@ export function useSoundDeviceStream(deviceId: string): SoundStreamData {
   }, [deviceId, audioContext, status, initialize, cleanup]);
 
   return {
+    stream: streamRef.current,
     analyser: analyserRef.current,
     isInitialized,
   };

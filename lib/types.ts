@@ -25,6 +25,7 @@ export interface SoundContextValue {
 }
 
 export interface SoundStreamData {
+  stream: MediaStream | null;
   analyser: AnalyserNode | null;
   isInitialized: boolean;
 }
