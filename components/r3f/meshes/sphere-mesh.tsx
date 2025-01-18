@@ -14,7 +14,6 @@ export default function SphereMesh({ color }: SphereMeshProps) {
   useFrame((_, delta) => {
     if (meshRef.current) {
       meshRef.current.rotation.y -= delta * 0.0114;
-      // meshRef.current.rotation.y -= 0.000114;
     }
   });
 

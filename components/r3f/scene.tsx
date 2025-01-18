@@ -2,8 +2,8 @@
 
 import { useTheme } from "next-themes";
 import { useSceneContext } from "@/contexts/scene-context";
-import SphereMesh from "@/components/rtf/meshes/sphere-mesh";
-import TorusMesh from "@/components/rtf/meshes/torus-mesh";
+import SphereScene from "@/components/r3f/scenes/sphere-scene";
+import TorusScene from "@/components/r3f/scenes/torus-scene";
 
 export default function Scene() {
   const { currentScene } = useSceneContext();
@@ -12,12 +12,11 @@ export default function Scene() {
   return (
     <>
       <ambientLight intensity={1.4} />
-      {/* <pointLight position={[10, 10, 10]} intensity={0.5} /> */}
       {currentScene === "sphere" && (
-        <SphereMesh color={resolvedTheme === "dark" ? "#FFFFFF" : "#000000"} />
+        <SphereScene primaryColor={resolvedTheme === "dark" ? "#FFFFFF" : "#000000"} />
       )}
       {currentScene === "torus" && (
-        <TorusMesh color={resolvedTheme === "dark" ? "#FFFFFF" : "#000000"} />
+        <TorusScene primaryColor={resolvedTheme === "dark" ? "#FFFFFF" : "#000000"} />
       )}
     </>
   );

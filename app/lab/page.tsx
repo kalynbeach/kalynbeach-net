@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import SitePageHeader from "@/components/site/site-page-header";
-import ThreeCanvas from "@/components/rtf/canvas";
+import ThreeCanvas from "@/components/r3f/canvas";
 
 export default function Lab() {
   return (
