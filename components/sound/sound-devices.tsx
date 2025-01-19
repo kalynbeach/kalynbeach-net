@@ -44,7 +44,7 @@ export default function SoundDevices({
       {/* Device Count */}
       <Badge variant="outline" className={cn(
         "size-9 justify-center items-center",
-        "text-sm sm:text-base font-mono font-semibold border-muted-foreground/50 bg-muted/30",
+        "text-sm sm:text-base font-mono font-semibold border-muted-foreground bg-muted/30",
         devices.length > 0 && "text-kb-blue dark:text-kb-green",
       )}>
         {devices.length}
