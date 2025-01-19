@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 type ChromaProps = {
   data: number[];
 };
@@ -19,12 +21,15 @@ const PITCH_CLASSES = [
 
 export default function Chroma({ data }: ChromaProps) {
   return (
-    <div className="chroma w-full h-32 border border-primary">
+    <div className="chroma w-full h-16 border border-primary">
       {data && data.length > 0 && (
-        <div className="chroma-container w-full h-full flex flex-row items-end justify-evenly">
-          {data.map((chroma, i) => (
-            <div key={i} className="chroma-bar w-full bg-primary flex flex-col justify-end" style={{ height: `${chroma * 100}%` }}>
-              <div className="chroma-label text-sm font-mono font-medium text-center text-primary-foreground">{PITCH_CLASSES[i]}</div>
+        <div className="chroma-container w-full h-full flex flex-row items-center justify-evenly">
+          {PITCH_CLASSES.map((pitchClass, i) => (
+            <div key={i} className={cn(
+              "chroma-bar w-full h-full bg-card flex flex-col justify-center",
+              data[i] >= 0.99 && "bg-primary",
+            )}>
+              <div className="chroma-label text-sm font-mono font-semibold text-center text-card">{pitchClass}</div>
             </div>
           ))}
         </div>
