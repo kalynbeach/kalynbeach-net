@@ -21,8 +21,8 @@ export default function SoundBlock() {
   const { audioContext } = useSoundContext();
   const { devices, selectedDevice, setSelectedDevice } = useSoundDevices();
   const { stream, analyser, isInitialized } = useSoundDeviceStream(selectedDevice);
-  const { features } = useMeyda(audioContext, stream);
-  const [activeVisualizers, setActiveVisualizers] = useState<string[]>(["waveform"]);
+  const { features, meydaInitializing, meydaError } = useMeyda(audioContext, stream);
+  const [activeVisualizers, setActiveVisualizers] = useState<string[]>(["waveform", "chroma"]);
 
   return (
     <div className="sound-block w-full flex flex-col items-start justify-start gap-2 border-2 border-primary p-2">
@@ -43,10 +43,12 @@ export default function SoundBlock() {
             className={cn(
               "w-16 sm:w-20 justify-center border-muted-foreground bg-muted/30",
               "font-mono font-semibold text-xs",
-              isInitialized && "text-kb-blue dark:text-kb-green",
+              isInitialized && !meydaInitializing && !meydaError && "text-kb-blue dark:text-kb-green",
+              meydaInitializing && "text-yellow-500",
+              meydaError && "text-red-500"
             )}
           >
-            {isInitialized ? "active" : "loading"}
+            {meydaInitializing ? "loading" : meydaError ? "error" : isInitialized ? "active" : "loading"}
           </Badge>
         </div>
       </div>
