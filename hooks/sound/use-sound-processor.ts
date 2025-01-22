@@ -8,7 +8,7 @@ const WORKLET_URL = process.env.NODE_ENV === "development"
 
 async function createSoundProcessor(audioContext: AudioContext) {
   try {
-    // await audioContext.resume();
+    console.log("[createSoundProcessor] WORKLET_URL: ", WORKLET_URL);
     await audioContext.audioWorklet.addModule(WORKLET_URL);
   } catch (e) {
     return null;
@@ -18,25 +18,21 @@ async function createSoundProcessor(audioContext: AudioContext) {
 }
 
 export function useSoundProcessor(audioContext: AudioContext | null) {
-  // const [processor, setProcessor] = useState<AudioWorkletNode | null>(null);
   const processorRef = useRef<AudioWorkletNode | null>(null);
   const [processorError, setProcessorError] = useState<Error | null>(null);
-  // const [data, setData] = useState<Float32Array[][]>([]);
 
   const initProcessor = useCallback(async () => {
     if (!audioContext || processorRef.current) return;
 
     try {
       const processor = await createSoundProcessor(audioContext);
+      console.log("[useSoundProcessor initProcessor] processor: ", processor);
 
       if (!processor) {
         throw new Error("Failed to create sound processor");
       }
 
       processorRef.current = processor;
-      console.log("[useSoundProcessor initProcessor] processor: ", processor);
-      // processor.connect(audioContext.destination);
-      // setProcessor(processor);
     } catch (e) {
       setProcessorError(e as Error);
     }

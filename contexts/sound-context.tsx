@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { SoundContextValue, SoundStatus, SoundError } from "@/lib/types";
-import { useSoundProcessor } from "@/hooks/sound/use-sound-processor";
 
 export const FFT_SIZE = 2048;
 export const SMOOTHING_TIME_CONSTANT = 0.8;
@@ -27,7 +26,6 @@ export function SoundContextProvider({
   const [audioContext] = useState<AudioContext | null>(getAudioContext);
   const [status, setStatus] = useState<SoundStatus>("idle");
   const [error, setError] = useState<SoundError | null>(null);
-  const { processor, processorError } = useSoundProcessor(audioContext);
 
   const initialize = async () => {
     try {
@@ -36,9 +34,6 @@ export function SoundContextProvider({
         throw new Error("AudioContext not available");
       }
       await audioContext.resume();
-
-      processor?.connect(audioContext.destination);
-      
       setStatus("active");
       setError(null);
     } catch (err) {

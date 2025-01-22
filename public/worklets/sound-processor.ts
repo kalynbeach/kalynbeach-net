@@ -1,3 +1,6 @@
+/**
+ * A custom `AudioWorkletProcessor`.
+ */
 class SoundProcessor extends AudioWorkletProcessor {
 
   static get parameterDescriptors() {
@@ -13,7 +16,7 @@ class SoundProcessor extends AudioWorkletProcessor {
     super();
   }
 
-  process(inputs, outputs, parameters) {
+  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, any>) {
     const input = inputs[0];
     const output = outputs[0];
 

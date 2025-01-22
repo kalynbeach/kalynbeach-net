@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { FFT_SIZE, SMOOTHING_TIME_CONSTANT, useSoundContext } from "@/contexts/sound-context";
+import { useSoundProcessor } from "@/hooks/sound/use-sound-processor";
 import type { SoundStreamData } from "@/lib/types";
 
 export function useSoundDeviceStream(deviceId: string): SoundStreamData {
   const [isInitialized, setIsInitialized] = useState(false);
   const { audioContext, status, initialize } = useSoundContext();
+  const { processor, processorError } = useSoundProcessor(audioContext);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -44,15 +46,12 @@ export function useSoundDeviceStream(deviceId: string): SoundStreamData {
       if (!deviceId || !audioContext) return;
 
       try {
-        // Clean up existing stream
         cleanup();
 
-        // Ensure AudioContext is active
         if (status === "suspended") {
           await initialize();
         }
 
-        // Get audio stream with optimal settings for performance
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: { exact: deviceId },
@@ -70,18 +69,20 @@ export function useSoundDeviceStream(deviceId: string): SoundStreamData {
           return;
         }
 
-        // Setup analyzer with optimal settings
         const analyser = audioContext.createAnalyser();
         analyser.fftSize = FFT_SIZE;
         analyser.smoothingTimeConstant = SMOOTHING_TIME_CONSTANT;
         analyser.minDecibels = -90;
         analyser.maxDecibels = -10;
 
-        // Setup source
         const source = audioContext.createMediaStreamSource(stream);
         source.connect(analyser);
 
-        // Store refs
+        if (processor) {
+          console.log("[useSoundDeviceStream] connecting source to processor");
+          source.connect(processor);
+        }
+
         analyserRef.current = analyser;
         sourceRef.current = source;
         streamRef.current = stream;
@@ -95,7 +96,6 @@ export function useSoundDeviceStream(deviceId: string): SoundStreamData {
       }
     }
 
-    // Only initialize if the context is active or suspended
     if (status === "active" || status === "suspended") {
       initializeSound();
     }
