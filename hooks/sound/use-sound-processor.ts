@@ -32,6 +32,10 @@ export function useSoundProcessor(audioContext: AudioContext | null) {
         throw new Error("Failed to create sound processor");
       }
 
+      processor.port.onmessage = (event) => {
+        console.log("[useSoundProcessor initProcessor onmessage] event: ", event);
+      };
+
       processorRef.current = processor;
     } catch (e) {
       setProcessorError(e as Error);

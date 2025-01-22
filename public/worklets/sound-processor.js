@@ -11,6 +11,7 @@ class SoundProcessor extends AudioWorkletProcessor {
 
   constructor() {
     super();
+    // this.port.postMessage("[SoundProcessor constructor] initialized!");
   }
 
   process(inputs, outputs, parameters) {
@@ -20,6 +21,8 @@ class SoundProcessor extends AudioWorkletProcessor {
     for (let channelNum = 0; channelNum < input.length; channelNum++) {
       const inputChannel = input[channelNum];
       const outputChannel = output[channelNum];
+
+      // this.port.postMessage(inputChannel);
 
       // TODO: implement sample processing
       for (let i = 0; i < inputChannel.length; i++) {
