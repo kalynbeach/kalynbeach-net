@@ -22,7 +22,7 @@ export default function SoundBlock() {
   const { devices, selectedDevice, setSelectedDevice } = useSoundDevices();
   const { stream, analyser, isInitialized } = useSoundDeviceStream(selectedDevice);
   const { features, meydaInitializing, meydaError } = useMeyda(audioContext, stream);
-  const [activeVisualizers, setActiveVisualizers] = useState<string[]>(["waveform", "chroma"]);
+  const [activeVisualizers, setActiveVisualizers] = useState<string[]>(["waveform"]);
 
   return (
     <div className="sound-block w-full flex flex-col items-start justify-start gap-2 border-2 border-primary p-2">

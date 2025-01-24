@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-const WORKLET_URL = process.env.NODE_ENV === "development" 
+const WORKLET_URL = process.env.NODE_ENV === "development" || process.env.BUILD_ID === undefined
   ? "/worklets/sound-processor.js"
   : `/worklets/sound-processor.js?v=${process.env.BUILD_ID}`;
 
