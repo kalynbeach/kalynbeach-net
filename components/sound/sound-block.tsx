@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { AudioWaveform, Music } from "lucide-react";
 import SoundDevices from "@/components/sound/sound-devices";
 import Chroma from "@/components/sound/chroma";
+import { WaveformSkeleton } from "@/components/sound/waveform";
 
 const Waveform = dynamic(() => import("@/components/sound/waveform"), { ssr: false });
 
@@ -53,17 +54,23 @@ export default function SoundBlock() {
         </div>
       </div>
       {/* Sound Block Visualizers */}
-      <div className="w-full h-full flex flex-col justify-between gap-2">
-        {activeVisualizers.includes("waveform") && (
+      <div className="w-full h-[296px] sm:h-[328px] md:h-[360px] lg:h-[456px] flex flex-col justify-between gap-2">
+        {isInitialized && activeVisualizers.includes("waveform") ? (
           <Waveform
             analyser={analyser}
             isInitialized={isInitialized}
             backgroundColor={resolvedTheme === "dark" ? "#090909" : "#ffffff"}
             lineColor={resolvedTheme === "dark" ? "#ffffff" : "#000000"}
           />
+        ) : (
+          <WaveformSkeleton />
         )}
-        {activeVisualizers.includes("chroma") && features && features.chroma && (
+        {isInitialized && activeVisualizers.includes("chroma") && features && features.chroma ? (
           <Chroma data={features.chroma} />
+        ) : (
+          <div className="chroma-skeleton w-full h-16 flex items-center justify-center bg-muted/30 border border-primary">
+            <span className="font-mono text-sm text-muted-foreground">chroma</span>
+          </div>
         )}
       </div>
     </div>
@@ -79,14 +86,14 @@ function SoundBlockControls({ activeVisualizers, setActiveVisualizers }: SoundBl
   return (
     <ToggleGroup type="multiple" variant="outline" value={activeVisualizers} onValueChange={setActiveVisualizers}>
       <ToggleGroupItem
-        className="group hover:bg-muted/50 hover:border-muted-foreground/60 data-[state=on]:border-primary data-[state=on]:bg-muted/50"
+        className="group hover:cursor-pointer hover:bg-muted/50 hover:border-muted-foreground/60 data-[state=on]:border-primary data-[state=on]:bg-muted/50"
         value="waveform"
         aria-label="Toggle Waveform"
       >
         <AudioWaveform className="h-4 w-4 stroke-muted-foreground group-data-[state=on]:stroke-kb-blue dark:group-data-[state=on]:stroke-kb-green" />
       </ToggleGroupItem>
       <ToggleGroupItem
-        className="group hover:bg-muted/50 hover:border-muted-foreground/60 data-[state=on]:border-primary data-[state=on]:bg-muted/50"
+        className="group hover:cursor-pointer hover:bg-muted/50 hover:border-muted-foreground/60 data-[state=on]:border-primary data-[state=on]:bg-muted/50"
         value="chroma"
         aria-label="Toggle Chroma"
       >
