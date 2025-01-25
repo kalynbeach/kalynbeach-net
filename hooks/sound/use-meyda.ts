@@ -53,7 +53,7 @@ export function useMeyda(context: AudioContext | null, stream: MediaStream | nul
           }
         });
 
-        console.log("[useMeyda initAnalyzer] starting analyzer...");
+        // console.log("[useMeyda initAnalyzer] starting analyzer...");
         analyzerRef.current.start();
       } catch (err) {
         console.error("[useMeyda initAnalyzer] Error initializing Meyda analyzer:", err);
@@ -75,7 +75,7 @@ export function useMeyda(context: AudioContext | null, stream: MediaStream | nul
     initMeydaAnalyzer();
 
     return () => {
-      console.log("[useMeyda cleanup] cleaning up analyzer and source...");
+      // console.log("[useMeyda cleanup] cleaning up analyzer and source...");
       if (analyzerRef.current) {
         analyzerRef.current.stop();
         analyzerRef.current = null;
