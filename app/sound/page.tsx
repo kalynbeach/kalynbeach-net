@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import SitePageHeader from "@/components/site/site-page-header";
 import { SoundContextProvider } from "@/contexts/sound-context";
+import SitePageHeader from "@/components/site/site-page-header";
 import SoundBlock from "@/components/sound/sound-block";
 
 export default function Sound() {
