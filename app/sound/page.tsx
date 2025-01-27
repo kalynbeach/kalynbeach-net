@@ -4,7 +4,6 @@ import { WavePlayerContextProvider, TEST_PLAYLIST, TEST_TRACKS } from "@/context
 import SitePageHeader from "@/components/site/site-page-header";
 import SoundBlock from "@/components/sound/sound-block";
 import WavePlayer from "@/components/wave-player/wave-player";
-import type { WavePlayerPlaylist, WavePlayerTrack } from "@/lib/types";
 
 export default function Sound() {
   return (

@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState, useRef } from "react";
 import { useWavePlayerContext } from "@/contexts/wave-player-context";
 import type {
@@ -12,10 +14,10 @@ export type UseWavePlayerValue = WavePlayerState & {
 };
 
 export function useWavePlayer(playlist: WavePlayerPlaylist): UseWavePlayerValue {
+  // TODO: refactor `state` out of `WavePlayerContextProvider` and into `useWavePlayer` state
   const { state, controls, initialize, cleanup } = useWavePlayerContext();
-  const audioRef = useRef<HTMLAudioElement>(null);
 
-  console.log("[useWavePlayer] state", state);
+  // console.log("[useWavePlayer] state", state);
 
   // initialize player and ensure initial track
   useEffect(() => {

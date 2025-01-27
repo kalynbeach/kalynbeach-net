@@ -27,7 +27,7 @@ export const TEST_TRACKS: WavePlayerTrack[] = [
 
 export const TEST_PLAYLIST: WavePlayerPlaylist = {
   id: 0,
-  title: "test",
+  title: "playlist_0",
   tracks: TEST_TRACKS,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -52,18 +52,20 @@ const SMOOTHING_TIME_CONSTANT = 0.8;
 export const WavePlayerContext = createContext<WavePlayerContextValue | null>(null);
 
 export function WavePlayerContextProvider({ children }: { children: React.ReactNode; }) {
+  // TODO: refactor `state` out of `WavePlayerContextProvider` and into `useWavePlayer` state
   const [state, setState] = useState<WavePlayerState>(initialState);
+  // TODO: prevent duplicate AudioContexts from being created
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const isCleanedUpRef = useRef(false);
 
-  // TODO: initialize audio context and nodes
+  // TODO: properly initialize audio context and nodes
   const initialize = useCallback(async (playlist: WavePlayerPlaylist) => {
     try {
       if (audioContext || isCleanedUpRef.current) return;
-      console.log("[WavePlayerContextProvider] initializing...");
+      // console.log("[WavePlayerContextProvider] initializing...");
 
       // set playlist and track in state
       setState(prev => ({
@@ -95,7 +97,7 @@ export function WavePlayerContextProvider({ children }: { children: React.ReactN
       isCleanedUpRef.current = false;
       
       setState(prev => ({ ...prev, status: "ready" }));
-      console.log("[WavePlayerContextProvider] initialized!");
+      // console.log("[WavePlayerContextProvider] initialized!");
     } catch (error) {
       console.error("Failed to initialize audio context:", error);
       setState(prev => ({
