@@ -9,14 +9,34 @@ import type {
   WavePlayerControls,
 } from "@/lib/types";
 
-// AudioContext settings
-const FFT_SIZE = 2048;
-const SMOOTHING_TIME_CONSTANT = 0.8;
+// TESTING
+export const TEST_TRACKS: WavePlayerTrack[] = [
+  {
+    id: 0,
+    title: "0_initializer",
+    artist: "Kalyn Beach",
+    record: "loops",
+    src: "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/0_initializer.wav",
+    image: {
+      src: "/icon.svg",
+      alt: "0_initializer",
+    },
+    isLoop: true,
+  },
+];
+
+export const TEST_PLAYLIST: WavePlayerPlaylist = {
+  id: 0,
+  title: "test",
+  tracks: TEST_TRACKS,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
 
 const initialState: WavePlayerState = {
   status: "idle",
-  playlist: null,
-  track: null,
+  playlist: TEST_PLAYLIST,
+  track: TEST_PLAYLIST.tracks[0],
   currentTime: 0,
   duration: 0,
   volume: 1,
@@ -25,32 +45,32 @@ const initialState: WavePlayerState = {
   error: null,
 };
 
+// AudioContext options
+const FFT_SIZE = 2048;
+const SMOOTHING_TIME_CONSTANT = 0.8;
+
 export const WavePlayerContext = createContext<WavePlayerContextValue | null>(null);
 
-export function WavePlayerContextProvider({
-  children,
-  playlist,
-}: {
-  children: React.ReactNode;
-  playlist: WavePlayerPlaylist;
-}) {
+export function WavePlayerContextProvider({ children }: { children: React.ReactNode; }) {
+  const [state, setState] = useState<WavePlayerState>(initialState);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const isCleanedUpRef = useRef(false);
 
-  const [tracks] = useState<WavePlayerTrack[]>(playlist.tracks);
-  const [state, setState] = useState<WavePlayerState>({
-    ...initialState,
-    playlist,
-    track: tracks[0],
-  });
-
   // TODO: initialize audio context and nodes
-  const initialize = useCallback(async () => {
+  const initialize = useCallback(async (playlist: WavePlayerPlaylist) => {
     try {
       if (audioContext || isCleanedUpRef.current) return;
+      console.log("[WavePlayerContextProvider] initializing...");
+
+      // set playlist and track in state
+      setState(prev => ({
+        ...prev,
+        playlist,
+        track: playlist.tracks[0],
+      }));
 
       const ctx = new AudioContext({
         latencyHint: "interactive",
@@ -75,6 +95,7 @@ export function WavePlayerContextProvider({
       isCleanedUpRef.current = false;
       
       setState(prev => ({ ...prev, status: "ready" }));
+      console.log("[WavePlayerContextProvider] initialized!");
     } catch (error) {
       console.error("Failed to initialize audio context:", error);
       setState(prev => ({
@@ -124,7 +145,6 @@ export function WavePlayerContextProvider({
       }
     }
 
-    // audioBufferCache.current.clear();
     setAudioContext(null);
     setState(initialState);
   }, [audioContext]);

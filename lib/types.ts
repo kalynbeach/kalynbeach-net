@@ -96,6 +96,6 @@ export type WavePlayerContextValue = {
   sourceNode: AudioBufferSourceNode | null;
   state: WavePlayerState;
   controls: WavePlayerControls;
-  initialize: () => Promise<void>;
+  initialize: (playlist: WavePlayerPlaylist) => Promise<void>;
   cleanup: () => void;
 };
