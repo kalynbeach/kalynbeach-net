@@ -305,3 +305,190 @@ const handleAudioError = (error: unknown) => {
 
 Would you like me to elaborate on any specific aspect or provide component-level implementation examples?
 
+## Project Structure Plan
+
+### Project Structure Thinking
+
+```plaintext
+<think>
+Okay, the user wants to know how to structure their Next.js project for the WavePlayer. Let me think about the best way to organize the files and components.
+
+First, I need to consider Next.js conventions. They're using the App Router, so everything should be in the app directory. But shared components and hooks might go in the src folder if they're using that structure.
+
+The existing code has contexts, hooks, components, and lib types. I should expand on that. Let's break it down:
+1. State Management: They have a context provider. Maybe split into separate files for context, reducer, and actions to keep things clean.
+2. Hooks: The useWavePlayer hook should handle the player logic. Maybe create custom hooks for visualization and controls too.
+3. Components: The wave-player component is already there. Need subcomponents for visualization, controls, track info. Maybe separate canvas and WebGL components.
+4. Lib: Types are in lib/types.ts. Add utilities for audio processing and error handling here.
+5. Workers: Web Workers for decoding audio chunks to offload the main thread.
+6. Public Assets: Audio worklet processors should be in the public directory so they're accessible.
+
+I should also consider testing – adding stories and test files.
+
+For the file structure, organizing by feature makes sense. Group all WavePlayer-related files together. Maybe under app/(player) or a components/wave-player directory.
+
+Need to make sure the structure is scalable for future features like WebGL visualizations and worklets.
+
+Also, think about TypeScript types. Keeping all WavePlayer types in lib/types/wave-player.d.ts might help with maintainability.
+
+Utilities for audio processing, time formatting, and error handling should be in lib/utils.
+
+Putting all this together, the structure should be modular, separating concerns, and easy to navigate. Each major feature (context, hooks, components) has its own directory with related files.
+</think>
+```
+
+```bash
+kalynbeach-net/
+├── app/
+│   └── sound/
+│       ├── page.tsx       # Main player page
+│       └── components/    # Page-specific components
+├── components/
+│   └── wave-player/
+│       ├── wave-player-track-controls.tsx
+│       ├── wave-player-track-info.tsx
+│       ├── wave-player-track-visual.tsx
+│       ├── visuals/
+│       │   ├── waveform-canvas.tsx
+│       │   └── frequency-webgl.tsx
+│       └── wave-player.tsx    # Main player component
+├── contexts/
+│   ├── wave-player/
+│   │   ├── context.tsx       # Context creation
+│   │   ├── reducer.ts        # State reducer
+│   │   └── actions.ts        # Action creators
+├── hooks/
+│   └── wave-player/
+│       ├── use-wave-player.ts  # Main hook
+│       ├── use-visualization.ts
+│       └── use-audio-controls.ts
+├── lib/
+│   ├── types/
+│   │   └── wave-player.d.ts   # Type definitions
+│   ├── utils/
+│   │   ├── audio-processor.ts # Audio utilities
+│   │   └── time-formatter.ts
+│   └── workers/
+│       └── audio-decoder.ts   # Web Worker
+└── public/
+    └── worklets/
+        └── waveform-processor.js  # AudioWorklet
+```
+
+### Key File Responsibilities
+
+1. **Context System**
+```typescript:context/wave-player/context.tsx
+// Core audio context management
+export const WavePlayerContext = createContext<WavePlayerContextValue | null>(null);
+
+// Combined provider component
+export function WavePlayerProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(playerReducer, initialState);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  
+  // Value memoization
+  const contextValue = useMemo(() => ({
+    state,
+    dispatch,
+    audioContext: audioContextRef.current
+  }), [state]);
+
+  return (
+    <WavePlayerContext.Provider value={contextValue}>
+      {children}
+    </WavePlayerContext.Provider>
+  );
+}
+```
+
+2. **Hook Structure**
+```typescript:hooks/wave-player/use-wave-player.ts
+// Main player hook
+export function useWavePlayer() {
+  const { state, dispatch, audioContext } = useContext(WavePlayerContext);
+  
+  // Memoized controls
+  const controls = useMemo(() => ({
+    play: async () => {
+      if (!audioContext) return;
+      // Play implementation
+    },
+    seek: (time: number) => {
+      // Seek implementation
+    }
+  }), [audioContext, state.buffer]);
+
+  return {
+    state,
+    controls
+  };
+}
+```
+
+3. **Component Architecture**
+```tsx:components/wave-player/wave-player.tsx
+// Main player component
+export default function WavePlayer() {
+  const { state, controls } = useWavePlayer();
+  
+  return (
+    <Card>
+      <TrackInfo />
+      <WaveformVisualization />
+      <PlayerControls />
+    </Card>
+  );
+}
+```
+
+4. **Worker Integration**
+```typescript:lib/workers/audio-decoder.ts
+// Web Worker for audio processing
+self.onmessage = (e) => {
+  const { chunk, index } = e.data;
+  decodeAudioData(chunk).then(decoded => {
+    self.postMessage({ decoded, index }, [decoded]);
+  });
+};
+```
+
+5. **Type Definitions**
+```typescript:lib/types/wave-player.d.ts
+// Extended type declarations
+declare module WavePlayer {
+  type VisualizationMode = "waveform" | "frequency";
+  
+  interface AudioState {
+    buffer: AudioBuffer | null;
+    playbackPosition: number;
+    status: PlayerStatus;
+  }
+  
+  interface VisualizationState {
+    waveformData: Uint8Array | null;
+    frequencyData: Uint8Array | null;
+  }
+}
+```
+
+### Implementation Strategy
+
+1. **Core First Approach**
+- Start with context system and basic hook
+- Implement minimal viable player component
+- Add visualization layer after core audio works
+
+2. **Progressive Enhancement**
+- Basic canvas visualization first
+- WebGL/WebAudio Worklet optimizations later
+- Loading states and error boundaries early
+
+3. **Testing Strategy**
+- Vitest for core audio logic, hooks, components, etc.
+
+4. **Performance Budget**
+- Audio decoding in worker threads
+- 60fps cap for visualizations
+- Memory monitoring for audio buffers
+
