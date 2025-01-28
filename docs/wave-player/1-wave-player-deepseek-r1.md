@@ -1,4 +1,4 @@
-# WavePlayer - DeepSeek R1 Report
+# WavePlayer - DeepSeek R1 Report 1
 
 ## Thinking
 
@@ -78,33 +78,7 @@ const [state, dispatch] = useReducer(playerReducer, initialState);
 const memoizedValue = useMemo(() => ({ state, controls }), [state, controls]);
 ```
 
-3. **Visualization System**
-
-```tsx
-// WaveformCanvas.tsx
-const WaveformCanvas = ({ data }: { data: Uint8Array }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    
-    // Draw waveform using canvas API
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.beginPath();
-    data.forEach((value, i) => {
-      const x = (i / data.length) * ctx.canvas.width;
-      const y = (value / 255) * ctx.canvas.height;
-      ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-  }, [data]);
-
-  return <canvas ref={canvasRef} className="w-full h-32" />;
-};
-```
-
-4. **Optimized Audio Workflow**
+3. **Optimized Audio Workflow**
 
 ```typescript
 // Audio processing workflow
@@ -137,6 +111,32 @@ const initializePlayback = async (buffer: AudioBuffer) => {
 };
 ```
 
+4. **Visualization System**
+
+```tsx
+// WaveformCanvas.tsx
+const WaveformCanvas = ({ data }: { data: Uint8Array }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    
+    // Draw waveform using canvas API
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.beginPath();
+    data.forEach((value, i) => {
+      const x = (i / data.length) * ctx.canvas.width;
+      const y = (value / 255) * ctx.canvas.height;
+      ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }, [data]);
+
+  return <canvas ref={canvasRef} className="w-full h-32" />;
+};
+```
+
 ## Implementation Priorities
 
 ### Phase 1: Core Functionality (2 Weeks)
@@ -151,15 +151,15 @@ const initializePlayback = async (buffer: AudioBuffer) => {
    - Web Worker decoding
    - Precise playback controls
 
-3. **Waveform Visualization**
-   - Canvas-based rendering
-   - 60fps update loop
-   - Responsive scaling
-
-4. **State Management**
+3. **State Management**
    - Reducer-based state machine
    - Memoized context values
    - Error recovery system
+
+4. **Waveform Visualization**
+   - Canvas-based rendering
+   - 60fps update loop
+   - Responsive scaling
 
 ```typescript
 // Example reducer action
