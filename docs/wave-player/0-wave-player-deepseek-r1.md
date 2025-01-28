@@ -212,6 +212,20 @@ const safeAudioOperation = async <T>(operation: () => Promise<T>) => {
    Should we implement ID3 tag parsing?  
    Requires additional library or custom implementation.
 
+### Answers
+
+1. We should prioritize waveform display over frequency analysis for the initial version, but I want to implement and use frequency analysis soon after.
+
+2. I like the idea of streaming the audio from S3, but I also want to prioritize performance and precision for real-time audio analysis, feature extraction, and playback controls. What do you recommend for the initial version?
+
+3. No crossfading is required for the initial version.
+
+4. No offline playback is required for the initial version.
+
+5. The initial visualizations should be simple (waveform using canvas, for example), but I want to implement a frequency analysis system for more complex visualizations using React Three Fiber and custom GLSL shaders soon after.
+
+6. No ID3 tag parsing is required for the initial version. I will be storing the playlist and track metadata in my Vercel Postgres database.
+
 ## Implementation Roadmap
 
 1. Phase 1: Core Audio Engine
