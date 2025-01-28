@@ -33,6 +33,10 @@ export const TEST_PLAYLIST: WavePlayerPlaylist = {
   updatedAt: new Date(),
 };
 
+// AudioContext options
+const FFT_SIZE = 2048;
+const SMOOTHING_TIME_CONSTANT = 0.8;
+
 const initialState: WavePlayerState = {
   status: "idle",
   playlist: TEST_PLAYLIST,
@@ -45,21 +49,31 @@ const initialState: WavePlayerState = {
   error: null,
 };
 
-// AudioContext options
-const FFT_SIZE = 2048;
-const SMOOTHING_TIME_CONSTANT = 0.8;
-
 export const WavePlayerContext = createContext<WavePlayerContextValue | null>(null);
 
 export function WavePlayerContextProvider({ children }: { children: React.ReactNode; }) {
   // TODO: refactor `state` out of `WavePlayerContextProvider` and into `useWavePlayer` state
   const [state, setState] = useState<WavePlayerState>(initialState);
-  // TODO: prevent duplicate AudioContexts from being created
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const isCleanedUpRef = useRef(false);
+  
+  // TODO: prevent duplicate AudioContexts from being created
+  const createAudioContext = () => {
+    if (typeof window === "undefined") return null;
+    return new AudioContext({
+      latencyHint: "interactive",
+      sampleRate: 48000,
+    });
+  };
+
+  const resumeAudioContext = async () => {
+    if (audioContext && audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+  }
 
   // TODO: properly initialize audio context and nodes
   const initialize = useCallback(async (playlist: WavePlayerPlaylist) => {
@@ -74,10 +88,13 @@ export function WavePlayerContextProvider({ children }: { children: React.ReactN
         track: playlist.tracks[0],
       }));
 
-      const ctx = new AudioContext({
-        latencyHint: "interactive",
-        sampleRate: 48000,
-      });
+      // const ctx = new AudioContext({
+      //   latencyHint: "interactive",
+      //   sampleRate: 48000,
+      // });
+
+      const ctx = createAudioContext();
+      if (!ctx) return;
 
       const analyser = ctx.createAnalyser();
       analyser.fftSize = FFT_SIZE;

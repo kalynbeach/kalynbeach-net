@@ -3,10 +3,11 @@
 import { useEffect, useState, useRef } from "react";
 import { useWavePlayerContext } from "@/contexts/wave-player-context";
 import type {
-  WavePlayerControls,
   WavePlayerState,
+  WavePlayerStatus,
   WavePlayerTrack,
   WavePlayerPlaylist,
+  WavePlayerControls,
 } from "@/lib/types";
 
 export type UseWavePlayerValue = WavePlayerState & {
@@ -14,20 +15,24 @@ export type UseWavePlayerValue = WavePlayerState & {
 };
 
 export function useWavePlayer(playlist: WavePlayerPlaylist): UseWavePlayerValue {
-  // TODO: refactor `state` out of `WavePlayerContextProvider` and into `useWavePlayer` state
   const { state, controls, initialize, cleanup } = useWavePlayerContext();
-
-  // console.log("[useWavePlayer] state", state);
+  // TODO: refactor `state` out of `WavePlayerContextProvider` and into `useWavePlayer` state
+  // const [status, setStatus] = useState<WavePlayerStatus>("idle");
+  // const [track, setTrack] = useState<WavePlayerTrack | null>(null);
+  // const [currentTime, setCurrentTime] = useState<number>(0);
+  // const [duration, setDuration] = useState<number>(0);
+  // const [volume, setVolume] = useState<number>(1);
+  // const [isMuted, setIsMuted] = useState<boolean>(false);
+  // const [isLooping, setIsLooping] = useState<boolean>(false);
+  // const [error, setError] = useState<Error | null>(null);
 
   // initialize player and ensure initial track
   useEffect(() => {
     let mounted = true;
 
     async function initializePlayer() {
-      // console.log("[useWavePlayer initializePlayer] initializing");
       try {
         await initialize(playlist);
-        // console.log("[useWavePlayer initializePlayer] initialized");
         if (mounted && !state.track) {
           await controls.next();
         }
