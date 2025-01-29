@@ -19,62 +19,77 @@ type WavePlayerProps = {
 };
 
 export default function WavePlayer({ playlist }: WavePlayerProps) {
-  const { state, initializeAudioContext } = useWavePlayer(playlist);
-  // const [needsActivation, setNeedsActivation] = useState(true);
+  const { state, initializeAudioContext, retryLoad } = useWavePlayer(playlist);
+  const [needsActivation, setNeedsActivation] = useState(true);
 
   useEffect(() => {
-    if (state.status === "idle") {
+    if (needsActivation && state.status === "idle") {
       initializeAudioContext();
-      // setNeedsActivation(true);
+      setNeedsActivation(false);
     }
-  }, [state.status]);
+  }, [state.status, needsActivation]);
 
   // if (needsActivation) {
   //   return (
-  //     <Card className="wave-player">
+  //     <Card className="wave-player wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">
+  //       <CardHeader className="p-4"></CardHeader>
   //       <CardContent className="p-4 text-center">
   //         <Button 
-  //           onClick={() => {
-  //             initializeAudioContext();
+  //           onClick={async () => {
+  //             await initializeAudioContext();
   //             setNeedsActivation(false);
   //           }}
   //         >
-  //           initialize
+  //           Activate Audio
   //         </Button>
   //       </CardContent>
+  //       <CardFooter className="flex flex-col items-center justify-center p-4"></CardFooter>
   //     </Card>
   //   );
   // }
 
   if (state.error) {
     return (
-      <Card className="wave-player">
-        <CardContent className="text-red-500 p-4">
-          Error: {state.error.message}
+      <Card className="wave-player wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">
+        <CardHeader className="p-4"></CardHeader>
+        <CardContent className="p-4 flex flex-col items-center gap-4">
+          <div className="text-red-500">Error: {state.error.message}</div>
+          <Button onClick={() => retryLoad()}>
+            Retry
+          </Button>
         </CardContent>
+        <CardFooter className="flex flex-col items-center justify-center p-4"></CardFooter>
       </Card>
     );
   }
 
   if (!state.track || state.status === "loading") {
     return (
-      <Card className="wave-player">
-        <CardContent className="flex items-center justify-center p-4">
-          <p className="text-sm font-mono">loading...</p>
+      <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">
+        <CardHeader className="p-4"></CardHeader>
+        <CardContent className="flex flex-col items-center justify-center p-4 gap-2">
+          <div className="h-4 w-full bg-secondary relative">
+            <div 
+              className="absolute h-full bg-primary" 
+              style={{ width: `${state.bufferProgress}%` }}
+            />
+          </div>
+          <p className="text-sm">Loading track...</p>
         </CardContent>
+        <CardFooter className="flex flex-col items-center justify-center p-4"></CardFooter>
       </Card>
     );
   }
 
   return (
-    <Card className="wave-player aspect-[5/7] w-full md:w-[320px] lg:w-[360px] flex flex-col border border-primary rounded-none">
-      <CardHeader className="p-4">
+    <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">
+      <CardHeader className="w-full p-4">
         <WavePlayerTrackInfo track={state.track} />
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center p-4">
+      <CardContent className="w-full h-full flex flex-col items-center justify-center p-4">
         <WavePlayerTrackVisual image={state.track.image} />
       </CardContent>
-      <CardFooter className="flex flex-col items-center justify-center p-4">
+      <CardFooter className="w-full flex flex-col items-center justify-center p-4">
         <WavePlayerTrackControls />
       </CardFooter>
     </Card>

@@ -5,7 +5,7 @@ import { useWavePlayerContext } from "@/contexts/wave-player/context";
 import type { WavePlayerPlaylist } from "@/lib/types/wave-player";
 
 export function useWavePlayer(playlist: WavePlayerPlaylist) {
-  const { state, controls, initializeAudioContext, loadTrack } = useWavePlayerContext();
+  const { state, controls, initializeAudioContext, loadTrack, retryLoad } = useWavePlayerContext();
 
   useEffect(() => {
     initializeAudioContext();
@@ -22,6 +22,8 @@ export function useWavePlayer(playlist: WavePlayerPlaylist) {
     controls,
     initializeAudioContext,
     loadTrack,
+    retryLoad,
   };
 }
+
 

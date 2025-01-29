@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWavePlayerContext } from "@/contexts/wave-player/context";
 import { WavePlayerTrack } from "@/lib/types/wave-player";
+import Image from "next/image";
 
 // TODO: implement image and R3F scene visual options
 type WavePlayerTrackVisualOption = "image" | "waveform" | "scene";
@@ -14,6 +15,7 @@ type WavePlayerTrackVisualProps = {
 export default function WavePlayerTrackVisual({ image }: WavePlayerTrackVisualProps) {
   const { state } = useWavePlayerContext();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [visualizationMode, setVisualizationMode] = useState<WavePlayerTrackVisualOption>("waveform");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -36,7 +38,7 @@ export default function WavePlayerTrackVisual({ image }: WavePlayerTrackVisualPr
         ctx.lineTo(x, y);
       }
       
-      ctx.strokeStyle = "#4f46e5";
+      ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2;
       ctx.stroke();
     };
@@ -45,11 +47,23 @@ export default function WavePlayerTrackVisual({ image }: WavePlayerTrackVisualPr
   }, [state.visualization.waveform]);
 
   return (
-    <canvas 
-      ref={canvasRef}
-      className="w-full h-48"
-      width={800}
-      height={192}
-    />
+    <div className="relative h-56 w-full">
+      {visualizationMode === "image" && (
+        <Image
+          src={image.src}
+          alt={image.alt}
+          fill
+          className="object-cover"
+        />
+      )}
+      {visualizationMode === "waveform" && (
+        <canvas 
+          ref={canvasRef}
+          className="w-full h-full"
+          width={512}
+          height={512}
+        />
+      )}
+    </div>
   );
 }
