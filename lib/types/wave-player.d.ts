@@ -32,11 +32,14 @@ export type WavePlayerAction =
   | { type: "SET_VOLUME"; payload: number }
   | { type: "SET_CURRENT_TIME"; payload: number }
   | { type: "SET_START_TIME"; payload: number }
+  | { type: "SET_LOOP"; payload: boolean }
   | { type: "RETRY_LOAD" };
 
 export interface WavePlayerState {
   audioContext: AudioContext | null;
   status: WavePlayerStatus;
+  playlist: WavePlayerPlaylist | null;
+  currentTrackIndex: number;
   track: WavePlayerTrack | null;
   buffer: AudioBuffer | null;
   bufferProgress: number;
@@ -60,8 +63,9 @@ export interface WavePlayerControls {
   pause: () => void;
   seek: (time: number) => void;
   setVolume: (volume: number) => void;
-  // TODO: update with additional controls
-  // setLoop: (loop: boolean) => void;
+  nextTrack: () => void;
+  previousTrack: () => void;
+  setLoop: (loop: boolean) => void;
 }
 
 export type WavePlayerContextValue = {

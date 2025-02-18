@@ -36,23 +36,44 @@ export default function WavePlayerTrackControls() {
           <span>{formatTime(state.duration)}</span>
         </div>
       </div>
-      <div className="w-full flex items-center justify-between gap-4">
-        {/* Control Buttons */}
-        <div className="">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => state.status === "playing" ? controls.pause() : controls.play()}
-          >
-            {state.status === "playing" ? (
-              <Pause className="h-6 w-6" />
-            ) : (
-              <Play className="h-6 w-6" />
-            )}
-          </Button>
-          {/* <Volume2 className="h-5 w-5" /> */}
-        </div>
-        {/* Volume Slider */}
+
+      {/* Main Controls */}
+      <div className="w-full flex items-center justify-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={controls.previousTrack}
+          className="hover:bg-secondary"
+        >
+          <SkipBack className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => state.status === "playing" ? controls.pause() : controls.play()}
+          className="h-10 w-10"
+        >
+          {state.status === "playing" ? (
+            <Pause className="h-6 w-6" />
+          ) : (
+            <Play className="h-6 w-6" />
+          )}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={controls.nextTrack}
+          className="hover:bg-secondary"
+        >
+          <SkipForward className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Volume Control */}
+      <div className="w-full flex items-center justify-center gap-2">
+        <Volume2 className="h-4 w-4 text-muted-foreground" />
         <Slider
           value={[state.volume * 100]}
           max={100}

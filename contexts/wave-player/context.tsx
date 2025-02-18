@@ -14,11 +14,15 @@ import type {
   WavePlayerState,
   WavePlayerTrack,
   WavePlayerAction,
+  WavePlayerPlaylist,
 } from "@/lib/types/wave-player";
+import { WavePlayerBufferPool } from "@/lib/wave-player/buffer-pool";
 
 const initialState: WavePlayerState = {
   audioContext: null,
   status: "idle",
+  playlist: null,
+  currentTrackIndex: 0,
   track: null,
   buffer: null,
   bufferProgress: 0,
@@ -44,8 +48,16 @@ function playerReducer(
       return { ...state, audioContext: action.payload.audioContext };
     case "SET_BUFFER":
       return { ...state, buffer: action.payload };
-    case "SET_TRACK":
-      return { ...state, track: action.payload };
+    case "SET_TRACK": {
+      const newTrack = action.payload;
+      return { 
+        ...state, 
+        track: newTrack,
+        currentTrackIndex: newTrack && state.playlist
+          ? state.playlist.tracks.findIndex(t => t.id === newTrack.id)
+          : 0
+      };
+    }
     case "SET_STATUS":
       return { ...state, status: action.payload };
     case "SET_PROGRESS":
@@ -60,6 +72,8 @@ function playerReducer(
       return { ...state, currentTime: action.payload };
     case "SET_START_TIME":
       return { ...state, startTime: action.payload };
+    case "SET_LOOP":
+      return { ...state, isLooping: action.payload };
     case "RETRY_LOAD":
       return { ...state, status: "loading", error: null };
     default:
@@ -71,16 +85,22 @@ const WavePlayerContext = createContext<WavePlayerContextValue | null>(null);
 
 export function WavePlayerProvider({
   children,
+  playlist,
 }: {
   children: React.ReactNode;
+  playlist?: WavePlayerPlaylist;
 }) {
-  const [state, dispatch] = useReducer(playerReducer, initialState);
+  const [state, dispatch] = useReducer(playerReducer, {
+    ...initialState,
+    playlist: playlist || null,
+  });
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const startTimeRef = useRef<number>(0);
   const pauseTimeRef = useRef<number>(0);
+  const bufferPoolRef = useRef<WavePlayerBufferPool | null>(null);
 
   const createAudioContext = () => {
     if (typeof window === "undefined") return null;
@@ -127,6 +147,16 @@ export function WavePlayerProvider({
       gainNodeRef.current.connect(audioContext.destination);
       analyserNodeRef.current.connect(gainNodeRef.current);
 
+      // Initialize buffer pool
+      bufferPoolRef.current = new WavePlayerBufferPool({
+        onProgress: (progress) => {
+          dispatch({ type: "SET_PROGRESS", payload: progress });
+        },
+        onError: (error) => {
+          dispatch({ type: "SET_ERROR", payload: error });
+        },
+      });
+
       dispatch({ type: "INITIALIZE", payload: { audioContext } });
     } catch (error) {
       dispatch({
@@ -141,7 +171,7 @@ export function WavePlayerProvider({
 
   const loadTrack = useCallback(
     async (track: WavePlayerTrack) => {
-      if (!state.audioContext) return;
+      if (!state.audioContext || !bufferPoolRef.current) return;
 
       console.log("[WavePlayerProvider loadTrack] loading track...");
 
@@ -149,10 +179,11 @@ export function WavePlayerProvider({
         dispatch({ type: "SET_STATUS", payload: "loading" });
         dispatch({ type: "SET_TRACK", payload: track });
 
-        const response = await fetch(track.src);
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = await state.audioContext.decodeAudioData(arrayBuffer);
-        console.log("[WavePlayerProvider loadTrack] setting buffer:", buffer);
+        // Use buffer pool for chunked loading
+        const buffer = await bufferPoolRef.current.loadTrackChunked(
+          track,
+          state.audioContext
+        );
 
         dispatch({ type: "SET_BUFFER", payload: buffer });
         dispatch({ type: "SET_STATUS", payload: "ready" });
@@ -262,13 +293,16 @@ export function WavePlayerProvider({
     }
   }, [state.track, loadTrack]);
 
-  const cleanupBuffer = useCallback(() => {
+  const cleanup = useCallback(() => {
     if (sourceNodeRef.current) {
       console.log(
         "[WavePlayerProvider cleanupBuffer] disconnecting source node"
       );
       sourceNodeRef.current.disconnect();
       sourceNodeRef.current = null;
+    }
+    if (bufferPoolRef.current) {
+      bufferPoolRef.current.cleanup();
     }
     dispatch({ type: "SET_BUFFER", payload: null });
   }, []);
@@ -316,6 +350,12 @@ export function WavePlayerProvider({
     updateVisualization();
   }, [state.status]);
 
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+
   const value: WavePlayerContextValue = useMemo(
     () => ({
       state,
@@ -324,20 +364,41 @@ export function WavePlayerProvider({
         pause,
         setVolume,
         seek,
+        nextTrack: () => {
+          if (!state.playlist) return;
+          const nextIndex = (state.currentTrackIndex + 1) % state.playlist.tracks.length;
+          const nextTrack = state.playlist.tracks[nextIndex];
+          dispatch({ type: "SET_TRACK", payload: nextTrack });
+          loadTrack(nextTrack);
+        },
+        previousTrack: () => {
+          if (!state.playlist) return;
+          const prevIndex = state.currentTrackIndex === 0 
+            ? state.playlist.tracks.length - 1 
+            : state.currentTrackIndex - 1;
+          const prevTrack = state.playlist.tracks[prevIndex];
+          dispatch({ type: "SET_TRACK", payload: prevTrack });
+          loadTrack(prevTrack);
+        },
+        setLoop: (loop: boolean) => {
+          dispatch({ type: "SET_LOOP", payload: loop });
+        },
       },
       loadTrack,
       initializeAudioContext,
       retryLoad,
-      cleanupBuffer,
+      cleanup,
     }),
     [
       state,
       play,
       pause,
+      setVolume,
+      seek,
       loadTrack,
       initializeAudioContext,
       retryLoad,
-      cleanupBuffer,
+      cleanup,
     ]
   );
 
