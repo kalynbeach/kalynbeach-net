@@ -53,121 +53,174 @@ This approach has limitations:
 Here's a more sophisticated approach using buffer pooling and chunked loading:
 
 ```typescript
-// Types for buffer management
-interface BufferPool {
+// Types and Interfaces
+export interface WavePlayerBufferPoolState {
   current: AudioBuffer | null;
   next: AudioBuffer | null;
   chunks: Map<string, AudioBuffer>;
   maxPoolSize: number;
+  onProgress?: (progress: number) => void;
+  onError?: (error: Error) => void;
 }
 
-// Buffer pool manager
-class AudioBufferPool {
-  private pool: BufferPool;
-  private chunkSize: number = 1024 * 1024; // 1MB chunks
-  
-  constructor(maxPoolSize: number = 100 * 1024 * 1024) { // 100MB default
+export interface WavePlayerBufferPoolOptions {
+  maxPoolSize?: number;
+  chunkSize?: number;
+  onProgress?: (progress: number) => void;
+  onError?: (error: Error) => void;
+}
+
+// Main Implementation
+export class WavePlayerBufferPool {
+  private pool: WavePlayerBufferPoolState;
+  private chunkSize: number;
+  private abortController: AbortController | null = null;
+
+  constructor(options: WavePlayerBufferPoolOptions = {}) {
+    this.chunkSize = options.chunkSize || 1024 * 1024; // 1MB default
     this.pool = {
       current: null,
       next: null,
       chunks: new Map(),
-      maxPoolSize,
+      maxPoolSize: options.maxPoolSize || 100 * 1024 * 1024, // 100MB default
+      onProgress: options.onProgress,
+      onError: options.onError,
     };
   }
 
   async loadTrackChunked(track: WavePlayerTrack, audioContext: AudioContext) {
-    const response = await fetch(track.src, {
-      headers: { Range: 'bytes=0-' }
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch audio');
-    
-    const contentLength = Number(response.headers.get('content-length'));
-    const chunks: ArrayBuffer[] = [];
-    let loadedBytes = 0;
-
-    // Stream chunks
-    const reader = response.body!.getReader();
-    
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      this.abortController = new AbortController();
       
-      chunks.push(value.buffer);
-      loadedBytes += value.length;
+      // Initial metadata fetch using Bun's fetch
+      const head = await fetch(track.src, { 
+        method: "HEAD",
+        signal: this.abortController.signal 
+      });
       
-      // Report progress
-      const progress = (loadedBytes / contentLength) * 100;
-      this.onProgress?.(progress);
+      const contentLength = parseInt(head.headers.get("Content-Length") || "0");
+      if (!contentLength) throw new Error("Content length not available");
 
-      // Decode chunk if we have enough data
-      if (chunks.length * this.chunkSize >= this.chunkSize * 2) {
-        const partialBuffer = await this.decodeChunks(chunks, audioContext);
-        this.pool.chunks.set(`${track.id}-${chunks.length}`, partialBuffer);
+      // Calculate optimal chunk size based on content length
+      const optimalChunkSize = Math.min(
+        this.chunkSize,
+        Math.ceil(contentLength / 10)
+      );
+
+      const chunks: ArrayBuffer[] = [];
+      let loadedBytes = 0;
+
+      for (let offset = 0; offset < contentLength; offset += optimalChunkSize) {
+        if (this.abortController.signal.aborted) {
+          throw new Error("Loading aborted");
+        }
+
+        const end = Math.min(offset + optimalChunkSize - 1, contentLength - 1);
+        const response = await fetch(track.src, {
+          headers: { Range: `bytes=${offset}-${end}` },
+          signal: this.abortController.signal,
+        });
+
+        const chunk = await response.arrayBuffer();
+        chunks.push(chunk);
+        loadedBytes += chunk.byteLength;
+
+        // Report progress
+        const progress = (loadedBytes / contentLength) * 100;
+        this.pool.onProgress?.(progress);
+
+        // Process chunk if we have enough data
+        if (chunks.length >= 2) {
+          const partialBuffer = await this.decodeChunks(chunks, audioContext);
+          const chunkKey = `${track.id}-${offset}`;
+          this.pool.chunks.set(chunkKey, partialBuffer);
+          this.managePoolSize();
+        }
       }
-    }
 
-    // Final decode of remaining data
-    const fullBuffer = await this.decodeChunks(chunks, audioContext);
-    this.pool.current = fullBuffer;
-    
-    // Cleanup old chunks if needed
-    this.managePoolSize();
-    
-    return fullBuffer;
+      // Final processing
+      const fullBuffer = await this.decodeChunks(chunks, audioContext);
+      
+      // Update pool
+      if (this.pool.current) {
+        this.pool.next = this.pool.current;
+      }
+      this.pool.current = fullBuffer;
+
+      return fullBuffer;
+    } catch (error) {
+      const finalError = error instanceof Error ? error : new Error("Track loading failed");
+      this.pool.onError?.(finalError);
+      throw finalError;
+    }
   }
 
-  private async decodeChunks(chunks: ArrayBuffer[], context: AudioContext) {
-    const combined = this.combineArrayBuffers(chunks);
+  async preloadTrack(track: WavePlayerTrack, audioContext: AudioContext) {
+    try {
+      const buffer = await this.loadTrackChunked(track, audioContext);
+      this.pool.next = buffer;
+      return buffer;
+    } catch (error) {
+      // Silently handle preload errors
+      console.warn("[WavePlayerBufferPool] Preload failed:", error);
+      return null;
+    }
+  }
+
+  private async decodeChunks(chunks: ArrayBuffer[], context: AudioContext): Promise<AudioBuffer> {
+    const combined = await this.combineArrayBuffers(chunks);
     return await context.decodeAudioData(combined);
   }
 
-  private managePoolSize() {
+  private async combineArrayBuffers(chunks: ArrayBuffer[]): Promise<ArrayBuffer> {
+    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+    const combined = new ArrayBuffer(totalLength);
+    const view = new Uint8Array(combined);
+    
+    let offset = 0;
+    for (const chunk of chunks) {
+      view.set(new Uint8Array(chunk), offset);
+      offset += chunk.byteLength;
+    }
+    
+    return combined;
+  }
+
+  private managePoolSize(): void {
     let totalSize = 0;
-    for (const [id, buffer] of this.pool.chunks) {
+    const entries = Array.from(this.pool.chunks.entries());
+    
+    // Sort by age (assuming keys contain timestamps)
+    entries.sort(([a], [b]) => parseInt(b.split('-')[1]) - parseInt(a.split('-')[1]));
+    
+    for (const [key, buffer] of entries) {
       totalSize += buffer.length * 4; // Approximate size in bytes
       if (totalSize > this.pool.maxPoolSize) {
-        this.pool.chunks.delete(id);
+        this.pool.chunks.delete(key);
       }
     }
   }
-}
-```
 
-### Integration with Your Context
-
-```typescript
-// Add to WavePlayerProvider
-const bufferPool = useRef<AudioBufferPool>(new AudioBufferPool());
-
-const loadTrack = useCallback(async (track: WavePlayerTrack) => {
-  if (!state.audioContext) return;
-
-  try {
-    dispatch({ type: "SET_STATUS", payload: "loading" });
-    dispatch({ type: "SET_TRACK", payload: track });
-
-    // Use buffer pool for loading
-    const buffer = await bufferPool.current.loadTrackChunked(
-      track,
-      state.audioContext
-    );
-
-    dispatch({ type: "SET_BUFFER", payload: buffer });
-    dispatch({ type: "SET_STATUS", payload: "ready" });
-
-    // Preload next track if available
-    const nextTrack = playlist?.tracks[currentTrackIndex + 1];
-    if (nextTrack) {
-      bufferPool.current.preloadTrack(nextTrack, state.audioContext);
-    }
-  } catch (error) {
-    dispatch({
-      type: "SET_ERROR",
-      payload: error instanceof Error ? error : new Error("Track loading failed"),
-    });
+  public abort(): void {
+    this.abortController?.abort();
   }
-}, [state.audioContext, playlist, currentTrackIndex]);
+
+  public cleanup(): void {
+    this.pool.chunks.clear();
+    this.pool.current = null;
+    this.pool.next = null;
+    this.abort();
+  }
+
+  // Getters for current state
+  public getCurrentBuffer(): AudioBuffer | null {
+    return this.pool.current;
+  }
+
+  public getNextBuffer(): AudioBuffer | null {
+    return this.pool.next;
+  }
+}
 ```
 
 ### Benefits of This Approach
@@ -176,27 +229,141 @@ const loadTrack = useCallback(async (track: WavePlayerTrack) => {
    - Starts playback faster with initial chunks
    - Streams remaining data in background
    - Better user experience for large files
+   - Supports partial playback before full load
 
 2. **Memory Management**
-   - Controlled buffer pool size
+   - Controlled buffer pool size (default 100MB)
    - Automatic cleanup of old chunks
    - Prevents memory leaks
+   - Efficient TypedArray usage for buffer combining
 
 3. **Performance Optimization**
+   - Uses Bun's optimized fetch API
+   - Dynamic chunk size calculation
    - Preloading of next track
    - Reuse of decoded chunks
-   - Smooth playback transitions
 
 4. **Resource Efficiency**
    - Only keeps necessary buffers in memory
    - Manages memory pressure automatically
-   - Works well with your playlist structure
+   - Abortable loading operations
+   - Clean cleanup of resources
 
-To implement this, you'll need to:
+5. **TypeScript Integration**
+   - Strong typing with separate interfaces
+   - Clear state management
+   - Type-safe error handling
+   - Proper callback typing
 
-1. Add the buffer pool manager to your project
-2. Update your context provider to use the pool
-3. Add progress tracking to your state management
-4. Update your cleanup functions to handle the pool
+### Implementation Notes
 
-Would you like me to elaborate on any part of this implementation or provide additional code examples for specific components?
+1. **State Management**
+
+   ```typescript
+   export interface WavePlayerBufferPoolState {
+     current: AudioBuffer | null;
+     next: AudioBuffer | null;
+     chunks: Map<string, AudioBuffer>;
+     maxPoolSize: number;
+     onProgress?: (progress: number) => void;
+     onError?: (error: Error) => void;
+   }
+   ```
+
+   Clearly defined state interface for better type safety and maintainability.
+
+2. **Configuration Options**
+
+   ```typescript
+   interface WavePlayerBufferPoolOptions {
+     maxPoolSize?: number;
+     chunkSize?: number;
+     onProgress?: (progress: number) => void;
+     onError?: (error: Error) => void;
+   }
+   ```
+
+   Flexible configuration with sensible defaults.
+
+3. **Progress Tracking**
+
+   ```typescript
+   const progress = (loadedBytes / contentLength) * 100;
+   this.pool.onProgress?.(progress);
+   ```
+
+   Real-time progress updates for UI feedback.
+
+4. **Error Handling**
+
+   ```typescript
+   const finalError = error instanceof Error ? error : new Error("Track loading failed");
+   this.pool.onError?.(finalError);
+   ```
+
+   Consistent error reporting with proper type checking.
+
+### Usage Guidelines
+
+1. **Initialization**
+
+   ```typescript
+   const bufferPool = new WavePlayerBufferPool({
+     maxPoolSize: 100 * 1024 * 1024, // 100MB
+     chunkSize: 1024 * 1024, // 1MB
+     onProgress: (progress) => {
+       // Update loading progress
+     },
+     onError: (error) => {
+       // Handle loading errors
+     }
+   });
+   ```
+
+2. **Resource Cleanup**
+
+   ```typescript
+   useEffect(() => {
+     return () => {
+       bufferPool.cleanup();
+     };
+   }, []);
+   ```
+
+3. **Track Loading**
+
+   ```typescript
+   await bufferPool.loadTrackChunked(track, audioContext);
+   ```
+
+4. **Track Preloading**
+
+   ```typescript
+   await bufferPool.preloadTrack(nextTrack, audioContext);
+   ```
+
+### Future Enhancements
+
+1. **Web Worker Integration**
+   - Move buffer decoding to worker thread
+   - Improve UI responsiveness
+   - Handle larger files efficiently
+
+2. **Cache Integration**
+   - Add browser cache support
+   - Implement persistent storage
+   - Optimize repeat playback
+
+3. **Stream Processing**
+   - Add real-time audio processing
+   - Support for live streaming
+   - Advanced audio effects
+
+To implement this system, ensure your project has:
+
+1. Proper TypeScript configuration for Web Audio API
+2. Error boundary setup for React components
+3. Sufficient memory allocation for audio processing
+4. Proper cleanup in component lifecycle methods
+
+Next steps will involve integrating this buffer pool implementation with the `WavePlayerProvider` context and updating the UI components to handle progress updates and loading states.
