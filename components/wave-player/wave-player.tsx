@@ -91,6 +91,13 @@ export default function WavePlayer({ playlist }: WavePlayerProps) {
       </CardContent>
       <CardFooter className="w-full flex flex-col items-center justify-center p-4">
         <WavePlayerTrackControls />
+        {/* <WavePlayerTrackControls
+          status={state.status}
+          currentTime={state.currentTime}
+          duration={state.duration}
+          volume={state.volume}
+          controls={controls}
+        /> */}
       </CardFooter>
     </Card>
   );

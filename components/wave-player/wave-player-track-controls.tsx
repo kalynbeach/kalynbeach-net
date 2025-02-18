@@ -1,5 +1,6 @@
 "use client";
 
+// import type { WavePlayerStatus, WavePlayerControls } from "@/lib/types/wave-player";
 import { useWavePlayerContext } from "@/contexts/wave-player/context";
 import { formatTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,10 +14,13 @@ import {
   Repeat,
 } from "lucide-react";
 
+// TODO: figure out if it's better to use state and controls from props instead of useWavePlayerContext
 // type WavePlayerTrackControlsProps = {
 //   status: WavePlayerStatus;
-//   currentTime: number;
+//   state.currentTime: number;
 //   duration: number;
+//   volume: number;
+//   controls: WavePlayerControls;
 // };
 
 export default function WavePlayerTrackControls() {
