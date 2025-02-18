@@ -21,6 +21,19 @@ export type WavePlayerPlaylist = {
 
 export type WavePlayerStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "error";
 
+export type WavePlayerAction =
+  | { type: "INITIALIZE"; payload: { audioContext: AudioContext } }
+  | { type: "SET_BUFFER"; payload: AudioBuffer | null }
+  | { type: "SET_TRACK"; payload: WavePlayerTrack | null }
+  | { type: "SET_STATUS"; payload: WavePlayerState["status"] }
+  | { type: "SET_PROGRESS"; payload: number }
+  | { type: "SET_ERROR"; payload: Error | null }
+  | { type: "SET_VISUALIZATION"; payload: { waveform: Uint8Array | null; frequencies: Uint8Array | null } }
+  | { type: "SET_VOLUME"; payload: number }
+  | { type: "SET_CURRENT_TIME"; payload: number }
+  | { type: "SET_START_TIME"; payload: number }
+  | { type: "RETRY_LOAD" };
+
 export interface WavePlayerState {
   audioContext: AudioContext | null;
   status: WavePlayerStatus;
