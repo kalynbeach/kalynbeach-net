@@ -1,6 +1,6 @@
 # WavePlayer TODOs
 
-## Issues
+## General
 
 ### Core Audio
 
@@ -8,13 +8,15 @@
   - [ ] Ensure that the current buffer pool strategy and implementation is optimal for both high-fidelity, memory-efficient audio playback and processing
   - [ ] Ensure that the buffer pool is properly managing the audio buffer chunks
 
+## Issues
+
 ### Context
 
+- [ ] Ensure `state.status` is properly updated when controls are used
+- [ ] Fix `state.currentTime` continuing to increment after the track has ended
 - [ ] Review `loadTrack` implementation:
   - [ ] Ensure that the current implementation is optimal
   - [ ] Ensure that the proper actions are dispatched when the track is loaded
-- [ ] Ensure `state.status` is properly updated when controls are used
-- [ ] Fix `state.currentTime` continuing to increment after the track has ended
 
 ### Components
 

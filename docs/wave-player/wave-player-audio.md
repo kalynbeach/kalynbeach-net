@@ -1,4 +1,4 @@
-# WavePlayer Audio
+# WavePlayer Core Audio
 
 ## Audio Loading & Buffer Pooling
 
