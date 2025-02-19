@@ -12,7 +12,9 @@
 
 ### Context
 
+- [ ] Ensure that `state.duration` is properly calculated and updated when a track is set
 - [ ] Ensure `state` values are properly updated when controls are used
+  - [ ] `state.duration` should be updated when the track is loaded
 - [ ] Fix apparent bug with `state` (`state.status`?) causing re-renders (for example, when a playing track gets paused)
 - [ ] Fix `state.currentTime` continuing to increment after the track has ended
 - [ ] Review `loadTrack` implementation:
