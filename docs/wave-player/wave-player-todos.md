@@ -12,7 +12,8 @@
 
 ### Context
 
-- [ ] Ensure `state.status` is properly updated when controls are used
+- [ ] Ensure `state` values are properly updated when controls are used
+- [ ] Fix apparent bug with `state` (`state.status`?) causing re-renders (for example, when a playing track gets paused)
 - [ ] Fix `state.currentTime` continuing to increment after the track has ended
 - [ ] Review `loadTrack` implementation:
   - [ ] Ensure that the current implementation is optimal

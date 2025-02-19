@@ -29,31 +29,12 @@ export default function WavePlayer({ playlist }: WavePlayerProps) {
     }
   }, [state.status, needsActivation]);
 
-  // if (needsActivation) {
-  //   return (
-  //     <Card className="wave-player wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">
-  //       <CardHeader className="p-4"></CardHeader>
-  //       <CardContent className="p-4 text-center">
-  //         <Button 
-  //           onClick={async () => {
-  //             await initializeAudioContext();
-  //             setNeedsActivation(false);
-  //           }}
-  //         >
-  //           Activate Audio
-  //         </Button>
-  //       </CardContent>
-  //       <CardFooter className="flex flex-col items-center justify-center p-4"></CardFooter>
-  //     </Card>
-  //   );
-  // }
-
   if (state.error) {
     return (
-      <Card className="wave-player wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">
+      <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border ">
         <CardHeader className="p-4"></CardHeader>
         <CardContent className="p-4 flex flex-col items-center gap-4">
-          <div className="text-red-500">Error: {state.error.message}</div>
+          <div className="text-red-500 font-mono">Error: {state.error.message}</div>
           <Button onClick={() => retryLoad()}>
             Retry
           </Button>
@@ -67,14 +48,14 @@ export default function WavePlayer({ playlist }: WavePlayerProps) {
     return (
       <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">
         <CardHeader className="p-4"></CardHeader>
-        <CardContent className="flex flex-col items-center justify-center p-4 gap-2">
+        <CardContent className="w-full h-full flex flex-col items-center justify-center p-4 gap-2">
           <div className="h-4 w-full bg-secondary relative">
             <div 
               className="absolute h-full bg-primary" 
               style={{ width: `${state.bufferProgress}%` }}
             />
           </div>
-          <p className="text-sm">Loading track...</p>
+          <p className="text-sm font-mono">loading...</p>
         </CardContent>
         <CardFooter className="flex flex-col items-center justify-center p-4"></CardFooter>
       </Card>
@@ -82,22 +63,15 @@ export default function WavePlayer({ playlist }: WavePlayerProps) {
   }
 
   return (
-    <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">
-      <CardHeader className="w-full p-4">
+    <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border rounded-none">
+      <CardHeader className="w-full p-2">
         <WavePlayerTrackInfo track={state.track} />
       </CardHeader>
-      <CardContent className="w-full h-full flex flex-col items-center justify-center p-4">
+      <CardContent className="w-full h-full flex flex-col items-center justify-center px-2 py-0">
         <WavePlayerTrackVisual image={state.track.image} />
       </CardContent>
-      <CardFooter className="w-full flex flex-col items-center justify-center p-4">
+      <CardFooter className="w-full flex flex-col items-center justify-center p-2">
         <WavePlayerTrackControls />
-        {/* <WavePlayerTrackControls
-          status={state.status}
-          currentTime={state.currentTime}
-          duration={state.duration}
-          volume={state.volume}
-          controls={controls}
-        /> */}
       </CardFooter>
     </Card>
   );

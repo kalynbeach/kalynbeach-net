@@ -47,7 +47,7 @@ export default function WavePlayerTrackVisual({ image }: WavePlayerTrackVisualPr
   }, [state.visualization.waveform]);
 
   return (
-    <div className="relative h-56 w-full">
+    <div className="wave-player-track-visual relative w-full">
       {visualizationMode === "image" && (
         <Image
           src={image.src}
@@ -59,7 +59,7 @@ export default function WavePlayerTrackVisual({ image }: WavePlayerTrackVisualPr
       {visualizationMode === "waveform" && (
         <canvas 
           ref={canvasRef}
-          className="w-full h-full"
+          className="w-full h-full border border-muted"
           width={512}
           height={512}
         />

@@ -27,15 +27,16 @@ export default function WavePlayerTrackControls() {
   const { state, controls } = useWavePlayerContext();
 
   return (
-    <div className="w-full flex flex-col items-center justify-center gap-2">
+    <div className="wave-player-track-controls w-full flex flex-col items-center justify-center gap-2 border border-muted/50 p-4">
       {/* Progress Slider */}
-      <div className="w-full space-y-2">
+      <div className="w-full space-y-2 flex flex-col items-center justify-center px-2">
         <Slider
           value={[state.currentTime]}
           max={state.duration}
           onValueChange={([value]) => controls.seek(value)}
+          className="w-full"
         />
-        <div className="flex justify-between text-sm">
+        <div className="w-full flex flex-row justify-between text-sm">
           <span>{formatTime(state.currentTime)}</span>
           <span>{formatTime(state.duration)}</span>
         </div>
@@ -76,7 +77,7 @@ export default function WavePlayerTrackControls() {
       </div>
 
       {/* Volume Control */}
-      <div className="w-full flex items-center justify-center gap-2">
+      {/* <div className="w-full flex items-center justify-center gap-2">
         <Volume2 className="h-4 w-4 text-muted-foreground" />
         <Slider
           value={[state.volume * 100]}
@@ -84,7 +85,7 @@ export default function WavePlayerTrackControls() {
           onValueChange={([value]) => controls.setVolume(value / 100)}
           className="w-24"
         />
-      </div>
+      </div> */}
     </div>
   );
 }
