@@ -1,193 +1,166 @@
-# WavePlayer - Code Review & Design Document
+# WavePlayer
 
 ## Overview
 
-WavePlayer is a React 19 & Web Audio API-based music player system built for Next.js 15. The system aims to provide a modern, component-based audio player with visualization capabilities and playlist management.
+The WavePlayer system is a modern, React-based audio player implementation built with Next.js 15 and React 19. It utilizes the Web Audio API for high-fidelity audio playback and processing, with a focus on efficient memory management and optimal performance.
 
-## Current Implementation Review
+## Architecture
 
-### Architecture
-
-The current implementation follows a well-structured pattern with:
-
-- Context-based state management (`WavePlayerContext`)
-- Custom hooks for business logic (`useWavePlayer`)
-- Modular UI components
-- TypeScript for type safety
-
-#### Strengths
-
-1. **Type System**
-   - Comprehensive TypeScript types for player state, tracks, and playlists
-   - Clear interface definitions for context values and controls
-   - Good separation of concerns in type definitions
-
-2. **Component Structure**
-   - Clean separation between visual components
-   - Modular design with separate track info, controls, and visualization
-   - Use of modern UI components (Radix UI)
-
-3. **Context Design**
-   - Well-organized audio context initialization
-   - Proper cleanup handling
-   - Good state management structure
-
-#### Areas for Improvement
-
-1. **Audio Processing**
-   - Need to implement core audio playback functionality
-   - Missing buffer loading and management
-   - Incomplete audio node connection chain
-
-2. **Controls Implementation**
-   - Control functions are currently empty placeholders
-   - Need to implement play, pause, seek, etc.
-   - Volume control and muting not implemented
-
-3. **Error Handling**
-   - Basic error state exists but needs more comprehensive handling
-   - Missing retry mechanisms
-   - Could use more detailed error states
-
-## Recommended Design & Implementation
-
-### 1. Audio Processing Pipeline
-
-```typescript
-// Recommended audio node chain:
-AudioBufferSourceNode -> AnalyserNode -> GainNode -> AudioContext.destination
-```
-
-Key improvements:
-
-- Add buffer loading and caching system
-- Implement proper audio node reconnection on track change
-- Add audio buffer preloading for next track
-
-### 2. State Management
-
-Current state management is good but could be enhanced with:
-
-- Track loading states
-- Buffer caching states
-- More granular error states
-- Progress tracking improvements
-
-### 3. Core Features to Implement
-
-#### Playback Control
-
-```typescript
-const play = async () => {
-  if (!audioContext || !sourceNode) return;
-  await audioContext.resume();
-  sourceNode.start(0, currentTime);
-  setState(prev => ({ ...prev, status: "playing" }));
-};
-
-const pause = () => {
-  if (!audioContext) return;
-  audioContext.suspend();
-  setState(prev => ({ ...prev, status: "paused" }));
-};
-```
-
-#### Track Loading
-
-```typescript
-const loadTrack = async (track: WavePlayerTrack) => {
-  try {
-    const response = await fetch(track.src);
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    // Setup source node with buffer
-  } catch (error) {
-    // Handle loading error
-  }
-};
-```
-
-#### Seeking & Time Management
-
-- Implement precise seeking using `AudioBufferSourceNode`
-- Track current time with high precision
-- Handle loop points correctly
-
-### 4. Performance Optimizations
+### Core Components
 
 1. **Buffer Management**
+   - Implements a sophisticated buffer pool system (`WavePlayerBufferPool`) for efficient audio data management
+   - Uses chunked loading strategy with configurable chunk sizes (default 1MB)
+   - Maintains memory constraints with a default 100MB pool size limit
+   - Supports preloading of next tracks for seamless playback
 
-- Implement buffer caching
-- Preload next track
-- Clear old buffers when memory pressure is high
+2. **State Management**
+   - Uses React Context (`WavePlayerContext`) for global state management
+   - Implements a robust state machine with clear status transitions:
+     - `idle` → `loading` → `ready` → `playing` ↔ `paused`
+   - Tracks essential playback state:
+     - Current track and playlist information
+     - Playback progress and duration
+     - Audio buffer and loading progress
+     - Visualization data (waveform and frequencies)
 
-2. **Rendering Optimization**
+3. **Audio Processing**
+   - Leverages Web Audio API's `AudioContext` for high-quality audio processing
+   - Supports various audio node types:
+     - `AudioBufferSourceNode` for playback
+     - `AnalyserNode` for visualization
+     - `GainNode` for volume control
+   - Implements efficient cleanup and resource management
 
-- Use `React.memo` for heavy components
-- Optimize visualization renders
-- Batch state updates
+### Key Features
 
-### 5. Future Enhancements
+1. **Chunked Loading**
+   - Audio files are loaded in configurable chunks
+   - Progress tracking during loading
+   - Efficient memory usage through buffer pool management
+   - Automatic cleanup of old chunks when memory limits are reached
 
-1. **Visualization Options**
+2. **Track Management**
+   - Support for playlists with multiple tracks
+   - Automatic preloading of next track
+   - Seamless track transitions
+   - Loop support for individual tracks
 
-- Waveform display
-- Frequency visualization
-- 3D scene integration
+3. **Visualization**
+   - Real-time waveform visualization
+   - Frequency analysis support
+   - Canvas-based rendering
+   - Support for different visualization modes (waveform, image, scene)
 
-2. **Advanced Features**
+## Implementation Details
 
-- Equalizer
-- Time stretching
-- Pitch shifting
-- Playlist management
-- Shuffle/repeat modes
+### Buffer Pool System
 
-3. **Progressive Enhancement**
+The `WavePlayerBufferPool` class implements a sophisticated memory management system:
 
-- Offline support
-- Background playback
-- Media session API integration
+```typescript
+class WavePlayerBufferPool {
+  // Core properties
+  private pool: WavePlayerBufferPoolState;
+  private chunkSize: number;
+  private abortController: AbortController | null;
 
-## Implementation Priorities
+  // Memory management
+  private managePoolSize(): void {
+    // Implements LRU-style cache management
+    // Removes oldest chunks when pool size exceeds limit
+  }
 
-1. Core Audio Functionality
-   - Complete playback controls
-   - Buffer loading system
-   - Basic time tracking
+  // Chunked loading
+  async loadTrackChunked(track: WavePlayerTrack, audioContext: AudioContext) {
+    // Implements efficient chunked loading with progress tracking
+    // Supports abort functionality
+    // Manages memory constraints
+  }
+}
+```
 
-2. State Management
-   - Error handling
-   - Loading states
-   - Progress tracking
+### State Management
 
-3. UI Polish
-   - Smooth transitions
-   - Loading indicators
-   - Error states
+The system uses a well-defined state machine with clear transitions and actions:
 
-4. Advanced Features
-   - Visualization
-   - Playlist management
-   - Audio effects
+```typescript
+type WavePlayerAction =
+  | { type: "INITIALIZE"; payload: { audioContext: AudioContext } }
+  | { type: "SET_BUFFER"; payload: AudioBuffer | null }
+  | { type: "SET_TRACK"; payload: WavePlayerTrack | null }
+  | { type: "SET_STATUS"; payload: WavePlayerState["status"] }
+  // ... additional actions
+```
 
-## Testing Strategy
+## Current Issues & TODOs
 
-1. Unit Tests
-   - Audio context initialization
-   - State management
-   - Control functions
+1. **State Management**
+   - ✅ Duration calculation and updates now working correctly
+   - ⚠️ Some state values still need proper updates when controls are used
+   - ⚠️ Bug with state causing re-renders during status transitions (e.g., playing → paused)
+   - ✅ Fixed `currentTime` continuing to increment after track end
 
-2. Integration Tests
-   - Full playback cycle
-   - Track switching
-   - Error recovery
+2. **Track Loading**
+   - ⚠️ `loadTrack` implementation needs optimization review
+   - ✅ Basic buffer loading UI implemented with progress bar
+   - ⚠️ Buffer loading UI could be improved for better user experience
 
-3. Performance Tests
-   - Memory usage
-   - Buffer loading
-   - UI responsiveness
+3. **UI Components**
+   - ✅ Improved `Card` layout and section styles
+   - ✅ Fixed progress `Slider` value updates
+   - ✅ Fixed progress `Slider` time display updates
+   - ⚠️ Progress `Slider` seeking functionality needs improvement
+   - ⚠️ Styles need improvement for larger screens
+   - ⚠️ Track info and controls styles need cleanup
 
-## Conclusion
+4. **Visualization**
+   - ⚠️ Initial canvas skeleton needed for pre-playback state
+   - ⚠️ Visualization styles need improvement
+   - ⚠️ Additional visualization modes to be implemented
 
-The current implementation provides a solid foundation but requires completion of core audio functionality. The architecture is well-structured and maintainable, making it a good base for building out the complete feature set. Focus should be on implementing the core audio processing pipeline and playback controls before moving on to advanced features.
+## Future Improvements
+
+1. **Performance Optimizations**
+   - Implement Web Worker for audio processing
+   - Optimize state update frequency
+   - Improve memory management strategies
+
+2. **Feature Enhancements**
+   - Add playlist management
+   - Implement more visualization options
+   - Add audio effects processing
+   - Improve preloading strategies
+
+3. **Developer Experience**
+   - Add comprehensive error handling
+   - Improve debugging capabilities
+   - Add performance monitoring
+
+## Dependencies
+
+The system relies on several key dependencies:
+
+- React 19 with React Compiler
+- Next.js 15
+- Web Audio API
+- Canvas API for visualization
+- Radix UI components for UI elements
+
+## Best Practices
+
+1. **Memory Management**
+   - Implement proper cleanup of audio nodes
+   - Manage buffer pool size
+   - Handle resource cleanup on unmount
+
+2. **Error Handling**
+   - Graceful fallbacks for loading failures
+   - Clear error messages
+   - Retry mechanisms
+
+3. **Performance**
+   - Efficient state updates
+   - Optimized visualization rendering
+   - Smart preloading strategies
+

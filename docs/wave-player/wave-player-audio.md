@@ -1,369 +1,168 @@
-# WavePlayer Core Audio
+# WavePlayer Audio
 
-## Audio Loading & Buffer Pooling
+Core audio loading and processing for `WavePlayer`.
 
-> 02-17-2025 - Claude-3.5-Sonnet
+## Overview
 
-I'll help you design an optimal audio loading strategy for your WavePlayer system. Based on your code and requirements, here's my analysis and recommendation:
+The WavePlayer system is a modern, React-based audio player implementation built with Next.js 15 and React 19. It utilizes the Web Audio API for high-fidelity audio playback and processing, with a focus on efficient memory management and optimal performance.
 
-### Current Implementation Analysis
+## Architecture
 
-Your current implementation loads the entire audio file at once:
+### Core Components
+
+1. **Buffer Management**
+   - Implements a sophisticated buffer pool system (`WavePlayerBufferPool`) for efficient audio data management
+   - Uses chunked loading strategy with configurable chunk sizes (default 1MB)
+   - Maintains memory constraints with a default 100MB pool size limit
+   - Supports preloading of next tracks for seamless playback
+
+2. **State Management**
+   - Uses React Context (`WavePlayerContext`) for global state management
+   - Implements a robust state machine with clear status transitions:
+     - `idle` → `loading` → `ready` → `playing` ↔ `paused`
+   - Tracks essential playback state:
+     - Current track and playlist information
+     - Playback progress and duration
+     - Audio buffer and loading progress
+     - Visualization data (waveform and frequencies)
+
+3. **Audio Processing**
+   - Leverages Web Audio API's `AudioContext` for high-quality audio processing
+   - Supports various audio node types:
+     - `AudioBufferSourceNode` for playback
+     - `AnalyserNode` for visualization
+     - `GainNode` for volume control
+   - Implements efficient cleanup and resource management
+
+### Key Features
+
+1. **Chunked Loading**
+   - Audio files are loaded in configurable chunks
+   - Progress tracking during loading
+   - Efficient memory usage through buffer pool management
+   - Automatic cleanup of old chunks when memory limits are reached
+
+2. **Track Management**
+   - Support for playlists with multiple tracks
+   - Automatic preloading of next track
+   - Seamless track transitions
+   - Loop support for individual tracks
+
+3. **Visualization**
+   - Real-time waveform visualization
+   - Frequency analysis support
+   - Canvas-based rendering
+   - Support for different visualization modes (waveform, image, scene)
+
+## Implementation Details
+
+### Buffer Pool System
+
+The `WavePlayerBufferPool` class implements a sophisticated memory management system:
 
 ```typescript
-// 142:168:contexts/wave-player/context.tsx
-  const loadTrack = useCallback(
-    async (track: WavePlayerTrack) => {
-      if (!state.audioContext) return;
-
-      console.log("[WavePlayerProvider loadTrack] loading track...");
-
-      try {
-        dispatch({ type: "SET_STATUS", payload: "loading" });
-        dispatch({ type: "SET_TRACK", payload: track });
-
-        const response = await fetch(track.src);
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = await state.audioContext.decodeAudioData(arrayBuffer);
-        console.log("[WavePlayerProvider loadTrack] setting buffer:", buffer);
-
-        dispatch({ type: "SET_BUFFER", payload: buffer });
-        dispatch({ type: "SET_STATUS", payload: "ready" });
-      } catch (error) {
-        dispatch({
-          type: "SET_ERROR",
-          payload:
-            error instanceof Error ? error : new Error("Track loading failed"),
-        });
-      }
-    },
-    [state.audioContext]
-  );
-```
-
-This approach has limitations:
-
-1. High memory usage for long tracks
-2. Long initial load times
-3. No preloading for next tracks
-4. Potential browser memory issues with large playlists
-
-### Recommended Buffer Pooling Strategy
-
-Here's a more sophisticated approach using buffer pooling and chunked loading:
-
-```typescript
-// Types and Interfaces
-export interface WavePlayerBufferPoolState {
-  current: AudioBuffer | null;
-  next: AudioBuffer | null;
-  chunks: Map<string, AudioBuffer>;
-  maxPoolSize: number;
-  onProgress?: (progress: number) => void;
-  onError?: (error: Error) => void;
-}
-
-export interface WavePlayerBufferPoolOptions {
-  maxPoolSize?: number;
-  chunkSize?: number;
-  onProgress?: (progress: number) => void;
-  onError?: (error: Error) => void;
-}
-
-// Main Implementation
-export class WavePlayerBufferPool {
+class WavePlayerBufferPool {
+  // Core properties
   private pool: WavePlayerBufferPoolState;
   private chunkSize: number;
-  private abortController: AbortController | null = null;
+  private abortController: AbortController | null;
 
-  constructor(options: WavePlayerBufferPoolOptions = {}) {
-    this.chunkSize = options.chunkSize || 1024 * 1024; // 1MB default
-    this.pool = {
-      current: null,
-      next: null,
-      chunks: new Map(),
-      maxPoolSize: options.maxPoolSize || 100 * 1024 * 1024, // 100MB default
-      onProgress: options.onProgress,
-      onError: options.onError,
-    };
-  }
-
-  async loadTrackChunked(track: WavePlayerTrack, audioContext: AudioContext) {
-    try {
-      this.abortController = new AbortController();
-      
-      // Initial metadata fetch using Bun's fetch
-      const head = await fetch(track.src, { 
-        method: "HEAD",
-        signal: this.abortController.signal 
-      });
-      
-      const contentLength = parseInt(head.headers.get("Content-Length") || "0");
-      if (!contentLength) throw new Error("Content length not available");
-
-      // Calculate optimal chunk size based on content length
-      const optimalChunkSize = Math.min(
-        this.chunkSize,
-        Math.ceil(contentLength / 10)
-      );
-
-      const chunks: ArrayBuffer[] = [];
-      let loadedBytes = 0;
-
-      for (let offset = 0; offset < contentLength; offset += optimalChunkSize) {
-        if (this.abortController.signal.aborted) {
-          throw new Error("Loading aborted");
-        }
-
-        const end = Math.min(offset + optimalChunkSize - 1, contentLength - 1);
-        const response = await fetch(track.src, {
-          headers: { Range: `bytes=${offset}-${end}` },
-          signal: this.abortController.signal,
-        });
-
-        const chunk = await response.arrayBuffer();
-        chunks.push(chunk);
-        loadedBytes += chunk.byteLength;
-
-        // Report progress
-        const progress = (loadedBytes / contentLength) * 100;
-        this.pool.onProgress?.(progress);
-
-        // Process chunk if we have enough data
-        if (chunks.length >= 2) {
-          const partialBuffer = await this.decodeChunks(chunks, audioContext);
-          const chunkKey = `${track.id}-${offset}`;
-          this.pool.chunks.set(chunkKey, partialBuffer);
-          this.managePoolSize();
-        }
-      }
-
-      // Final processing
-      const fullBuffer = await this.decodeChunks(chunks, audioContext);
-      
-      // Update pool
-      if (this.pool.current) {
-        this.pool.next = this.pool.current;
-      }
-      this.pool.current = fullBuffer;
-
-      return fullBuffer;
-    } catch (error) {
-      const finalError = error instanceof Error ? error : new Error("Track loading failed");
-      this.pool.onError?.(finalError);
-      throw finalError;
-    }
-  }
-
-  async preloadTrack(track: WavePlayerTrack, audioContext: AudioContext) {
-    try {
-      const buffer = await this.loadTrackChunked(track, audioContext);
-      this.pool.next = buffer;
-      return buffer;
-    } catch (error) {
-      // Silently handle preload errors
-      console.warn("[WavePlayerBufferPool] Preload failed:", error);
-      return null;
-    }
-  }
-
-  private async decodeChunks(chunks: ArrayBuffer[], context: AudioContext): Promise<AudioBuffer> {
-    const combined = await this.combineArrayBuffers(chunks);
-    return await context.decodeAudioData(combined);
-  }
-
-  private async combineArrayBuffers(chunks: ArrayBuffer[]): Promise<ArrayBuffer> {
-    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
-    const combined = new ArrayBuffer(totalLength);
-    const view = new Uint8Array(combined);
-    
-    let offset = 0;
-    for (const chunk of chunks) {
-      view.set(new Uint8Array(chunk), offset);
-      offset += chunk.byteLength;
-    }
-    
-    return combined;
-  }
-
+  // Memory management
   private managePoolSize(): void {
-    let totalSize = 0;
-    const entries = Array.from(this.pool.chunks.entries());
-    
-    // Sort by age (assuming keys contain timestamps)
-    entries.sort(([a], [b]) => parseInt(b.split('-')[1]) - parseInt(a.split('-')[1]));
-    
-    for (const [key, buffer] of entries) {
-      totalSize += buffer.length * 4; // Approximate size in bytes
-      if (totalSize > this.pool.maxPoolSize) {
-        this.pool.chunks.delete(key);
-      }
-    }
+    // Implements LRU-style cache management
+    // Removes oldest chunks when pool size exceeds limit
   }
 
-  public abort(): void {
-    this.abortController?.abort();
-  }
-
-  public cleanup(): void {
-    this.pool.chunks.clear();
-    this.pool.current = null;
-    this.pool.next = null;
-    this.abort();
-  }
-
-  // Getters for current state
-  public getCurrentBuffer(): AudioBuffer | null {
-    return this.pool.current;
-  }
-
-  public getNextBuffer(): AudioBuffer | null {
-    return this.pool.next;
+  // Chunked loading
+  async loadTrackChunked(track: WavePlayerTrack, audioContext: AudioContext) {
+    // Implements efficient chunked loading with progress tracking
+    // Supports abort functionality
+    // Manages memory constraints
   }
 }
 ```
 
-### Benefits of This Approach
+### State Management
 
-1. **Progressive Loading**
-   - Starts playback faster with initial chunks
-   - Streams remaining data in background
-   - Better user experience for large files
-   - Supports partial playback before full load
+The system uses a well-defined state machine with clear transitions and actions:
 
-2. **Memory Management**
-   - Controlled buffer pool size (default 100MB)
-   - Automatic cleanup of old chunks
-   - Prevents memory leaks
-   - Efficient TypedArray usage for buffer combining
+```typescript
+type WavePlayerAction =
+  | { type: "INITIALIZE"; payload: { audioContext: AudioContext } }
+  | { type: "SET_BUFFER"; payload: AudioBuffer | null }
+  | { type: "SET_TRACK"; payload: WavePlayerTrack | null }
+  | { type: "SET_STATUS"; payload: WavePlayerState["status"] }
+  // ... additional actions
+```
 
-3. **Performance Optimization**
-   - Uses Bun's optimized fetch API
-   - Dynamic chunk size calculation
-   - Preloading of next track
-   - Reuse of decoded chunks
-
-4. **Resource Efficiency**
-   - Only keeps necessary buffers in memory
-   - Manages memory pressure automatically
-   - Abortable loading operations
-   - Clean cleanup of resources
-
-5. **TypeScript Integration**
-   - Strong typing with separate interfaces
-   - Clear state management
-   - Type-safe error handling
-   - Proper callback typing
-
-### Implementation Notes
+## Current Issues & TODOs
 
 1. **State Management**
+   - ✅ Duration calculation and updates now working correctly
+   - ⚠️ Some state values still need proper updates when controls are used
+   - ⚠️ Bug with state causing re-renders during status transitions (e.g., playing → paused)
+   - ✅ Fixed `currentTime` continuing to increment after track end
 
-   ```typescript
-   export interface WavePlayerBufferPoolState {
-     current: AudioBuffer | null;
-     next: AudioBuffer | null;
-     chunks: Map<string, AudioBuffer>;
-     maxPoolSize: number;
-     onProgress?: (progress: number) => void;
-     onError?: (error: Error) => void;
-   }
-   ```
+2. **Track Loading**
+   - ⚠️ `loadTrack` implementation needs optimization review
+   - ✅ Basic buffer loading UI implemented with progress bar
+   - ⚠️ Buffer loading UI could be improved for better user experience
 
-   Clearly defined state interface for better type safety and maintainability.
+3. **UI Components**
+   - ✅ Improved `Card` layout and section styles
+   - ✅ Fixed progress `Slider` value updates
+   - ✅ Fixed progress `Slider` time display updates
+   - ⚠️ Progress `Slider` seeking functionality needs improvement
+   - ⚠️ Styles need improvement for larger screens
+   - ⚠️ Track info and controls styles need cleanup
 
-2. **Configuration Options**
+4. **Visualization**
+   - ⚠️ Initial canvas skeleton needed for pre-playback state
+   - ⚠️ Visualization styles need improvement
+   - ⚠️ Additional visualization modes to be implemented
 
-   ```typescript
-   interface WavePlayerBufferPoolOptions {
-     maxPoolSize?: number;
-     chunkSize?: number;
-     onProgress?: (progress: number) => void;
-     onError?: (error: Error) => void;
-   }
-   ```
+## Future Improvements
 
-   Flexible configuration with sensible defaults.
+1. **Performance Optimizations**
+   - Implement Web Worker for audio processing
+   - Optimize state update frequency
+   - Improve memory management strategies
 
-3. **Progress Tracking**
+2. **Feature Enhancements**
+   - Add playlist management
+   - Implement more visualization options
+   - Add audio effects processing
+   - Improve preloading strategies
 
-   ```typescript
-   const progress = (loadedBytes / contentLength) * 100;
-   this.pool.onProgress?.(progress);
-   ```
+3. **Developer Experience**
+   - Add comprehensive error handling
+   - Improve debugging capabilities
+   - Add performance monitoring
 
-   Real-time progress updates for UI feedback.
+## Dependencies
 
-4. **Error Handling**
+The system relies on several key dependencies:
 
-   ```typescript
-   const finalError = error instanceof Error ? error : new Error("Track loading failed");
-   this.pool.onError?.(finalError);
-   ```
+- React 19 with React Compiler
+- Next.js 15
+- Web Audio API
+- Canvas API for visualization
+- Radix UI components for UI elements
 
-   Consistent error reporting with proper type checking.
+## Best Practices
 
-### Usage Guidelines
+1. **Memory Management**
+   - Implement proper cleanup of audio nodes
+   - Manage buffer pool size
+   - Handle resource cleanup on unmount
 
-1. **Initialization**
+2. **Error Handling**
+   - Graceful fallbacks for loading failures
+   - Clear error messages
+   - Retry mechanisms
 
-   ```typescript
-   const bufferPool = new WavePlayerBufferPool({
-     maxPoolSize: 100 * 1024 * 1024, // 100MB
-     chunkSize: 1024 * 1024, // 1MB
-     onProgress: (progress) => {
-       // Update loading progress
-     },
-     onError: (error) => {
-       // Handle loading errors
-     }
-   });
-   ```
+3. **Performance**
+   - Efficient state updates
+   - Optimized visualization rendering
+   - Smart preloading strategies
 
-2. **Resource Cleanup**
-
-   ```typescript
-   useEffect(() => {
-     return () => {
-       bufferPool.cleanup();
-     };
-   }, []);
-   ```
-
-3. **Track Loading**
-
-   ```typescript
-   await bufferPool.loadTrackChunked(track, audioContext);
-   ```
-
-4. **Track Preloading**
-
-   ```typescript
-   await bufferPool.preloadTrack(nextTrack, audioContext);
-   ```
-
-### Future Enhancements
-
-1. **Web Worker Integration**
-   - Move buffer decoding to worker thread
-   - Improve UI responsiveness
-   - Handle larger files efficiently
-
-2. **Cache Integration**
-   - Add browser cache support
-   - Implement persistent storage
-   - Optimize repeat playback
-
-3. **Stream Processing**
-   - Add real-time audio processing
-   - Support for live streaming
-   - Advanced audio effects
-
-To implement this system, ensure your project has:
-
-1. Proper TypeScript configuration for Web Audio API
-2. Error boundary setup for React components
-3. Sufficient memory allocation for audio processing
-4. Proper cleanup in component lifecycle methods
-
-Next steps will involve integrating this buffer pool implementation with the `WavePlayerProvider` context and updating the UI components to handle progress updates and loading states.

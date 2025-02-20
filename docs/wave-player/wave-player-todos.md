@@ -6,17 +6,16 @@
 
 - [ ] Review `WavePlayerBufferPool` implementation:
   - [ ] Ensure that the current buffer pool strategy and implementation is optimal for both high-fidelity, memory-efficient audio playback and processing
-  - [ ] Ensure that the buffer pool is properly managing the audio buffer chunks
+  - [ ] Ensure that the buffer pool is properly managing (creating, caching, cleaning up) audio buffer chunks
 
 ## Issues
 
 ### Context
 
-- [ ] Ensure that `state.duration` is properly calculated and updated when a track is set
-- [ ] Ensure `state` values are properly updated when controls are used
-  - [ ] `state.duration` should be updated when the track is loaded
+- [x] Ensure that `state.duration` is properly calculated and updated when a track is set
+- [ ] Ensure all `state` values are properly updated when controls are used
 - [ ] Fix apparent bug with `state` (`state.status`?) causing re-renders (for example, when a playing track gets paused)
-- [ ] Fix `state.currentTime` continuing to increment after the track has ended
+- [x] Fix `state.currentTime` continuing to increment after the track has ended
 - [ ] Review `loadTrack` implementation:
   - [ ] Ensure that the current implementation is optimal
   - [ ] Ensure that the proper actions are dispatched when the track is loaded
@@ -25,14 +24,14 @@
 
 - `WavePlayer`
   - [ ] Clean up and improve styles
-    - [ ] Improve `Card` layout and section styles
+    - [x] Improve `Card` layout and section styles
     - [ ] Improve styles for larger screens (sizing, padding, etc.)
     - [ ] Improve audio buffer loading UI
 - `WavePlayerTrackInfo`
   - [ ] Clean up and improve styles
 - `WavePlayerTrackControls`
-  - [ ] Fix progress `Slider` values (`state.currentTime`, `state.duration`) not properly updating
-  - [ ] Fix progress `Slider` not updating properly when `state.currentTime` changes
+  - [x] Fix progress `Slider` values (`state.currentTime`, `state.duration`) not properly updating
+  - [x] Fix progress `Slider` not updating properly when `state.currentTime` changes
   - [ ] Fix progress `Slider` not seeking to the correct position when interacted with
   - [ ] Clean up and improve styles
 - `WavePlayerTrackVisuals`
