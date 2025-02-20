@@ -126,6 +126,34 @@ export function WavePlayerProvider({
     }
   }, [state.audioContext]);
 
+  const seek = useCallback(
+    (time: number) => {
+      if (!state.audioContext || !state.buffer) return;
+
+      // Stop current playback
+      if (sourceNodeRef.current) {
+        sourceNodeRef.current.stop();
+      }
+
+      // Create new source node
+      sourceNodeRef.current = state.audioContext.createBufferSource();
+      sourceNodeRef.current.buffer = state.buffer;
+      sourceNodeRef.current.connect(analyserNodeRef.current!);
+
+      // Update timing references
+      startTimeRef.current = state.audioContext.currentTime - time;
+      pauseTimeRef.current = time;
+
+      // Start playback if currently playing
+      if (state.status === "playing") {
+        sourceNodeRef.current.start(0, time);
+      }
+
+      dispatch({ type: "SET_CURRENT_TIME", payload: time });
+    },
+    [state.audioContext, state.buffer, state.status]
+  );
+
   const initializeAudioContext = useCallback(async () => {
     try {
       console.log(
@@ -171,6 +199,82 @@ export function WavePlayerProvider({
     }
   }, []);
 
+  const play = useCallback(async () => {
+    if (!state.audioContext || !state.buffer || !state.track) return;
+
+    console.log("[WavePlayerProvider play] playing track...");
+
+    try {
+      // Resume context if suspended
+      if (state.audioContext.state === "suspended") {
+        console.log("[WavePlayerProvider play] resuming audio context");
+        await state.audioContext.resume();
+        
+        // When resuming from pause, use the stored pause time
+        startTimeRef.current = state.audioContext.currentTime - pauseTimeRef.current;
+      } else {
+        // Create new source node
+        sourceNodeRef.current = state.audioContext.createBufferSource();
+        sourceNodeRef.current.buffer = state.buffer;
+        sourceNodeRef.current.connect(analyserNodeRef.current!);
+
+        // Set loop property directly on the source node if track is a loop
+        sourceNodeRef.current.loop = state.track.isLoop;
+
+        // Handle track completion for non-looping tracks
+        if (!state.track.isLoop) {
+          sourceNodeRef.current.onended = () => {
+            console.log("[WavePlayerProvider play] track ended");
+            // Stop playback and reset time
+            sourceNodeRef.current?.disconnect();
+            sourceNodeRef.current = null;
+            startTimeRef.current = 0;
+            pauseTimeRef.current = 0;
+            dispatch({ type: "SET_STATUS", payload: "ready" });
+            dispatch({ type: "SET_CURRENT_TIME", payload: 0 });
+          };
+        }
+
+        // Start playback
+        const startTime = state.audioContext.currentTime - (pauseTimeRef.current || 0);
+        sourceNodeRef.current.start(0, pauseTimeRef.current);
+        startTimeRef.current = startTime;
+      }
+
+      dispatch({ type: "SET_STATUS", payload: "playing" });
+    } catch (error) {
+      dispatch({
+        type: "SET_ERROR",
+        payload: error instanceof Error ? error : new Error("Playback failed"),
+      });
+    }
+  }, [state.audioContext, state.buffer, state.track]);
+
+  const pause = useCallback(() => {
+    if (!state.audioContext || !sourceNodeRef.current) return;
+
+    // Store the current time before pausing
+    pauseTimeRef.current = state.audioContext.currentTime - startTimeRef.current;
+    
+    // Suspend the audio context instead of stopping the source
+    state.audioContext.suspend();
+    dispatch({ type: "SET_STATUS", payload: "paused" });
+  }, [state.audioContext]);
+
+  const setVolume = useCallback(
+    (volume: number) => {
+      if (!gainNodeRef.current) return;
+
+      gainNodeRef.current.gain.setValueAtTime(
+        volume,
+        state.audioContext?.currentTime || 0
+      );
+
+      dispatch({ type: "SET_VOLUME", payload: volume });
+    },
+    [state.audioContext]
+  );
+
   const loadTrack = useCallback(
     async (track: WavePlayerTrack) => {
       if (!state.audioContext || !bufferPoolRef.current) return;
@@ -180,6 +284,7 @@ export function WavePlayerProvider({
       try {
         dispatch({ type: "SET_STATUS", payload: "loading" });
         dispatch({ type: "SET_TRACK", payload: track });
+        dispatch({ type: "SET_LOOP", payload: track.isLoop });
 
         // Use buffer pool for chunked loading
         const buffer = await bufferPoolRef.current.loadTrackChunked(
@@ -199,90 +304,6 @@ export function WavePlayerProvider({
       }
     },
     [state.audioContext]
-  );
-
-  const play = useCallback(async () => {
-    if (!state.audioContext || !state.buffer) return;
-
-    console.log("[WavePlayerProvider play] playing track...");
-
-    try {
-      // Resume context if suspended
-      if (state.audioContext.state === "suspended") {
-        console.log("[WavePlayerProvider play] resuming audio context");
-        await state.audioContext.resume();
-      }
-
-      // Create new source node
-      sourceNodeRef.current = state.audioContext.createBufferSource();
-      sourceNodeRef.current.buffer = state.buffer;
-      sourceNodeRef.current.connect(analyserNodeRef.current!);
-
-      // Start playback
-      const startTime =
-        state.audioContext.currentTime - (pauseTimeRef.current || 0);
-      sourceNodeRef.current.start(0, pauseTimeRef.current);
-      startTimeRef.current = startTime;
-
-      dispatch({ type: "SET_STATUS", payload: "playing" });
-      dispatch({ type: "SET_START_TIME", payload: startTime });
-    } catch (error) {
-      dispatch({
-        type: "SET_ERROR",
-        payload: error instanceof Error ? error : new Error("Playback failed"),
-      });
-    }
-  }, [state.audioContext, state.buffer]);
-
-  const pause = useCallback(() => {
-    if (!state.audioContext || !sourceNodeRef.current) return;
-
-    sourceNodeRef.current.stop();
-    pauseTimeRef.current =
-      state.audioContext.currentTime - startTimeRef.current;
-    dispatch({ type: "SET_STATUS", payload: "paused" });
-  }, [state.audioContext]);
-
-  const setVolume = useCallback(
-    (volume: number) => {
-      if (!gainNodeRef.current) return;
-
-      gainNodeRef.current.gain.setValueAtTime(
-        volume,
-        state.audioContext?.currentTime || 0
-      );
-
-      dispatch({ type: "SET_VOLUME", payload: volume });
-    },
-    [state.audioContext]
-  );
-
-  const seek = useCallback(
-    (time: number) => {
-      if (!state.audioContext || !state.buffer) return;
-
-      // Stop current playback
-      if (sourceNodeRef.current) {
-        sourceNodeRef.current.stop();
-      }
-
-      // Create new source node
-      sourceNodeRef.current = state.audioContext.createBufferSource();
-      sourceNodeRef.current.buffer = state.buffer;
-      sourceNodeRef.current.connect(analyserNodeRef.current!);
-
-      // Update timing references
-      startTimeRef.current = state.audioContext.currentTime - time;
-      pauseTimeRef.current = time;
-
-      // Start playback if currently playing
-      if (state.status === "playing") {
-        sourceNodeRef.current.start(0, time);
-      }
-
-      dispatch({ type: "SET_CURRENT_TIME", payload: time });
-    },
-    [state.audioContext, state.buffer, state.status]
   );
 
   const retryLoad = useCallback(() => {
@@ -314,9 +335,17 @@ export function WavePlayerProvider({
     let animationFrameId: number;
 
     const updateTime = () => {
-      if (state.audioContext && state.startTime) {
-        const currentTime = state.audioContext.currentTime - state.startTime;
-        dispatch({ type: "SET_CURRENT_TIME", payload: currentTime });
+      if (state.audioContext && state.status === "playing" && state.duration > 0) {
+        const rawCurrentTime = state.audioContext.currentTime - startTimeRef.current;
+        
+        // For looping tracks, calculate time within the loop cycle
+        if (state.track?.isLoop) {
+          const cycleTime = rawCurrentTime % state.duration;
+          dispatch({ type: "SET_CURRENT_TIME", payload: cycleTime });
+        } else {
+          // For non-looping tracks, just use the raw time
+          dispatch({ type: "SET_CURRENT_TIME", payload: rawCurrentTime });
+        }
       }
       animationFrameId = requestAnimationFrame(updateTime);
     };
@@ -326,7 +355,7 @@ export function WavePlayerProvider({
     }
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [state.status, state.audioContext, state.startTime]);
+  }, [state.status, state.audioContext, state.duration, state.track]);
 
   useEffect(() => {
     if (!analyserNodeRef.current || state.status !== "playing") return;
