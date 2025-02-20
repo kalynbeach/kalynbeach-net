@@ -129,3 +129,85 @@ flowchart TB
     class SRC,ANA,GAIN,DEST playback
     class VIS,AUDIO output
 ```
+
+## Buffer Pool System
+
+```mermaid
+graph TB
+    subgraph Input["Track Input"]
+        Track["track.src"]
+        Track --> Head["HEAD Request"]
+        Head --> Length["Content Length"]
+    end
+
+    subgraph Loading["Buffer Pool Loading"]
+        Length --> CS["Chunk Size"]
+        CS --> Chunks["Load Track"]
+        
+        subgraph Process["Processing"]
+            Chunks --> AB["Array Buffers"]
+            AB --> Combine["Combine Buffers"]
+            Combine --> Decode["Decode Audio"]
+        end
+    end
+
+    subgraph Pool["Buffer Pool State"]
+        Decode --> BP["Buffer Pool"]
+        
+        subgraph State["Pool State"]
+            Current["Current Buffer"]
+            Next["Next Buffer"]
+            Cache["Chunk Cache"]
+        end
+        
+        BP --> Current
+        BP --> Next
+        BP --> Cache
+
+        subgraph Memory["Memory Control"]
+            Size["Pool Size"]
+            Sort["Sort by Age"]
+            Evict["Evict Chunks"]
+            
+            Size --> Sort
+            Sort --> Evict
+            Evict --> |"if > max size"| Cache
+        end
+    end
+
+    subgraph Events["Event Handlers"]
+        Progress["Progress Event"]
+        Error["Error Event"]
+        Abort["Abort Control"]
+        
+        Process --> Progress
+        Process --> |"error"| Error
+        Abort --> |"abort"| Process
+    end
+
+    %% Relationships
+    Length --> |"sets"| CS
+    Chunks --> |"updates"| Progress
+    BP --> |"checks"| Size
+    Cache --> |"updates"| Size
+
+    %% Styling
+    classDef input fill:#e3f2fd,stroke:#1565c0
+    classDef loading fill:#fff3e0,stroke:#f57c00
+    classDef pool fill:#f3e5f5,stroke:#7b1fa2
+    classDef events fill:#e8f5e9,stroke:#2e7d32
+
+    class Track,Head,Length input
+    class CS,Chunks,Process loading
+    class BP,State,Memory pool
+    class Progress,Error,Abort events
+
+    %% Notes
+    note["Chunk Size: 1MB"]
+    note2["Max Pool: 100MB"]
+    CS --> note
+    BP --> note2
+
+    style note fill:#fff9c4,stroke:#fbc02d
+    style note2 fill:#fff9c4,stroke:#fbc02d
+```
