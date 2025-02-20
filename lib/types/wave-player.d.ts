@@ -1,3 +1,19 @@
+export interface WavePlayerBufferPoolState {
+  current: AudioBuffer | null;
+  next: AudioBuffer | null;
+  chunks: Map<string, AudioBuffer>;
+  maxPoolSize: number;
+  onProgress?: (progress: number) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface WavePlayerBufferPoolOptions {
+  maxPoolSize?: number;
+  chunkSize?: number;
+  onProgress?: (progress: number) => void;
+  onError?: (error: Error) => void;
+}
+
 export type WavePlayerTrack = {
   id: number;
   title: string;

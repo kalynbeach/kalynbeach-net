@@ -1,21 +1,17 @@
-import { WavePlayerTrack } from "@/lib/types/wave-player";
+import { WavePlayerTrack, WavePlayerBufferPoolState, WavePlayerBufferPoolOptions } from "@/lib/types/wave-player";
 
-export interface WavePlayerBufferPoolState {
-  current: AudioBuffer | null;
-  next: AudioBuffer | null;
-  chunks: Map<string, AudioBuffer>;
-  maxPoolSize: number;
-  onProgress?: (progress: number) => void;
-  onError?: (error: Error) => void;
-}
-
-export interface WavePlayerBufferPoolOptions {
-  maxPoolSize?: number;
-  chunkSize?: number;
-  onProgress?: (progress: number) => void;
-  onError?: (error: Error) => void;
-}
-
+/**
+ * Core audio buffer management system for `WavePlayer`.
+ * 
+ * This class handles the loading and caching of audio buffers.
+ * 
+ * It provides methods for:
+ * - Loading tracks in chunks
+ * - Managing the buffer pool size
+ * - Handling progress and error events
+ * 
+ * It's a WIP and will probably be refactored and improved.
+ */
 export class WavePlayerBufferPool {
   private pool: WavePlayerBufferPoolState;
   private chunkSize: number;
