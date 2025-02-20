@@ -32,6 +32,7 @@ export type WavePlayerAction =
   | { type: "SET_VOLUME"; payload: number }
   | { type: "SET_CURRENT_TIME"; payload: number }
   | { type: "SET_START_TIME"; payload: number }
+  | { type: "SET_DURATION"; payload: number }
   | { type: "SET_LOOP"; payload: boolean }
   | { type: "RETRY_LOAD" };
 

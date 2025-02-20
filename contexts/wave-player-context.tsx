@@ -72,6 +72,8 @@ function playerReducer(
       return { ...state, currentTime: action.payload };
     case "SET_START_TIME":
       return { ...state, startTime: action.payload };
+    case "SET_DURATION":
+      return { ...state, duration: action.payload };
     case "SET_LOOP":
       return { ...state, isLooping: action.payload };
     case "RETRY_LOAD":
@@ -186,6 +188,7 @@ export function WavePlayerProvider({
         );
 
         dispatch({ type: "SET_BUFFER", payload: buffer });
+        dispatch({ type: "SET_DURATION", payload: buffer.duration });
         dispatch({ type: "SET_STATUS", payload: "ready" });
       } catch (error) {
         dispatch({
