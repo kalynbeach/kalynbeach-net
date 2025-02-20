@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useWavePlayerContext } from "@/contexts/wave-player/context";
+import { useWavePlayerContext } from "@/contexts/wave-player-context";
 import { WavePlayerTrack } from "@/lib/types/wave-player";
 import Image from "next/image";
 

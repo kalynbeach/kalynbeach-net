@@ -24,6 +24,7 @@ export default function WavePlayer({ playlist }: WavePlayerProps) {
 
   useEffect(() => {
     if (needsActivation && state.status === "idle") {
+      console.log("[WavePlayer] initializing audio context");
       initializeAudioContext();
       setNeedsActivation(false);
     }

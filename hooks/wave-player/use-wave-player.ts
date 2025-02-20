@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useWavePlayerContext } from "@/contexts/wave-player/context";
+import { useWavePlayerContext } from "@/contexts/wave-player-context";
 import type { WavePlayerPlaylist } from "@/lib/types/wave-player";
 
 export function useWavePlayer(playlist: WavePlayerPlaylist) {

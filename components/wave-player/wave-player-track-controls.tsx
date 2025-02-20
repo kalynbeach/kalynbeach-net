@@ -1,7 +1,7 @@
 "use client";
 
 // import type { WavePlayerStatus, WavePlayerControls } from "@/lib/types/wave-player";
-import { useWavePlayerContext } from "@/contexts/wave-player/context";
+import { useWavePlayerContext } from "@/contexts/wave-player-context";
 import { formatTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";

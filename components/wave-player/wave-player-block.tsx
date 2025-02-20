@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
-import { useWavePlayerContext, TEST_PLAYLIST } from "@/contexts/wave-player-context";
+import type { WavePlayerPlaylist } from "@/lib/types/wave-player";
 import WavePlayer from "./wave-player";
 
-export default function WavePlayerBlock() {
-  const { state, controls, initialize, cleanup } = useWavePlayerContext();
+type WavePlayerBlockProps = {
+  playlist: WavePlayerPlaylist;
+};
 
+export default function WavePlayerBlock({ playlist }: WavePlayerBlockProps) {
   return (
     <div className="wave-player-block">
-      <WavePlayer playlist={TEST_PLAYLIST} />
+      <WavePlayer playlist={playlist} />
     </div>
   );
 }
