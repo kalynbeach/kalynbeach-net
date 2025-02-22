@@ -25,7 +25,7 @@ export default function SiteNav() {
           className={cn(
             "text-xs sm:text-sm font-mono font-semibold dark:font-normal",
             "transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green",
-            `${pathname === page.route ? "text-kb-blue dark:text-kb-green" : ""}`
+            `${pathname.includes(page.route) ? "text-kb-blue dark:text-kb-green" : ""}`
           )}
         >
           {page.label}
