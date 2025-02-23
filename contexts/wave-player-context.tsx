@@ -407,21 +407,29 @@ export function WavePlayerProvider({
     if (!analyserNodeRef.current || state.status !== "playing") return;
 
     const updateVisualization = () => {
-      const visualizationBuffer = new Uint8Array(
-        analyserNodeRef.current!.frequencyBinCount
-      );
-      analyserNodeRef.current!.getByteTimeDomainData(visualizationBuffer);
-      const waveform = visualizationBuffer.slice();
-      analyserNodeRef.current!.getByteFrequencyData(visualizationBuffer);
-      const frequencies = visualizationBuffer.slice();
+      // Verify analyzer node is still available
+      if (!analyserNodeRef.current) return;
 
-      dispatch({
-        type: "SET_VISUALIZATION",
-        payload: { waveform, frequencies },
-      });
+      try {
+        const visualizationBuffer = new Uint8Array(
+          analyserNodeRef.current.frequencyBinCount
+        );
+        analyserNodeRef.current.getByteTimeDomainData(visualizationBuffer);
+        const waveform = visualizationBuffer.slice();
+        analyserNodeRef.current.getByteFrequencyData(visualizationBuffer);
+        const frequencies = visualizationBuffer.slice();
 
-      if (state.status === "playing") {
-        requestAnimationFrame(updateVisualization);
+        dispatch({
+          type: "SET_VISUALIZATION",
+          payload: { waveform, frequencies },
+        });
+
+        // Only request next frame if we're still playing and analyzer exists
+        if (state.status === "playing") {
+          requestAnimationFrame(updateVisualization);
+        }
+      } catch (error) {
+        console.error("[WavePlayerProvider] Visualization update error:", error);
       }
     };
 
