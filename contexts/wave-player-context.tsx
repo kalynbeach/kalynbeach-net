@@ -116,7 +116,11 @@ export function WavePlayerProvider({
   const bufferPoolRef = useRef<WavePlayerBufferPool | null>(null);
 
   const createAudioContext = useCallback(() => {
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined") {
+      const error = new Error("AudioContext not supported");
+      dispatch({ type: "SET_ERROR", payload: error });
+      return null;
+    }
 
     try {
       // Reuse existing global context if available
@@ -138,9 +142,11 @@ export function WavePlayerProvider({
       return ctx;
     } catch (error) {
       console.error("[WavePlayerProvider] Error creating AudioContext:", error);
-      return null;
+      const finalError = new Error("AudioContext not supported");
+      dispatch({ type: "SET_ERROR", payload: finalError });
+      throw finalError;
     }
-  }, []);
+  }, [dispatch]);
 
   const cleanupAudioNodes = useCallback(() => {
     // Cancel any pending animation frame
@@ -199,7 +205,9 @@ export function WavePlayerProvider({
       console.log("[WavePlayerProvider initialize] initializing audio context");
       const audioContext = createAudioContext();
       if (!audioContext) {
-        throw new Error("Audio context could not be created");
+        const error = new Error("AudioContext not supported");
+        dispatch({ type: "SET_ERROR", payload: error });
+        throw error;
       }
 
       // Initialize audio nodes
@@ -221,13 +229,9 @@ export function WavePlayerProvider({
 
       dispatch({ type: "INITIALIZE", payload: { audioContext } });
     } catch (error) {
-      dispatch({
-        type: "SET_ERROR",
-        payload:
-          error instanceof Error
-            ? error
-            : new Error("Audio context initialization failed"),
-      });
+      const finalError = error instanceof Error ? error : new Error("AudioContext not supported");
+      dispatch({ type: "SET_ERROR", payload: finalError });
+      throw finalError;
     }
   }, [createAudioContext, initializeAudioNodes]);
 
