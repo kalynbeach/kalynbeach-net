@@ -216,15 +216,37 @@ export function WavePlayerProvider({
   }, [state.track, loadTrack]);
 
   const cleanup = useCallback(() => {
+    console.log(
+      "[WavePlayerProvider cleanup] Cleaning up audio nodes and suspending context"
+    );
+
     if (sourceNodeRef.current) {
-      console.log(
-        "[WavePlayerProvider cleanupBuffer] disconnecting source node"
-      );
+      sourceNodeRef.current.stop();
       sourceNodeRef.current.disconnect();
       sourceNodeRef.current = null;
     }
+
     if (bufferPoolRef.current) {
       bufferPoolRef.current.cleanup();
+    }
+
+    if (analyserNodeRef.current) {
+      analyserNodeRef.current.disconnect();
+      analyserNodeRef.current = null;
+    }
+
+    if (gainNodeRef.current) {
+      gainNodeRef.current.disconnect();
+      gainNodeRef.current = null;
+    }
+
+    if (globalAudioContext && globalAudioContext.state !== "closed") {
+      globalAudioContext.suspend().catch((error) => {
+        console.error(
+          "[WavePlayerProvider cleanup] Error suspending context:",
+          error
+        );
+      });
     }
     dispatch({ type: "SET_BUFFER", payload: null });
   }, []);
@@ -329,6 +351,29 @@ export function WavePlayerProvider({
     }
   }, [state.audioContext]);
 
+  const previousTrack = useCallback(() => {
+    if (!state.playlist) return;
+    const prevIndex =
+      state.currentTrackIndex === 0
+        ? state.playlist.tracks.length - 1
+        : state.currentTrackIndex - 1;
+    const prevTrack = state.playlist.tracks[prevIndex];
+    dispatch({ type: "SET_TRACK", payload: prevTrack });
+    loadTrack(prevTrack);
+  }, [state.playlist, state.currentTrackIndex]);
+
+  const nextTrack = useCallback(() => {
+    if (!state.playlist) return;
+    const nextIndex = (state.currentTrackIndex + 1) % state.playlist.tracks.length;
+    const nextTrack = state.playlist.tracks[nextIndex];
+    dispatch({ type: "SET_TRACK", payload: nextTrack });
+    loadTrack(nextTrack);
+  }, [state.playlist, state.currentTrackIndex, loadTrack]);
+
+  const setLoop = useCallback((loop: boolean) => {
+    dispatch({ type: "SET_LOOP", payload: loop });
+  }, []);
+
   const setVolume = useCallback(
     (volume: number) => {
       if (!gainNodeRef.current) return;
@@ -372,6 +417,7 @@ export function WavePlayerProvider({
     };
   }, [state.audioContext]);
 
+  // Update time state
   useEffect(() => {
     let animationFrameId: number;
 
@@ -403,6 +449,7 @@ export function WavePlayerProvider({
     return () => cancelAnimationFrame(animationFrameId);
   }, [state.status, state.audioContext, state.duration, state.track]);
 
+  // Update visualization state
   useEffect(() => {
     if (!analyserNodeRef.current || state.status !== "playing") return;
 
@@ -436,46 +483,10 @@ export function WavePlayerProvider({
     updateVisualization();
   }, [state.status]);
 
-  // Cleanup on unmount - now properly handles context suspension
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log(
-        "[WavePlayerProvider] Cleaning up audio nodes and suspending context"
-      );
-
-      // Clean up source node
-      if (sourceNodeRef.current) {
-        sourceNodeRef.current.stop();
-        sourceNodeRef.current.disconnect();
-        sourceNodeRef.current = null;
-      }
-
-      // Clean up buffer pool
-      if (bufferPoolRef.current) {
-        bufferPoolRef.current.cleanup();
-      }
-
-      // Clean up analyzer node
-      if (analyserNodeRef.current) {
-        analyserNodeRef.current.disconnect();
-        analyserNodeRef.current = null;
-      }
-
-      // Clean up gain node
-      if (gainNodeRef.current) {
-        gainNodeRef.current.disconnect();
-        gainNodeRef.current = null;
-      }
-
-      // Suspend the audio context
-      if (globalAudioContext && globalAudioContext.state !== "closed") {
-        globalAudioContext.suspend().catch((error) => {
-          console.error(
-            "[WavePlayerProvider cleanup] Error suspending context:",
-            error
-          );
-        });
-      }
+      cleanup();
     };
   }, []);
 
@@ -487,27 +498,9 @@ export function WavePlayerProvider({
         pause,
         setVolume,
         seek,
-        nextTrack: () => {
-          if (!state.playlist) return;
-          const nextIndex =
-            (state.currentTrackIndex + 1) % state.playlist.tracks.length;
-          const nextTrack = state.playlist.tracks[nextIndex];
-          dispatch({ type: "SET_TRACK", payload: nextTrack });
-          loadTrack(nextTrack);
-        },
-        previousTrack: () => {
-          if (!state.playlist) return;
-          const prevIndex =
-            state.currentTrackIndex === 0
-              ? state.playlist.tracks.length - 1
-              : state.currentTrackIndex - 1;
-          const prevTrack = state.playlist.tracks[prevIndex];
-          dispatch({ type: "SET_TRACK", payload: prevTrack });
-          loadTrack(prevTrack);
-        },
-        setLoop: (loop: boolean) => {
-          dispatch({ type: "SET_LOOP", payload: loop });
-        },
+        nextTrack,
+        previousTrack,
+        setLoop,
       },
       loadTrack,
       initialize,

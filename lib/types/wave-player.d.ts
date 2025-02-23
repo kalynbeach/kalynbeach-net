@@ -35,7 +35,13 @@ export type WavePlayerPlaylist = {
   updatedAt: Date;
 };
 
-export type WavePlayerStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "error";
+export type WavePlayerStatus =
+  | "idle"
+  | "loading"
+  | "ready"
+  | "playing"
+  | "paused"
+  | "error";
 
 export type WavePlayerAction =
   | { type: "INITIALIZE"; payload: { audioContext: AudioContext } }
@@ -44,7 +50,10 @@ export type WavePlayerAction =
   | { type: "SET_STATUS"; payload: WavePlayerState["status"] }
   | { type: "SET_PROGRESS"; payload: number }
   | { type: "SET_ERROR"; payload: Error | null }
-  | { type: "SET_VISUALIZATION"; payload: { waveform: Uint8Array | null; frequencies: Uint8Array | null } }
+  | {
+      type: "SET_VISUALIZATION";
+      payload: { waveform: Uint8Array | null; frequencies: Uint8Array | null };
+    }
   | { type: "SET_VOLUME"; payload: number }
   | { type: "SET_CURRENT_TIME"; payload: number }
   | { type: "SET_START_TIME"; payload: number }
@@ -91,4 +100,5 @@ export type WavePlayerContextValue = {
   initialize: () => Promise<void>;
   loadTrack: (track: WavePlayerTrack) => Promise<void>;
   retryLoad: () => void;
+  cleanup: () => void;
 };
