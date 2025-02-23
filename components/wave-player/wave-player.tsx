@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+// TODO: create a WavePlayerSkeleton component
+
 type WavePlayerProps = {
   playlist: WavePlayerPlaylist;
 };
@@ -22,6 +24,8 @@ export default function WavePlayer({ playlist }: WavePlayerProps) {
   const { state, initializeAudioContext, retryLoad } = useWavePlayer(playlist);
   const [needsActivation, setNeedsActivation] = useState(true);
 
+  // TODO: review if this useEffect is needed - it feels like
+  // it's redundant or should be handled in the useWavePlayer hook
   useEffect(() => {
     if (needsActivation && state.status === "idle") {
       console.log("[WavePlayer] initializing audio context");
@@ -30,6 +34,7 @@ export default function WavePlayer({ playlist }: WavePlayerProps) {
     }
   }, [state.status, needsActivation]);
 
+  // TODO: refactor and clean up error UI
   if (state.error) {
     return (
       <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border ">
@@ -45,6 +50,7 @@ export default function WavePlayer({ playlist }: WavePlayerProps) {
     );
   }
 
+  // TODO: refactor and clean up loading UI (use skeleton)
   if (!state.track || state.status === "loading") {
     return (
       <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">

@@ -4,7 +4,7 @@ import { WavePlayerProvider } from "@/contexts/wave-player-context";
 import WavePlayer from "@/components/wave-player/wave-player";
 import SitePageHeader from "@/components/site/site-page-header";
 
-// TESTING
+// TODO: replace these placeholder tracks
 const TEST_TRACKS: WavePlayerTrack[] = [
   {
     id: 1,
@@ -20,7 +20,7 @@ const TEST_TRACKS: WavePlayerTrack[] = [
   },
 ];
 
-// TESTING
+// TODO: replace this placeholder playlist
 const TEST_PLAYLIST: WavePlayerPlaylist = {
   id: 1,
   title: "playlist_0",
@@ -28,6 +28,8 @@ const TEST_PLAYLIST: WavePlayerPlaylist = {
   createdAt: new Date(),
   updatedAt: new Date(),
 };
+
+// TODO: add server actions for WavePlayer data fetching (playlists, tracks, etc.)
 
 // TODO: optimize WavePlayer rendering in WavePlayerPage
 export default function WavePlayerPage() {
