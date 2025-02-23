@@ -19,156 +19,244 @@
 - `tests/components/wave-player-track-info.test.tsx`
 - `tests/components/wave-player-track-visual.test.tsx`
 
-## Testing Report: Claude 3.5 Sonnet
+## Testing Strategy
 
 ### 1. Buffer Pool System
 
 The buffer pool is the foundation of the audio loading system and requires thorough testing:
 
-- Memory management and limits
 - Chunked loading functionality
-- Progress tracking
+  - Proper chunk size handling
+  - Complete buffer combination
+  - Proper decoding of complete buffer
+- Progress tracking accuracy
 - Error handling
-- Cleanup procedures
+  - Network errors
+  - Decoding errors
+  - Abort handling
+- Memory management
+  - Pool size limits
+  - Cleanup procedures
+  - Resource management
 
 ### 2. Audio Context Management
 
 Critical audio context behaviors to test:
 
-- Initialization and state management
-- User gesture handling
-- Node creation and routing
-- Resource cleanup
-- Browser compatibility handling
+- Global context management
+  - Single instance maintenance
+  - Proper state transitions
+  - Resume/suspend handling
+- Audio node lifecycle
+  - Creation and routing
+  - Cleanup and disconnection
+  - Memory management
+- Browser compatibility
+  - Context creation
+  - Audio decoding support
+  - Sample rate handling
 
 ### 3. State Management
 
 The WavePlayer context requires testing of:
 
-- Track loading/unloading cycles
-- Playback state transitions
-- Error state handling
-- Progress updates
-- Volume control
-- Track navigation
+- Track loading/unloading
+  - Buffer loading states
+  - Progress updates
+  - Error handling
+- Playback control
+  - Play/pause transitions
+  - Seek functionality
+  - Volume control
+  - Loop handling
+- Resource management
+  - Node cleanup
+  - Memory cleanup
+  - Animation frame handling
 
 ### 4. User Interface Components
 
 #### Core Player Component
-- Initial render states
-- Loading indicators
-- Error displays
-- Track information display
-- Playback controls interaction
+- Render states
+  - Initial state
+  - Loading state
+  - Error state
+  - Playing state
+- Component lifecycle
+  - Mount/unmount cleanup
+  - State synchronization
+  - Event handling
 
 #### Track Controls
-- Play/pause functionality
-- Volume control
-- Track navigation
-- Progress bar interaction
-- Loop control
+- Playback controls
+  - Play/pause functionality
+  - Track navigation
+  - Progress control
+  - Volume adjustment
+- UI interactions
+  - Button states
+  - Slider behavior
+  - Progress updates
 
 #### Track Visualization
-- Waveform rendering
-- Frequency visualization
-- Image display
-- Performance monitoring
-- Canvas updates
+- Canvas rendering
+  - Waveform accuracy
+  - Performance optimization
+  - Memory usage
+  - Animation smoothness
 
-### 5. Performance Considerations
+### 5. Performance Testing
 
 Key areas for performance testing:
 
-1. **Memory Usage**
-   - Buffer allocation/deallocation
-   - Maximum playlist size
-   - Garbage collection patterns
+1. **Memory Management**
+   - Buffer allocation
+   - Cleanup efficiency
+   - Memory pressure handling
+   - Garbage collection
 
 2. **Loading Performance**
-   - Initial load times
-   - Chunk loading efficiency
-   - Preloading behavior
-   - Cache utilization
+   - Chunk loading speed
+   - Decode performance
+   - Progress accuracy
+   - Network efficiency
 
 3. **Playback Performance**
-   - Smooth playback verification
-   - Seek performance
-   - Visualization frame rate
-   - Audio processing overhead
+   - Audio quality
+   - Seek responsiveness
+   - Visualization performance
+   - State update efficiency
 
 ### 6. Error Handling
 
 Critical error scenarios to test:
 
 1. **Network Errors**
-   - Failed track loading
-   - Interrupted downloads
+   - Connection failures
    - Timeout handling
-   - Retry mechanisms
+   - Range request errors
+   - Abort behavior
 
-2. **Audio Context Errors**
-   - Initialization failures
-   - Decoding errors
-   - Buffer overflows
-   - Context state errors
+2. **Audio Errors**
+   - Decoding failures
+   - Context errors
+   - Buffer errors
+   - Node errors
 
-3. **User Input Errors**
-   - Invalid seek positions
-   - Rapid control interactions
-   - Volume boundary conditions
+3. **State Errors**
+   - Invalid transitions
+   - Resource cleanup
+   - Memory limits
+   - Browser constraints
 
-### 7. Integration Points
+### 7. Integration Testing
 
-Key integration tests needed:
+Key integration points to test:
 
 1. **Browser APIs**
-   - Web Audio API compatibility
-   - MediaElement integration
-   - Fetch API usage
-   - Worker thread communication
+   - Web Audio API
+   - Fetch API
+   - Canvas API
+   - Performance API
 
-2. **React Component Hierarchy**
-   - Context propagation
-   - State synchronization
-   - Event bubbling
-   - Prop drilling verification
+2. **React Integration**
+   - Context updates
+   - Component lifecycle
+   - Event handling
+   - Memory management
 
-3. **External Systems**
-   - Audio file sources
-   - Metadata handling
-   - Image loading
-   - Analytics integration
+3. **Next.js Integration**
+   - App Router
+   - Client components
+   - Static optimization
+   - Route handling
 
 ### 8. Accessibility Testing
 
 Essential accessibility tests:
 
 1. **Keyboard Navigation**
-   - Control focus management
+   - Control access
+   - Focus management
    - Keyboard shortcuts
-   - Tab order
-   - ARIA attributes
+   - ARIA support
 
-2. **Screen Reader Compatibility**
-   - Audio status announcements
+2. **Screen Reader Support**
+   - Status announcements
    - Progress updates
    - Error notifications
-   - Track information
+   - Control labels
 
 ### 9. Browser Compatibility
 
 Cross-browser testing requirements:
 
-1. **Audio Implementation**
+1. **Audio Support**
+   - Context creation
    - Codec support
    - Buffer handling
-   - Audio context behavior
+   - Node support
+
+2. **UI Compatibility**
+   - Canvas support
+   - Layout rendering
+   - Event handling
    - Performance characteristics
 
-2. **UI Rendering**
-   - Canvas performance
-   - CSS compatibility
-   - Layout consistency
-   - Animation smoothness
+## Test Implementation
 
-This testing strategy ensures comprehensive coverage of the WavePlayer system's critical functionality while maintaining focus on user experience and reliability.
+### Unit Tests
+
+```typescript
+describe("WavePlayerBufferPool", () => {
+  it("should load and decode audio file correctly", async () => {
+    // Test complete buffer loading and decoding
+  });
+
+  it("should handle memory limits correctly", async () => {
+    // Test pool size management
+  });
+
+  it("should report progress accurately", async () => {
+    // Test progress tracking
+  });
+
+  it("should handle errors appropriately", async () => {
+    // Test error scenarios
+  });
+});
+
+describe("WavePlayerContext", () => {
+  it("should manage global audio context correctly", async () => {
+    // Test context lifecycle
+  });
+
+  it("should handle playback state transitions", async () => {
+    // Test state management
+  });
+
+  it("should clean up resources properly", async () => {
+    // Test cleanup procedures
+  });
+});
+```
+
+### Integration Tests
+
+```typescript
+describe("WavePlayer", () => {
+  it("should load and play audio correctly", async () => {
+    // Test complete playback flow
+  });
+
+  it("should handle user interactions properly", async () => {
+    // Test control interactions
+  });
+
+  it("should manage resources efficiently", async () => {
+    // Test resource management
+  });
+});
+```
+
+This testing strategy ensures comprehensive coverage of the WavePlayer system's critical functionality while maintaining focus on reliability and performance.

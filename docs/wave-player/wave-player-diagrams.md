@@ -50,7 +50,7 @@ graph TB
 
     %% Data Flow
     S3 -.- |Audio Data| BP
-    BP -.- |Processed Buffers| AN
+    BP -.- |Processed Buffer| AN
     AN -.- |Visualization Data| TV
     WPS -.- |State Updates| WP
 
@@ -85,13 +85,13 @@ flowchart TB
     subgraph Processing["Processing Layer"]
         BP[Buffer Pool]
         subgraph Pool["Pool Management"]
-            CB[Current Buffer]
-            NB[Next Buffer]
-            CH[Chunk Cache]
+            CB[Complete Buffer]
+            DECODE[Audio Decoding]
         end
         
         AB --> BP
-        BP --> CB & NB & CH
+        BP --> CB
+        CB --> DECODE
     end
 
     subgraph Playback["Playback Layer"]
@@ -102,7 +102,7 @@ flowchart TB
             DEST[Destination Node]
         end
         
-        CB --> SRC
+        DECODE --> SRC
         SRC --> ANA
         ANA --> GAIN
         GAIN --> DEST
@@ -125,7 +125,7 @@ flowchart TB
 
     class S3,WAV storage
     class CL,HEAD,RANGE,AB loading
-    class BP,CB,NB,CH processing
+    class BP,CB,DECODE processing
     class SRC,ANA,GAIN,DEST playback
     class VIS,AUDIO output
 ```
@@ -156,22 +156,18 @@ graph TB
         
         subgraph State["Pool State"]
             Current["Current Buffer"]
-            Next["Next Buffer"]
-            Cache["Chunk Cache"]
+            Size["Pool Size"]
         end
         
         BP --> Current
-        BP --> Next
-        BP --> Cache
+        Current --> Size
 
         subgraph Memory["Memory Control"]
-            Size["Pool Size"]
-            Sort["Sort by Age"]
-            Evict["Evict Chunks"]
+            Check["Check Size"]
+            Clear["Clear Old Data"]
             
-            Size --> Sort
-            Sort --> Evict
-            Evict --> |"if > max size"| Cache
+            Size --> Check
+            Check --> |"if > max size"| Clear
         end
     end
 
@@ -189,7 +185,6 @@ graph TB
     Length --> |"sets"| CS
     Chunks --> |"updates"| Progress
     BP --> |"checks"| Size
-    Cache --> |"updates"| Size
 
     %% Styling
     classDef input fill:#e3f2fd,stroke:#1565c0

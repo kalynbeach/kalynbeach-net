@@ -2,28 +2,23 @@ import { WavePlayerTrack, WavePlayerBufferPoolState, WavePlayerBufferPoolOptions
 
 /**
  * Core audio buffer management system for `WavePlayer`.
- * 
- * This class handles the loading and caching of audio buffers.
- * 
- * It provides methods for:
- * - Loading tracks in chunks
- * - Managing the buffer pool size
- * - Handling progress and error events
- * 
- * It's a WIP and will probably be refactored and improved.
+ * Implements efficient chunked loading and buffer management for optimal audio streaming.
  */
 export class WavePlayerBufferPool {
   private pool: WavePlayerBufferPoolState;
-  private chunkSize: number;
   private abortController: AbortController | null = null;
+  private readonly chunkSize: number;
+  private readonly maxPoolSize: number;
+  private totalBufferSize = 0;
 
   constructor(options: WavePlayerBufferPoolOptions = {}) {
-    this.chunkSize = options.chunkSize || 1024 * 1024; // 1MB default
+    this.chunkSize = options.chunkSize || 1024 * 1024; // 1MB default chunk size
+    this.maxPoolSize = options.maxPoolSize || 100 * 1024 * 1024; // 100MB default pool size
     this.pool = {
       current: null,
       next: null,
       chunks: new Map(),
-      maxPoolSize: options.maxPoolSize || 100 * 1024 * 1024, // 100MB default
+      maxPoolSize: this.maxPoolSize,
       onProgress: options.onProgress,
       onError: options.onError,
     };
@@ -31,9 +26,11 @@ export class WavePlayerBufferPool {
 
   async loadTrackChunked(track: WavePlayerTrack, audioContext: AudioContext) {
     try {
+      // Cleanup any existing state
+      this.cleanup();
       this.abortController = new AbortController();
       
-      // Initial metadata fetch using Bun's fetch
+      // Get file size for chunk calculation
       const head = await fetch(track.src, { 
         method: "HEAD",
         signal: this.abortController.signal 
@@ -42,21 +39,16 @@ export class WavePlayerBufferPool {
       const contentLength = parseInt(head.headers.get("Content-Length") || "0");
       if (!contentLength) throw new Error("Content length not available");
 
-      // Calculate optimal chunk size based on content length
-      const optimalChunkSize = Math.min(
-        this.chunkSize,
-        Math.ceil(contentLength / 10)
-      );
-
+      // Load the complete audio file in chunks
       const chunks: ArrayBuffer[] = [];
       let loadedBytes = 0;
 
-      for (let offset = 0; offset < contentLength; offset += optimalChunkSize) {
-        if (this.abortController.signal.aborted) {
+      for (let offset = 0; offset < contentLength; offset += this.chunkSize) {
+        if (this.abortController?.signal.aborted) {
           throw new Error("Loading aborted");
         }
 
-        const end = Math.min(offset + optimalChunkSize - 1, contentLength - 1);
+        const end = Math.min(offset + this.chunkSize - 1, contentLength - 1);
         const response = await fetch(track.src, {
           headers: { Range: `bytes=${offset}-${end}` },
           signal: this.abortController.signal,
@@ -66,51 +58,35 @@ export class WavePlayerBufferPool {
         chunks.push(chunk);
         loadedBytes += chunk.byteLength;
 
-        // Report progress
+        // Report loading progress
         const progress = (loadedBytes / contentLength) * 100;
         this.pool.onProgress?.(progress);
-
-        // Process chunk if we have enough data
-        if (chunks.length >= 2) {
-          const partialBuffer = await this.decodeChunks(chunks, audioContext);
-          const chunkKey = `${track.id}-${offset}`;
-          this.pool.chunks.set(chunkKey, partialBuffer);
-          this.managePoolSize();
-        }
       }
 
-      // Final processing
-      const fullBuffer = await this.decodeChunks(chunks, audioContext);
+      // Combine all chunks into a single buffer
+      const completeBuffer = await this.combineArrayBuffers(chunks);
       
-      // Update pool
-      if (this.pool.current) {
-        this.pool.next = this.pool.current;
+      try {
+        // Decode the complete audio file
+        const audioBuffer = await audioContext.decodeAudioData(completeBuffer);
+        
+        // Store in pool
+        this.pool.current = audioBuffer;
+        this.totalBufferSize = audioBuffer.length * 4; // 32-bit float samples
+        
+        // Manage pool size if needed
+        this.managePoolSize();
+        
+        return audioBuffer;
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "unknown error";
+        throw new Error("Unable to decode audio data: " + message);
       }
-      this.pool.current = fullBuffer;
-
-      return fullBuffer;
     } catch (error) {
       const finalError = error instanceof Error ? error : new Error("Track loading failed");
       this.pool.onError?.(finalError);
       throw finalError;
     }
-  }
-
-  async preloadTrack(track: WavePlayerTrack, audioContext: AudioContext) {
-    try {
-      const buffer = await this.loadTrackChunked(track, audioContext);
-      this.pool.next = buffer;
-      return buffer;
-    } catch (error) {
-      // Silently handle preload errors
-      console.warn("[WavePlayerBufferPool] Preload failed:", error);
-      return null;
-    }
-  }
-
-  private async decodeChunks(chunks: ArrayBuffer[], context: AudioContext): Promise<AudioBuffer> {
-    const combined = await this.combineArrayBuffers(chunks);
-    return await context.decodeAudioData(combined);
   }
 
   private async combineArrayBuffers(chunks: ArrayBuffer[]): Promise<ArrayBuffer> {
@@ -128,32 +104,30 @@ export class WavePlayerBufferPool {
   }
 
   private managePoolSize(): void {
-    let totalSize = 0;
-    const entries = Array.from(this.pool.chunks.entries());
-    
-    // Sort by age (assuming keys contain timestamps)
-    entries.sort(([a], [b]) => parseInt(b.split('-')[1]) - parseInt(a.split('-')[1]));
-    
-    for (const [key, buffer] of entries) {
-      totalSize += buffer.length * 4; // Approximate size in bytes
-      if (totalSize > this.pool.maxPoolSize) {
-        this.pool.chunks.delete(key);
-      }
+    if (this.totalBufferSize > this.maxPoolSize) {
+      // Clear old chunks to free memory
+      this.pool.chunks.clear();
+      
+      // Keep track of current buffer size
+      this.totalBufferSize = this.pool.current ? this.pool.current.length * 4 : 0;
     }
   }
 
   public abort(): void {
-    this.abortController?.abort();
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
   }
 
   public cleanup(): void {
     this.pool.chunks.clear();
     this.pool.current = null;
     this.pool.next = null;
+    this.totalBufferSize = 0;
     this.abort();
   }
 
-  // Getters for current state
   public getCurrentBuffer(): AudioBuffer | null {
     return this.pool.current;
   }
