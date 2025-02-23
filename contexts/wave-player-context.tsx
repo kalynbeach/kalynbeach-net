@@ -50,12 +50,13 @@ function playerReducer(
       return { ...state, buffer: action.payload };
     case "SET_TRACK": {
       const newTrack = action.payload;
-      return { 
-        ...state, 
+      return {
+        ...state,
         track: newTrack,
-        currentTrackIndex: newTrack && state.playlist
-          ? state.playlist.tracks.findIndex(t => t.id === newTrack.id)
-          : 0
+        currentTrackIndex:
+          newTrack && state.playlist
+            ? state.playlist.tracks.findIndex((t) => t.id === newTrack.id)
+            : 0,
       };
     }
     case "SET_STATUS":
@@ -85,6 +86,9 @@ function playerReducer(
 
 const WavePlayerContext = createContext<WavePlayerContextValue | null>(null);
 
+// Singleton AudioContext instance
+let globalAudioContext: AudioContext | null = null;
+
 export function WavePlayerProvider({
   children,
   playlist,
@@ -106,16 +110,103 @@ export function WavePlayerProvider({
 
   const createAudioContext = () => {
     if (typeof window === "undefined") return null;
-    if (audioContextRef.current) {
-      return audioContextRef.current;
+
+    // Use existing global context if available
+    if (globalAudioContext) {
+      audioContextRef.current = globalAudioContext;
+      return globalAudioContext;
     }
+
+    // Create new context if none exists
     const ctx = new AudioContext({
       latencyHint: "interactive",
       sampleRate: 48000,
     });
+    globalAudioContext = ctx;
     audioContextRef.current = ctx;
     return ctx;
   };
+
+  // Handle page visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (!state.audioContext) return;
+
+      if (document.hidden) {
+        console.log(
+          "[WavePlayerProvider] Page hidden, suspending audio context"
+        );
+        if (sourceNodeRef.current) {
+          // Store current time before suspending
+          pauseTimeRef.current =
+            state.audioContext.currentTime - startTimeRef.current;
+          sourceNodeRef.current.stop();
+          sourceNodeRef.current.disconnect();
+          sourceNodeRef.current = null;
+        }
+        await state.audioContext.suspend();
+        dispatch({ type: "SET_STATUS", payload: "paused" });
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [state.audioContext]);
+
+  // Initialize audio nodes when AudioContext is created
+  const initializeAudioNodes = useCallback((audioContext: AudioContext) => {
+    // Only initialize if nodes don't exist
+    if (!analyserNodeRef.current) {
+      analyserNodeRef.current = audioContext.createAnalyser();
+    }
+    if (!gainNodeRef.current) {
+      gainNodeRef.current = audioContext.createGain();
+    }
+
+    // Connect node chain
+    gainNodeRef.current.connect(audioContext.destination);
+    analyserNodeRef.current.connect(gainNodeRef.current);
+  }, []);
+
+  const initializeAudioContext = useCallback(async () => {
+    try {
+      console.log(
+        "[WavePlayerProvider initializeAudioContext] initializing audio context"
+      );
+      const audioContext = createAudioContext();
+      if (!audioContext) {
+        throw new Error("Audio context could not be created");
+      }
+
+      // Initialize audio nodes
+      initializeAudioNodes(audioContext);
+
+      // Initialize buffer pool
+      if (!bufferPoolRef.current) {
+        bufferPoolRef.current = new WavePlayerBufferPool({
+          onProgress: (progress) => {
+            dispatch({ type: "SET_PROGRESS", payload: progress });
+          },
+          onError: (error) => {
+            dispatch({ type: "SET_ERROR", payload: error });
+          },
+        });
+      }
+
+      dispatch({ type: "INITIALIZE", payload: { audioContext } });
+    } catch (error) {
+      dispatch({
+        type: "SET_ERROR",
+        payload:
+          error instanceof Error
+            ? error
+            : new Error("Audio context initialization failed"),
+      });
+    }
+  }, [initializeAudioNodes]);
 
   const resumeAudioContext = useCallback(async () => {
     if (state.audioContext && state.audioContext.state === "suspended") {
@@ -154,92 +245,43 @@ export function WavePlayerProvider({
     [state.audioContext, state.buffer, state.status]
   );
 
-  const initializeAudioContext = useCallback(async () => {
-    try {
-      console.log(
-        "[WavePlayerProvider initializeAudioContext] initializing audio context"
-      );
-      const audioContext = createAudioContext();
-      if (!audioContext) {
-        throw new Error("Audio context could not be created");
-      }
-
-      console.log(
-        "[WavePlayerProvider initializeAudioContext] resuming audio context"
-      );
-      await resumeAudioContext();
-
-      // Initialize audio nodes
-      analyserNodeRef.current = audioContext.createAnalyser();
-      gainNodeRef.current = audioContext.createGain();
-
-      // Connect node chain
-      gainNodeRef.current.connect(audioContext.destination);
-      analyserNodeRef.current.connect(gainNodeRef.current);
-
-      // Initialize buffer pool
-      bufferPoolRef.current = new WavePlayerBufferPool({
-        onProgress: (progress) => {
-          dispatch({ type: "SET_PROGRESS", payload: progress });
-        },
-        onError: (error) => {
-          dispatch({ type: "SET_ERROR", payload: error });
-        },
-      });
-
-      dispatch({ type: "INITIALIZE", payload: { audioContext } });
-    } catch (error) {
-      dispatch({
-        type: "SET_ERROR",
-        payload:
-          error instanceof Error
-            ? error
-            : new Error("Audio context initialization failed"),
-      });
-    }
-  }, []);
-
   const play = useCallback(async () => {
     if (!state.audioContext || !state.buffer || !state.track) return;
 
     console.log("[WavePlayerProvider play] playing track...");
 
     try {
+      // Always create a new source node
+      sourceNodeRef.current = state.audioContext.createBufferSource();
+      sourceNodeRef.current.buffer = state.buffer;
+      sourceNodeRef.current.connect(analyserNodeRef.current!);
+      sourceNodeRef.current.loop = state.track.isLoop;
+
+      // Handle track completion for non-looping tracks
+      if (!state.track.isLoop) {
+        sourceNodeRef.current.onended = () => {
+          console.log("[WavePlayerProvider play] track ended");
+          // Stop playback and reset time
+          sourceNodeRef.current?.disconnect();
+          sourceNodeRef.current = null;
+          startTimeRef.current = 0;
+          pauseTimeRef.current = 0;
+          dispatch({ type: "SET_STATUS", payload: "ready" });
+          dispatch({ type: "SET_CURRENT_TIME", payload: 0 });
+        };
+      }
+
       // Resume context if suspended
       if (state.audioContext.state === "suspended") {
         console.log("[WavePlayerProvider play] resuming audio context");
         await state.audioContext.resume();
-        
-        // When resuming from pause, use the stored pause time
-        startTimeRef.current = state.audioContext.currentTime - pauseTimeRef.current;
-      } else {
-        // Create new source node
-        sourceNodeRef.current = state.audioContext.createBufferSource();
-        sourceNodeRef.current.buffer = state.buffer;
-        sourceNodeRef.current.connect(analyserNodeRef.current!);
-
-        // Set loop property directly on the source node if track is a loop
-        sourceNodeRef.current.loop = state.track.isLoop;
-
-        // Handle track completion for non-looping tracks
-        if (!state.track.isLoop) {
-          sourceNodeRef.current.onended = () => {
-            console.log("[WavePlayerProvider play] track ended");
-            // Stop playback and reset time
-            sourceNodeRef.current?.disconnect();
-            sourceNodeRef.current = null;
-            startTimeRef.current = 0;
-            pauseTimeRef.current = 0;
-            dispatch({ type: "SET_STATUS", payload: "ready" });
-            dispatch({ type: "SET_CURRENT_TIME", payload: 0 });
-          };
-        }
-
-        // Start playback
-        const startTime = state.audioContext.currentTime - (pauseTimeRef.current || 0);
-        sourceNodeRef.current.start(0, pauseTimeRef.current);
-        startTimeRef.current = startTime;
       }
+
+      // Start playback
+      const startTime =
+        state.audioContext.currentTime - (pauseTimeRef.current || 0);
+      sourceNodeRef.current.start(0, pauseTimeRef.current);
+      startTimeRef.current = startTime;
 
       dispatch({ type: "SET_STATUS", payload: "playing" });
     } catch (error) {
@@ -250,15 +292,29 @@ export function WavePlayerProvider({
     }
   }, [state.audioContext, state.buffer, state.track]);
 
-  const pause = useCallback(() => {
+  const pause = useCallback(async () => {
     if (!state.audioContext || !sourceNodeRef.current) return;
 
-    // Store the current time before pausing
-    pauseTimeRef.current = state.audioContext.currentTime - startTimeRef.current;
-    
-    // Suspend the audio context instead of stopping the source
-    state.audioContext.suspend();
-    dispatch({ type: "SET_STATUS", payload: "paused" });
+    try {
+      // Store the current time before pausing
+      pauseTimeRef.current =
+        state.audioContext.currentTime - startTimeRef.current;
+
+      // Stop and disconnect the current source node
+      sourceNodeRef.current.stop();
+      sourceNodeRef.current.disconnect();
+      sourceNodeRef.current = null;
+
+      // Suspend the audio context
+      await state.audioContext.suspend();
+
+      dispatch({ type: "SET_STATUS", payload: "paused" });
+    } catch (error) {
+      console.error(
+        "[WavePlayerProvider pause] Error suspending context:",
+        error
+      );
+    }
   }, [state.audioContext]);
 
   const setVolume = useCallback(
@@ -335,9 +391,14 @@ export function WavePlayerProvider({
     let animationFrameId: number;
 
     const updateTime = () => {
-      if (state.audioContext && state.status === "playing" && state.duration > 0) {
-        const rawCurrentTime = state.audioContext.currentTime - startTimeRef.current;
-        
+      if (
+        state.audioContext &&
+        state.status === "playing" &&
+        state.duration > 0
+      ) {
+        const rawCurrentTime =
+          state.audioContext.currentTime - startTimeRef.current;
+
         // For looping tracks, calculate time within the loop cycle
         if (state.track?.isLoop) {
           const cycleTime = rawCurrentTime % state.duration;
@@ -382,11 +443,48 @@ export function WavePlayerProvider({
     updateVisualization();
   }, [state.status]);
 
+  // Cleanup on unmount - now properly handles context suspension
   useEffect(() => {
     return () => {
-      cleanup();
+      console.log(
+        "[WavePlayerProvider] Cleaning up audio nodes and suspending context"
+      );
+
+      // Clean up source node
+      if (sourceNodeRef.current) {
+        sourceNodeRef.current.stop();
+        sourceNodeRef.current.disconnect();
+        sourceNodeRef.current = null;
+      }
+
+      // Clean up buffer pool
+      if (bufferPoolRef.current) {
+        bufferPoolRef.current.cleanup();
+      }
+
+      // Clean up analyzer node
+      if (analyserNodeRef.current) {
+        analyserNodeRef.current.disconnect();
+        analyserNodeRef.current = null;
+      }
+
+      // Clean up gain node
+      if (gainNodeRef.current) {
+        gainNodeRef.current.disconnect();
+        gainNodeRef.current = null;
+      }
+
+      // Suspend the audio context
+      if (globalAudioContext && globalAudioContext.state !== "closed") {
+        globalAudioContext.suspend().catch((error) => {
+          console.error(
+            "[WavePlayerProvider cleanup] Error suspending context:",
+            error
+          );
+        });
+      }
     };
-  }, [cleanup]);
+  }, []);
 
   const value: WavePlayerContextValue = useMemo(
     () => ({
@@ -398,16 +496,18 @@ export function WavePlayerProvider({
         seek,
         nextTrack: () => {
           if (!state.playlist) return;
-          const nextIndex = (state.currentTrackIndex + 1) % state.playlist.tracks.length;
+          const nextIndex =
+            (state.currentTrackIndex + 1) % state.playlist.tracks.length;
           const nextTrack = state.playlist.tracks[nextIndex];
           dispatch({ type: "SET_TRACK", payload: nextTrack });
           loadTrack(nextTrack);
         },
         previousTrack: () => {
           if (!state.playlist) return;
-          const prevIndex = state.currentTrackIndex === 0 
-            ? state.playlist.tracks.length - 1 
-            : state.currentTrackIndex - 1;
+          const prevIndex =
+            state.currentTrackIndex === 0
+              ? state.playlist.tracks.length - 1
+              : state.currentTrackIndex - 1;
           const prevTrack = state.playlist.tracks[prevIndex];
           dispatch({ type: "SET_TRACK", payload: prevTrack });
           loadTrack(prevTrack);
