@@ -364,9 +364,16 @@ export function WavePlayerProvider({
         };
       }
 
-      // Start playback from pause time
-      const startTime = state.audioContext.currentTime - (pauseTimeRef.current || 0);
-      sourceNodeRef.current.start(0, pauseTimeRef.current);
+      // Calculate correct start time for looping tracks
+      let startOffset = pauseTimeRef.current || 0;
+      if (state.track.isLoop && startOffset > 0) {
+        // Ensure the offset is within the buffer duration
+        startOffset = startOffset % state.buffer.duration;
+      }
+
+      // Start playback from the correct offset
+      const startTime = state.audioContext.currentTime - startOffset;
+      sourceNodeRef.current.start(0, startOffset);
       startTimeRef.current = startTime;
 
       dispatch({ type: "SET_STATUS", payload: "playing" });
