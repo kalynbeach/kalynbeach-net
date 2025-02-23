@@ -1,8 +1,8 @@
 "use client";
 
-// import type { WavePlayerStatus, WavePlayerControls } from "@/lib/types/wave-player";
-import { useWavePlayerContext } from "@/contexts/wave-player-context";
 import { formatTime } from "@/lib/utils";
+import type { WavePlayerState, WavePlayerControls } from "@/lib/types/wave-player";
+// import { useWavePlayer } from "@/hooks/wave-player/use-wave-player";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { 
@@ -14,31 +14,29 @@ import {
   Repeat,
 } from "lucide-react";
 
-// TODO: figure out if it's better to use state and controls from props instead of useWavePlayerContext
-// type WavePlayerTrackControlsProps = {
-//   status: WavePlayerStatus;
-//   state.currentTime: number;
-//   duration: number;
-//   volume: number;
-//   controls: WavePlayerControls;
-// };
+type WavePlayerTrackControlsProps = {
+  status: WavePlayerState["status"];
+  currentTime: WavePlayerState["currentTime"];
+  duration: WavePlayerState["duration"];
+  controls: WavePlayerControls;
+};
 
-export default function WavePlayerTrackControls() {
-  const { state, controls } = useWavePlayerContext();
+export default function WavePlayerTrackControls({ status, currentTime, duration, controls }: WavePlayerTrackControlsProps) {
+  // const { state, controls } = useWavePlayer();
 
   return (
     <div className="wave-player-track-controls w-full flex flex-col items-center justify-center gap-2 border border-muted/50 p-4">
       {/* Progress Slider */}
       <div className="w-full space-y-2 flex flex-col items-center justify-center px-2">
         <Slider
-          value={[state.currentTime]}
-          max={state.duration}
+          value={[currentTime]}
+          max={duration}
           onValueChange={([value]) => controls.seek(value)}
           className="w-full"
         />
         <div className="w-full flex flex-row justify-between text-sm">
-          <span>{formatTime(state.currentTime)}</span>
-          <span>{formatTime(state.duration)}</span>
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
         </div>
       </div>
 
@@ -56,10 +54,10 @@ export default function WavePlayerTrackControls() {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => state.status === "playing" ? controls.pause() : controls.play()}
+          onClick={() => status === "playing" ? controls.pause() : controls.play()}
           className="h-10 w-10"
         >
-          {state.status === "playing" ? (
+          {status === "playing" ? (
             <Pause className="h-6 w-6" />
           ) : (
             <Play className="h-6 w-6" />

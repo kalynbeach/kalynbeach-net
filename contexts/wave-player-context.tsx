@@ -18,6 +18,8 @@ import type {
 } from "@/lib/types/wave-player";
 import { WavePlayerBufferPool } from "@/lib/wave-player/buffer-pool";
 
+const WavePlayerContext = createContext<WavePlayerContextValue | null>(null);
+
 const initialState: WavePlayerState = {
   audioContext: null,
   status: "idle",
@@ -39,7 +41,10 @@ const initialState: WavePlayerState = {
   error: null,
 };
 
-function playerReducer(
+// Singleton AudioContext instance
+let globalAudioContext: AudioContext | null = null;
+
+function wavePlayerReducer(
   state: WavePlayerState,
   action: WavePlayerAction
 ): WavePlayerState {
@@ -84,11 +89,6 @@ function playerReducer(
   }
 }
 
-const WavePlayerContext = createContext<WavePlayerContextValue | null>(null);
-
-// Singleton AudioContext instance
-let globalAudioContext: AudioContext | null = null;
-
 export function WavePlayerProvider({
   children,
   playlist,
@@ -96,7 +96,7 @@ export function WavePlayerProvider({
   children: React.ReactNode;
   playlist?: WavePlayerPlaylist;
 }) {
-  const [state, dispatch] = useReducer(playerReducer, {
+  const [state, dispatch] = useReducer(wavePlayerReducer, {
     ...initialState,
     playlist: playlist || null,
   });
@@ -138,9 +138,7 @@ export function WavePlayerProvider({
 
   const initialize = useCallback(async () => {
     try {
-      console.log(
-        "[WavePlayerProvider initialize] initializing audio context"
-      );
+      console.log("[WavePlayerProvider initialize] initializing audio context");
       const audioContext = createAudioContext();
       if (!audioContext) {
         throw new Error("Audio context could not be created");
@@ -364,7 +362,8 @@ export function WavePlayerProvider({
 
   const nextTrack = useCallback(() => {
     if (!state.playlist) return;
-    const nextIndex = (state.currentTrackIndex + 1) % state.playlist.tracks.length;
+    const nextIndex =
+      (state.currentTrackIndex + 1) % state.playlist.tracks.length;
     const nextTrack = state.playlist.tracks[nextIndex];
     dispatch({ type: "SET_TRACK", payload: nextTrack });
     loadTrack(nextTrack);
@@ -476,7 +475,10 @@ export function WavePlayerProvider({
           requestAnimationFrame(updateVisualization);
         }
       } catch (error) {
-        console.error("[WavePlayerProvider] Visualization update error:", error);
+        console.error(
+          "[WavePlayerProvider] Visualization update error:",
+          error
+        );
       }
     };
 

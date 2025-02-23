@@ -39,8 +39,8 @@ export default function WavePlayerPage() {
       <h2 className="text-xl font-mono font-medium">WavePlayer</h2>
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-          <WavePlayerProvider>
-            <WavePlayer playlist={TEST_PLAYLIST} />
+          <WavePlayerProvider playlist={TEST_PLAYLIST}>
+            <WavePlayer />
           </WavePlayerProvider>
         </Suspense>
       </div>

@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useWavePlayerContext } from "@/contexts/wave-player-context";
-import type { WavePlayerPlaylist } from "@/lib/types/wave-player";
 
-// TODO: review implementation and refactor as needed
-export function useWavePlayer(playlist: WavePlayerPlaylist) {
+export function useWavePlayer() {
   const { state, controls, initialize, loadTrack, retryLoad } = useWavePlayerContext();
 
   useEffect(() => {
@@ -13,6 +11,9 @@ export function useWavePlayer(playlist: WavePlayerPlaylist) {
   }, [initialize]);
 
   useEffect(() => {
+    const playlist = state.playlist;
+    if (!playlist) return;
+
     if (playlist.tracks.length > 0) {
       loadTrack(playlist.tracks[state.currentTrackIndex]);
 
@@ -24,7 +25,7 @@ export function useWavePlayer(playlist: WavePlayerPlaylist) {
         loadTrack(nextTrack);
       }
     }
-  }, [playlist, state.currentTrackIndex, loadTrack]);
+  }, [state.playlist, state.currentTrackIndex, loadTrack]);
 
   return {
     state,
