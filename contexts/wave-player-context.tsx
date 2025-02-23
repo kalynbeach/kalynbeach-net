@@ -110,14 +110,10 @@ export function WavePlayerProvider({
 
   const createAudioContext = () => {
     if (typeof window === "undefined") return null;
-
-    // Use existing global context if available
     if (globalAudioContext) {
       audioContextRef.current = globalAudioContext;
       return globalAudioContext;
     }
-
-    // Create new context if none exists
     const ctx = new AudioContext({
       latencyHint: "interactive",
       sampleRate: 48000,
@@ -127,38 +123,7 @@ export function WavePlayerProvider({
     return ctx;
   };
 
-  // Handle page visibility changes
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (!state.audioContext) return;
-
-      if (document.hidden) {
-        console.log(
-          "[WavePlayerProvider] Page hidden, suspending audio context"
-        );
-        if (sourceNodeRef.current) {
-          // Store current time before suspending
-          pauseTimeRef.current =
-            state.audioContext.currentTime - startTimeRef.current;
-          sourceNodeRef.current.stop();
-          sourceNodeRef.current.disconnect();
-          sourceNodeRef.current = null;
-        }
-        await state.audioContext.suspend();
-        dispatch({ type: "SET_STATUS", payload: "paused" });
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [state.audioContext]);
-
-  // Initialize audio nodes when AudioContext is created
   const initializeAudioNodes = useCallback((audioContext: AudioContext) => {
-    // Only initialize if nodes don't exist
     if (!analyserNodeRef.current) {
       analyserNodeRef.current = audioContext.createAnalyser();
     }
@@ -171,10 +136,10 @@ export function WavePlayerProvider({
     analyserNodeRef.current.connect(gainNodeRef.current);
   }, []);
 
-  const initializeAudioContext = useCallback(async () => {
+  const initialize = useCallback(async () => {
     try {
       console.log(
-        "[WavePlayerProvider initializeAudioContext] initializing audio context"
+        "[WavePlayerProvider initialize] initializing audio context"
       );
       const audioContext = createAudioContext();
       if (!audioContext) {
@@ -208,14 +173,61 @@ export function WavePlayerProvider({
     }
   }, [initializeAudioNodes]);
 
-  const resumeAudioContext = useCallback(async () => {
-    if (state.audioContext && state.audioContext.state === "suspended") {
+  const loadTrack = useCallback(
+    async (track: WavePlayerTrack) => {
+      if (!state.audioContext || !bufferPoolRef.current) return;
+
+      console.log("[WavePlayerProvider loadTrack] loading track...");
+
+      try {
+        dispatch({ type: "SET_STATUS", payload: "loading" });
+        dispatch({ type: "SET_TRACK", payload: track });
+        dispatch({ type: "SET_LOOP", payload: track.isLoop });
+
+        // Use buffer pool for chunked loading
+        const buffer = await bufferPoolRef.current.loadTrackChunked(
+          track,
+          state.audioContext
+        );
+
+        dispatch({ type: "SET_BUFFER", payload: buffer });
+        dispatch({ type: "SET_DURATION", payload: buffer.duration });
+        dispatch({ type: "SET_STATUS", payload: "ready" });
+      } catch (error) {
+        dispatch({
+          type: "SET_ERROR",
+          payload:
+            error instanceof Error ? error : new Error("Track loading failed"),
+        });
+      }
+    },
+    [state.audioContext]
+  );
+
+  const retryLoad = useCallback(() => {
+    if (state.track) {
       console.log(
-        "[WavePlayerProvider resumeAudioContext] resuming audio context"
+        "[WavePlayerProvider retryLoad] retrying load - track:",
+        state.track
       );
-      await state.audioContext.resume();
+      dispatch({ type: "RETRY_LOAD" });
+      loadTrack(state.track);
     }
-  }, [state.audioContext]);
+  }, [state.track, loadTrack]);
+
+  const cleanup = useCallback(() => {
+    if (sourceNodeRef.current) {
+      console.log(
+        "[WavePlayerProvider cleanupBuffer] disconnecting source node"
+      );
+      sourceNodeRef.current.disconnect();
+      sourceNodeRef.current = null;
+    }
+    if (bufferPoolRef.current) {
+      bufferPoolRef.current.cleanup();
+    }
+    dispatch({ type: "SET_BUFFER", payload: null });
+  }, []);
 
   const seek = useCallback(
     (time: number) => {
@@ -331,61 +343,34 @@ export function WavePlayerProvider({
     [state.audioContext]
   );
 
-  const loadTrack = useCallback(
-    async (track: WavePlayerTrack) => {
-      if (!state.audioContext || !bufferPoolRef.current) return;
+  // Handle page visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (!state.audioContext) return;
 
-      console.log("[WavePlayerProvider loadTrack] loading track...");
-
-      try {
-        dispatch({ type: "SET_STATUS", payload: "loading" });
-        dispatch({ type: "SET_TRACK", payload: track });
-        dispatch({ type: "SET_LOOP", payload: track.isLoop });
-
-        // Use buffer pool for chunked loading
-        const buffer = await bufferPoolRef.current.loadTrackChunked(
-          track,
-          state.audioContext
+      if (document.hidden) {
+        console.log(
+          "[WavePlayerProvider] Page hidden, suspending audio context"
         );
-
-        dispatch({ type: "SET_BUFFER", payload: buffer });
-        dispatch({ type: "SET_DURATION", payload: buffer.duration });
-        dispatch({ type: "SET_STATUS", payload: "ready" });
-      } catch (error) {
-        dispatch({
-          type: "SET_ERROR",
-          payload:
-            error instanceof Error ? error : new Error("Track loading failed"),
-        });
+        if (sourceNodeRef.current) {
+          // Store current time before suspending
+          pauseTimeRef.current =
+            state.audioContext.currentTime - startTimeRef.current;
+          sourceNodeRef.current.stop();
+          sourceNodeRef.current.disconnect();
+          sourceNodeRef.current = null;
+        }
+        await state.audioContext.suspend();
+        dispatch({ type: "SET_STATUS", payload: "paused" });
       }
-    },
-    [state.audioContext]
-  );
+    };
 
-  const retryLoad = useCallback(() => {
-    if (state.track) {
-      console.log(
-        "[WavePlayerProvider retryLoad] retrying load - track:",
-        state.track
-      );
-      dispatch({ type: "RETRY_LOAD" });
-      loadTrack(state.track);
-    }
-  }, [state.track, loadTrack]);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
-  const cleanup = useCallback(() => {
-    if (sourceNodeRef.current) {
-      console.log(
-        "[WavePlayerProvider cleanupBuffer] disconnecting source node"
-      );
-      sourceNodeRef.current.disconnect();
-      sourceNodeRef.current = null;
-    }
-    if (bufferPoolRef.current) {
-      bufferPoolRef.current.cleanup();
-    }
-    dispatch({ type: "SET_BUFFER", payload: null });
-  }, []);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [state.audioContext]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -517,7 +502,7 @@ export function WavePlayerProvider({
         },
       },
       loadTrack,
-      initializeAudioContext,
+      initialize,
       retryLoad,
       cleanup,
     }),
@@ -528,7 +513,7 @@ export function WavePlayerProvider({
       setVolume,
       seek,
       loadTrack,
-      initializeAudioContext,
+      initialize,
       retryLoad,
       cleanup,
     ]

@@ -88,7 +88,7 @@ export interface WavePlayerControls {
 export type WavePlayerContextValue = {
   state: WavePlayerState;
   controls: WavePlayerControls;
-  initializeAudioContext: () => Promise<void>;
+  initialize: () => Promise<void>;
   loadTrack: (track: WavePlayerTrack) => Promise<void>;
   retryLoad: () => void;
 };

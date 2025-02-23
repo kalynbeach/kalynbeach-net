@@ -1,4 +1,4 @@
-import type { WavePlayerTrack } from "@/lib/types";
+import type { WavePlayerTrack } from "@/lib/types/wave-player";
 import {
   CardDescription,
   CardHeader,

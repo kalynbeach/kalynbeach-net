@@ -21,7 +21,7 @@ type WavePlayerProps = {
 };
 
 export default function WavePlayer({ playlist }: WavePlayerProps) {
-  const { state, initializeAudioContext, retryLoad } = useWavePlayer(playlist);
+  const { state, initialize, retryLoad } = useWavePlayer(playlist);
   const [needsActivation, setNeedsActivation] = useState(true);
 
   // TODO: review if this useEffect is needed - it feels like
@@ -29,7 +29,7 @@ export default function WavePlayer({ playlist }: WavePlayerProps) {
   useEffect(() => {
     if (needsActivation && state.status === "idle") {
       console.log("[WavePlayer] initializing audio context");
-      initializeAudioContext();
+      initialize();
       setNeedsActivation(false);
     }
   }, [state.status, needsActivation]);
