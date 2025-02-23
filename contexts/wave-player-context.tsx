@@ -106,12 +106,12 @@ export function WavePlayerProvider({
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
-  
+
   // Timing refs
   const startTimeRef = useRef<number>(0);
   const pauseTimeRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
-  
+
   // Buffer management
   const bufferPoolRef = useRef<WavePlayerBufferPool | null>(null);
 
@@ -174,22 +174,25 @@ export function WavePlayerProvider({
     pauseTimeRef.current = 0;
   }, []);
 
-  const initializeAudioNodes = useCallback((audioContext: AudioContext) => {
-    // Clean up existing nodes first
-    cleanupAudioNodes();
+  const initializeAudioNodes = useCallback(
+    (audioContext: AudioContext) => {
+      // Clean up existing nodes first
+      cleanupAudioNodes();
 
-    // Create new nodes
-    analyserNodeRef.current = audioContext.createAnalyser();
-    analyserNodeRef.current.fftSize = 2048;
-    analyserNodeRef.current.smoothingTimeConstant = 0.8;
+      // Create new nodes
+      analyserNodeRef.current = audioContext.createAnalyser();
+      analyserNodeRef.current.fftSize = 2048;
+      analyserNodeRef.current.smoothingTimeConstant = 0.8;
 
-    gainNodeRef.current = audioContext.createGain();
-    gainNodeRef.current.gain.value = state.volume;
+      gainNodeRef.current = audioContext.createGain();
+      gainNodeRef.current.gain.value = state.volume;
 
-    // Connect nodes
-    gainNodeRef.current.connect(audioContext.destination);
-    analyserNodeRef.current.connect(gainNodeRef.current);
-  }, [state.volume, cleanupAudioNodes]);
+      // Connect nodes
+      gainNodeRef.current.connect(audioContext.destination);
+      analyserNodeRef.current.connect(gainNodeRef.current);
+    },
+    [state.volume, cleanupAudioNodes]
+  );
 
   const initialize = useCallback(async () => {
     try {
@@ -343,10 +346,24 @@ export function WavePlayerProvider({
         await state.audioContext.resume();
       }
 
-      // Clean up existing source node
+      // Clean up existing source node with fade out
       if (sourceNodeRef.current) {
-        sourceNodeRef.current.stop();
-        sourceNodeRef.current.disconnect();
+        const oldSource = sourceNodeRef.current;
+        const fadeOutDuration = 0.05; // 50ms fade
+        gainNodeRef.current?.gain.setValueAtTime(
+          state.volume,
+          state.audioContext.currentTime
+        );
+        gainNodeRef.current?.gain.linearRampToValueAtTime(
+          0,
+          state.audioContext.currentTime + fadeOutDuration
+        );
+
+        // Schedule the old source cleanup
+        setTimeout(() => {
+          oldSource.stop();
+          oldSource.disconnect();
+        }, fadeOutDuration * 1000);
       }
 
       // Create new source node
@@ -371,10 +388,20 @@ export function WavePlayerProvider({
         startOffset = startOffset % state.buffer.duration;
       }
 
-      // Start playback from the correct offset
+      // Start playback from the correct offset with fade in
       const startTime = state.audioContext.currentTime - startOffset;
       sourceNodeRef.current.start(0, startOffset);
       startTimeRef.current = startTime;
+
+      // Fade in the new source
+      gainNodeRef.current?.gain.setValueAtTime(
+        0,
+        state.audioContext.currentTime
+      );
+      gainNodeRef.current?.gain.linearRampToValueAtTime(
+        state.volume,
+        state.audioContext.currentTime + 0.05
+      );
 
       dispatch({ type: "SET_STATUS", payload: "playing" });
     } catch (error) {
@@ -383,7 +410,13 @@ export function WavePlayerProvider({
         payload: error instanceof Error ? error : new Error("Playback failed"),
       });
     }
-  }, [state.audioContext, state.buffer, state.track, cleanupAudioNodes]);
+  }, [
+    state.audioContext,
+    state.buffer,
+    state.track,
+    state.volume,
+    cleanupAudioNodes,
+  ]);
 
   const pause = useCallback(async () => {
     if (!state.audioContext || !sourceNodeRef.current) return;
@@ -393,22 +426,41 @@ export function WavePlayerProvider({
       pauseTimeRef.current =
         state.audioContext.currentTime - startTimeRef.current;
 
-      // Stop and disconnect the current source node
-      sourceNodeRef.current.stop();
-      sourceNodeRef.current.disconnect();
-      sourceNodeRef.current = null;
+      // Fade out before stopping
+      const fadeOutDuration = 0.05; // 50ms fade
+      gainNodeRef.current?.gain.setValueAtTime(
+        state.volume,
+        state.audioContext.currentTime
+      );
+      gainNodeRef.current?.gain.linearRampToValueAtTime(
+        0,
+        state.audioContext.currentTime + fadeOutDuration
+      );
 
-      // Suspend the audio context
-      await state.audioContext.suspend();
+      // Schedule the source node cleanup after fade
+      setTimeout(() => {
+        if (sourceNodeRef.current) {
+          sourceNodeRef.current.stop();
+          sourceNodeRef.current.disconnect();
+          sourceNodeRef.current = null;
+        }
+        // Reset gain for next playback
+        if (state.audioContext && gainNodeRef.current) {
+          gainNodeRef.current.gain.setValueAtTime(
+            state.volume,
+            state.audioContext.currentTime
+          );
+        }
+      }, fadeOutDuration * 1000);
 
       dispatch({ type: "SET_STATUS", payload: "paused" });
     } catch (error) {
       console.error(
-        "[WavePlayerProvider pause] Error suspending context:",
+        "[WavePlayerProvider pause] Error pausing playback:",
         error
       );
     }
-  }, [state.audioContext]);
+  }, [state.audioContext, state.volume]);
 
   const previousTrack = useCallback(() => {
     if (!state.playlist) return;
@@ -448,24 +500,57 @@ export function WavePlayerProvider({
     [state.audioContext]
   );
 
-  // Handle page visibility changes
+  // Handle page visibility changes with delayed suspension
   useEffect(() => {
+    let suspensionTimeout: number;
+
     const handleVisibilityChange = async () => {
       if (!state.audioContext) return;
 
       if (document.hidden) {
-        console.log(
-          "[WavePlayerProvider] Page hidden, suspending audio context"
-        );
-        if (sourceNodeRef.current) {
+        console.log("[WavePlayerProvider] Page hidden");
+        if (sourceNodeRef.current && state.audioContext) {
           // Store current time before suspending
           pauseTimeRef.current =
             state.audioContext.currentTime - startTimeRef.current;
-          sourceNodeRef.current.stop();
-          sourceNodeRef.current.disconnect();
-          sourceNodeRef.current = null;
+
+          // Fade out audio
+          const fadeOutDuration = 0.05;
+          if (gainNodeRef.current) {
+            gainNodeRef.current.gain.setValueAtTime(
+              state.volume,
+              state.audioContext.currentTime
+            );
+            gainNodeRef.current.gain.linearRampToValueAtTime(
+              0,
+              state.audioContext.currentTime + fadeOutDuration
+            );
+          }
+
+          // Schedule cleanup after fade
+          setTimeout(() => {
+            if (sourceNodeRef.current) {
+              sourceNodeRef.current.stop();
+              sourceNodeRef.current.disconnect();
+              sourceNodeRef.current = null;
+            }
+          }, fadeOutDuration * 1000);
         }
-        await state.audioContext.suspend();
+
+        // Only suspend after a delay of inactivity
+        window.clearTimeout(suspensionTimeout);
+        suspensionTimeout = window.setTimeout(async () => {
+          if (
+            state.status === "paused" &&
+            state.audioContext?.state === "running"
+          ) {
+            console.log(
+              "[WavePlayerProvider] Suspending audio context after inactivity"
+            );
+            await state.audioContext.suspend().catch(console.error);
+          }
+        }, 5000); // 5 second delay before suspension
+
         dispatch({ type: "SET_STATUS", payload: "paused" });
       }
     };
@@ -474,8 +559,9 @@ export function WavePlayerProvider({
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.clearTimeout(suspensionTimeout);
     };
-  }, [state.audioContext]);
+  }, [state.audioContext, state.status, state.volume]);
 
   // Update time state
   useEffect(() => {
