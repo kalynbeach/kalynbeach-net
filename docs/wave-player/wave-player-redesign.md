@@ -13,23 +13,27 @@ The WavePlayer is built on three main components:
 ### Buffer Pool
 
 **Strengths:**
+
 - Efficient chunked loading strategy
 - Handles memory constraints well
 - Clear separation of audio data management from playback logic
 
 **Areas for Improvement:**
+
 - Highly coupled to Web Audio API and fetch API, making testing difficult
 - Complex internal state management
 - Error handling is somewhat inconsistent
 
-### Wave Player Context
+### WavePlayer Context
 
 **Strengths:**
+
 - Comprehensive state management
 - Handles complex audio node lifecycle well
 - Proper cleanup of resources
 
 **Areas for Improvement:**
+
 - Very large component with multiple responsibilities
 - Heavy use of refs makes testing challenging
 - Complex state updates spread throughout the component
@@ -38,10 +42,12 @@ The WavePlayer is built on three main components:
 ### useWavePlayer Hook
 
 **Strengths:**
+
 - Simple interface to the underlying complexity
 - Good separation from implementation details
 
 **Areas for Improvement:**
+
 - Still requires extensive mocking for testing
 - Automatic initialization might complicate testing
 
@@ -96,15 +102,15 @@ interface IBufferLoader {
 // Implementation with real browser APIs
 class WebAudioEngine implements IAudioEngine {
   private context: AudioContext;
-  
+
   constructor(context?: AudioContext) {
     this.context = context || new AudioContext();
   }
-  
+
   createSource() {
     return new WebAudioSource(this.context.createBufferSource());
   }
-  
+
   // etc.
 }
 ```
@@ -115,22 +121,32 @@ Consider using a more explicit state machine:
 
 ```typescript
 // Define clear states and transitions
-type PlayerState = 
-  | { status: 'idle' }
-  | { status: 'loading', track: WavePlayerTrack, progress: number }
-  | { status: 'ready', track: WavePlayerTrack, buffer: AudioBuffer }
-  | { status: 'playing', track: WavePlayerTrack, buffer: AudioBuffer, startTime: number }
-  | { status: 'paused', track: WavePlayerTrack, buffer: AudioBuffer, position: number }
-  | { status: 'error', error: Error };
+type PlayerState =
+  | { status: "idle" }
+  | { status: "loading"; track: WavePlayerTrack; progress: number }
+  | { status: "ready"; track: WavePlayerTrack; buffer: AudioBuffer }
+  | {
+      status: "playing";
+      track: WavePlayerTrack;
+      buffer: AudioBuffer;
+      startTime: number;
+    }
+  | {
+      status: "paused";
+      track: WavePlayerTrack;
+      buffer: AudioBuffer;
+      position: number;
+    }
+  | { status: "error"; error: Error };
 
 // Define clear transitions
 const playerMachine = {
   idle: {
-    LOAD: 'loading'
+    LOAD: "loading",
   },
   loading: {
-    LOADED: 'ready',
-    ERROR: 'error'
+    LOADED: "ready",
+    ERROR: "error",
   },
   // etc.
 };
@@ -148,9 +164,10 @@ Introduce a testing-friendly architecture:
 
 ## Specific Recommendations
 
-### For Buffer Pool
+### For BufferPool
 
 1. Create an interface for audio loading:
+
 ```typescript
 interface IAudioLoader {
   loadChunk(url: string, range: Range): Promise<ArrayBuffer>;
@@ -159,6 +176,7 @@ interface IAudioLoader {
 ```
 
 2. Use dependency injection:
+
 ```typescript
 class WavePlayerBufferPool {
   constructor(
@@ -170,9 +188,10 @@ class WavePlayerBufferPool {
 }
 ```
 
-### For Wave Player Context
+### For WavePlayer Context
 
 1. Split into smaller contexts:
+
 ```typescript
 // Audio engine context
 const AudioEngineContext = createContext<IAudioEngine | null>(null);
@@ -185,21 +204,29 @@ const VisualizationContext = createContext<IVisualizationEngine | null>(null);
 ```
 
 2. Use reducers for each domain:
+
 ```typescript
-function playbackReducer(state: PlaybackState, action: PlaybackAction): PlaybackState;
-function visualizationReducer(state: VisualizationState, action: VisualizationAction): VisualizationState;
+function playbackReducer(
+  state: PlaybackState,
+  action: PlaybackAction
+): PlaybackState;
+function visualizationReducer(
+  state: VisualizationState,
+  action: VisualizationAction
+): VisualizationState;
 ```
 
 ### For useWavePlayer
 
 1. Make initialization explicit:
+
 ```typescript
 function useWavePlayer() {
   const { state, controls } = useWavePlayerContext();
-  
+
   // No automatic initialization
   // Let the consumer control when to initialize
-  
+
   return {
     state,
     controls,
@@ -218,4 +245,3 @@ The current implementation shows strong domain knowledge and has good separation
 2. **Dependency injection and interfaces** to improve testability
 3. **Simplified state management** for more predictable behavior
 4. **Abstraction of browser APIs** to reduce testing complexity
-
