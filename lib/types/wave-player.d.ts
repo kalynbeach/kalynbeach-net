@@ -59,7 +59,8 @@ export type WavePlayerAction =
   | { type: "SET_START_TIME"; payload: number }
   | { type: "SET_DURATION"; payload: number }
   | { type: "SET_LOOP"; payload: boolean }
-  | { type: "RETRY_LOAD" };
+  | { type: "RETRY_LOAD" }
+  | { type: "SET_NEXT_TRACK_LOADING"; payload: boolean };
 
 export interface WavePlayerState {
   audioContext: AudioContext | null;
@@ -77,6 +78,7 @@ export interface WavePlayerState {
   isMuted: boolean;
   isLooping: boolean;
   error: Error | null;
+  isNextTrackLoading: boolean;
 }
 
 export type WavePlayerVisualization = {

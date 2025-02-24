@@ -39,6 +39,7 @@ const initialState: WavePlayerState = {
   isMuted: false,
   isLooping: false,
   error: null,
+  isNextTrackLoading: false,
 };
 
 // Single global audio context instance
@@ -84,6 +85,8 @@ function wavePlayerReducer(
       return { ...state, isLooping: action.payload };
     case "RETRY_LOAD":
       return { ...state, status: "loading", error: null };
+    case "SET_NEXT_TRACK_LOADING":
+      return { ...state, isNextTrackLoading: action.payload };
     default:
       return state;
   }
@@ -191,11 +194,19 @@ export function WavePlayerProvider({
       analyserNodeRef.current.smoothingTimeConstant = 0.8;
 
       gainNodeRef.current = audioContext.createGain();
-      gainNodeRef.current.gain.value = state.volume;
+      // Initialize gain at 0 to prevent initial pops
+      gainNodeRef.current.gain.setValueAtTime(0, audioContext.currentTime);
 
-      // Connect nodes
+      // Connect nodes in silence first
       gainNodeRef.current.connect(audioContext.destination);
       analyserNodeRef.current.connect(gainNodeRef.current);
+
+      // Set initial volume after connection
+      gainNodeRef.current.gain.setTargetAtTime(
+        state.volume,
+        audioContext.currentTime,
+        0.001
+      );
     },
     [state.volume, cleanupAudioNodes]
   );
@@ -235,36 +246,61 @@ export function WavePlayerProvider({
     }
   }, [createAudioContext, initializeAudioNodes]);
 
-  const loadTrack = useCallback(
-    async (track: WavePlayerTrack) => {
-      if (!state.audioContext || !bufferPoolRef.current) return;
+  const preloadNextTrack = useCallback(async () => {
+    if (!state.playlist || !state.audioContext || state.isNextTrackLoading) return;
 
-      console.log("[WavePlayerProvider loadTrack] loading track...");
+    const nextTrackIndex = (state.currentTrackIndex + 1) % state.playlist.tracks.length;
+    if (nextTrackIndex === state.currentTrackIndex) return;
 
-      try {
-        dispatch({ type: "SET_STATUS", payload: "loading" });
-        dispatch({ type: "SET_TRACK", payload: track });
-        dispatch({ type: "SET_LOOP", payload: track.isLoop });
+    try {
+      dispatch({ type: "SET_NEXT_TRACK_LOADING", payload: true });
+      const nextTrack = state.playlist.tracks[nextTrackIndex];
+      
+      // Create a new buffer pool instance for preloading
+      const preloadPool = new WavePlayerBufferPool({
+        maxPoolSize: 50 * 1024 * 1024,
+        chunkSize: 256 * 1024,
+      });
 
-        // Use buffer pool for chunked loading
-        const buffer = await bufferPoolRef.current.loadTrackChunked(
-          track,
-          state.audioContext
-        );
-
-        dispatch({ type: "SET_BUFFER", payload: buffer });
-        dispatch({ type: "SET_DURATION", payload: buffer.duration });
-        dispatch({ type: "SET_STATUS", payload: "ready" });
-      } catch (error) {
-        dispatch({
-          type: "SET_ERROR",
-          payload:
-            error instanceof Error ? error : new Error("Track loading failed"),
-        });
+      await preloadPool.loadTrackChunked(nextTrack, state.audioContext);
+      
+      // Store the preloaded buffer in the main pool
+      if (bufferPoolRef.current) {
+        bufferPoolRef.current.setNextBuffer(preloadPool.getCurrentBuffer());
       }
-    },
-    [state.audioContext]
-  );
+    } catch (error) {
+      console.warn("[WavePlayerProvider] Failed to preload next track:", error);
+    } finally {
+      dispatch({ type: "SET_NEXT_TRACK_LOADING", payload: false });
+    }
+  }, [state.playlist, state.currentTrackIndex, state.audioContext, state.isNextTrackLoading]);
+
+  const loadTrack = useCallback(async (track: WavePlayerTrack) => {
+    if (!state.audioContext || !bufferPoolRef.current) return;
+
+    console.log("[WavePlayerProvider loadTrack] loading track...");
+
+    try {
+      dispatch({ type: "SET_STATUS", payload: "loading" });
+      dispatch({ type: "SET_TRACK", payload: track });
+      dispatch({ type: "SET_LOOP", payload: track.isLoop });
+
+      // Use buffer pool for chunked loading
+      const buffer = await bufferPoolRef.current.loadTrackChunked(track, state.audioContext);
+
+      dispatch({ type: "SET_BUFFER", payload: buffer });
+      dispatch({ type: "SET_DURATION", payload: buffer.duration });
+      dispatch({ type: "SET_STATUS", payload: "ready" });
+
+      // After successful load, try to preload next track
+      preloadNextTrack();
+    } catch (error) {
+      dispatch({
+        type: "SET_ERROR",
+        payload: error instanceof Error ? error : new Error("Track loading failed"),
+      });
+    }
+  }, [state.audioContext, preloadNextTrack]);
 
   const retryLoad = useCallback(() => {
     if (state.track) {
@@ -350,61 +386,51 @@ export function WavePlayerProvider({
         await state.audioContext.resume();
       }
 
-      // Clean up existing source node with fade out
-      if (sourceNodeRef.current) {
-        const oldSource = sourceNodeRef.current;
-        const fadeOutDuration = 0.05; // 50ms fade
-        gainNodeRef.current?.gain.setValueAtTime(
-          state.volume,
-          state.audioContext.currentTime
-        );
-        gainNodeRef.current?.gain.linearRampToValueAtTime(
-          0,
-          state.audioContext.currentTime + fadeOutDuration
-        );
+      const now = state.audioContext.currentTime;
+      const RAMP_DURATION = 0.001; // 1ms ramp
 
-        // Schedule the old source cleanup
-        setTimeout(() => {
-          oldSource.stop();
-          oldSource.disconnect();
-        }, fadeOutDuration * 1000);
+      // Prepare new source node while old one is still playing
+      const newSource = state.audioContext.createBufferSource();
+      newSource.buffer = state.buffer;
+      newSource.loop = state.track.isLoop;
+
+      // Set gain to 0 instantly
+      gainNodeRef.current?.gain.setValueAtTime(0, now);
+      
+      // Connect new source (while gain is 0)
+      newSource.connect(analyserNodeRef.current!);
+      
+      // Stop old source after a tiny delay
+      if (sourceNodeRef.current) {
+        sourceNodeRef.current.stop(now + RAMP_DURATION);
+        sourceNodeRef.current.disconnect(now + RAMP_DURATION);
       }
 
-      // Create new source node
-      sourceNodeRef.current = state.audioContext.createBufferSource();
-      sourceNodeRef.current.buffer = state.buffer;
-      sourceNodeRef.current.loop = state.track.isLoop;
-      sourceNodeRef.current.connect(analyserNodeRef.current!);
+      // Calculate start offset
+      let startOffset = pauseTimeRef.current || 0;
+      if (state.track.isLoop && startOffset > 0) {
+        startOffset = startOffset % state.buffer.duration;
+      }
 
-      // Handle track completion
+      // Start new source
+      newSource.start(now, startOffset);
+      startTimeRef.current = now - startOffset;
+      sourceNodeRef.current = newSource;
+
+      // Handle track completion for non-looping tracks
       if (!state.track.isLoop) {
-        sourceNodeRef.current.onended = () => {
+        newSource.onended = () => {
           cleanupAudioNodes();
           dispatch({ type: "SET_STATUS", payload: "ready" });
           dispatch({ type: "SET_CURRENT_TIME", payload: 0 });
         };
       }
 
-      // Calculate correct start time for looping tracks
-      let startOffset = pauseTimeRef.current || 0;
-      if (state.track.isLoop && startOffset > 0) {
-        // Ensure the offset is within the buffer duration
-        startOffset = startOffset % state.buffer.duration;
-      }
-
-      // Start playback from the correct offset with fade in
-      const startTime = state.audioContext.currentTime - startOffset;
-      sourceNodeRef.current.start(0, startOffset);
-      startTimeRef.current = startTime;
-
-      // Fade in the new source
-      gainNodeRef.current?.gain.setValueAtTime(
-        0,
-        state.audioContext.currentTime
-      );
-      gainNodeRef.current?.gain.linearRampToValueAtTime(
+      // Ramp gain up very quickly
+      gainNodeRef.current?.gain.setTargetAtTime(
         state.volume,
-        state.audioContext.currentTime + 0.05
+        now,
+        RAMP_DURATION / 3
       );
 
       dispatch({ type: "SET_STATUS", payload: "playing" });
@@ -414,57 +440,35 @@ export function WavePlayerProvider({
         payload: error instanceof Error ? error : new Error("Playback failed"),
       });
     }
-  }, [
-    state.audioContext,
-    state.buffer,
-    state.track,
-    state.volume,
-    cleanupAudioNodes,
-  ]);
+  }, [state.audioContext, state.buffer, state.track, state.volume, cleanupAudioNodes]);
 
   const pause = useCallback(async () => {
     if (!state.audioContext || !sourceNodeRef.current) return;
 
     try {
-      // Store the current time before pausing
-      pauseTimeRef.current =
-        state.audioContext.currentTime - startTimeRef.current;
+      const now = state.audioContext.currentTime;
+      const RAMP_DURATION = 0.001; // 1ms ramp
 
-      // Fade out before stopping
-      const fadeOutDuration = 0.05; // 50ms fade
-      gainNodeRef.current?.gain.setValueAtTime(
-        state.volume,
-        state.audioContext.currentTime
-      );
-      gainNodeRef.current?.gain.linearRampToValueAtTime(
-        0,
-        state.audioContext.currentTime + fadeOutDuration
-      );
+      // Store current time before ramping down
+      pauseTimeRef.current = now - startTimeRef.current;
 
-      // Schedule the source node cleanup after fade
+      // Quick fade out
+      gainNodeRef.current?.gain.setTargetAtTime(0, now, RAMP_DURATION / 3);
+
+      // Schedule cleanup after ramp
       setTimeout(() => {
         if (sourceNodeRef.current) {
           sourceNodeRef.current.stop();
           sourceNodeRef.current.disconnect();
           sourceNodeRef.current = null;
         }
-        // Reset gain for next playback
-        if (state.audioContext && gainNodeRef.current) {
-          gainNodeRef.current.gain.setValueAtTime(
-            state.volume,
-            state.audioContext.currentTime
-          );
-        }
-      }, fadeOutDuration * 1000);
+      }, RAMP_DURATION * 1000 * 2); // Double the ramp time for safety
 
       dispatch({ type: "SET_STATUS", payload: "paused" });
     } catch (error) {
-      console.error(
-        "[WavePlayerProvider pause] Error pausing playback:",
-        error
-      );
+      console.error("[WavePlayerProvider pause] Error pausing playback:", error);
     }
-  }, [state.audioContext, state.volume]);
+  }, [state.audioContext]);
 
   const previousTrack = useCallback(() => {
     if (!state.playlist) return;

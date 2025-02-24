@@ -26,8 +26,11 @@ export class WavePlayerBufferPool {
 
   async loadTrackChunked(track: WavePlayerTrack, audioContext: AudioContext) {
     try {
-      // Cleanup any existing state
-      this.cleanup();
+      // Don't cleanup if we're loading into next buffer slot
+      if (!this.pool.next) {
+        this.cleanup();
+      }
+      
       this.abortController = new AbortController();
       
       // Get file size for chunk calculation
@@ -70,9 +73,15 @@ export class WavePlayerBufferPool {
         // Decode the complete audio file
         const audioBuffer = await audioContext.decodeAudioData(completeBuffer);
         
-        // Store in pool
-        this.pool.current = audioBuffer;
-        this.totalBufferSize = audioBuffer.length * 4; // 32-bit float samples
+        // Store in appropriate pool slot
+        if (this.pool.next === null) {
+          this.pool.current = audioBuffer;
+        } else {
+          this.pool.next = audioBuffer;
+        }
+        
+        this.totalBufferSize = (this.pool.current?.length || 0) * 4 + 
+                              (this.pool.next?.length || 0) * 4; // 32-bit float samples
         
         // Manage pool size if needed
         this.managePoolSize();
@@ -105,11 +114,27 @@ export class WavePlayerBufferPool {
 
   private managePoolSize(): void {
     if (this.totalBufferSize > this.maxPoolSize) {
-      // Clear old chunks to free memory
+      // Clear old chunks and next buffer to free memory
       this.pool.chunks.clear();
+      this.pool.next = null;
       
-      // Keep track of current buffer size
+      // Keep track of current buffer size only
       this.totalBufferSize = this.pool.current ? this.pool.current.length * 4 : 0;
+    }
+  }
+
+  public setNextBuffer(buffer: AudioBuffer | null): void {
+    this.pool.next = buffer;
+    this.totalBufferSize = (this.pool.current?.length || 0) * 4 + 
+                          (this.pool.next?.length || 0) * 4;
+    this.managePoolSize();
+  }
+
+  public promoteNextBuffer(): void {
+    if (this.pool.next) {
+      this.pool.current = this.pool.next;
+      this.pool.next = null;
+      this.totalBufferSize = this.pool.current.length * 4;
     }
   }
 

@@ -10,22 +10,16 @@ export function useWavePlayer() {
     initialize();
   }, [initialize]);
 
+  // Load initial track when playlist changes or currentTrackIndex changes
   useEffect(() => {
     const playlist = state.playlist;
-    if (!playlist) return;
+    if (!playlist || playlist.tracks.length === 0) return;
 
-    if (playlist.tracks.length > 0) {
+    // Only load track if we're not already loading or playing
+    if (state.status === "idle" || state.status === "error") {
       loadTrack(playlist.tracks[state.currentTrackIndex]);
-
-      // Preload next track if available
-      const nextTrackIndex = (state.currentTrackIndex + 1) % playlist.tracks.length;
-      if (nextTrackIndex !== state.currentTrackIndex) {
-        const nextTrack = playlist.tracks[nextTrackIndex];
-        // NOTE: preloading is handled internally by the buffer pool
-        loadTrack(nextTrack);
-      }
     }
-  }, [state.playlist, state.currentTrackIndex, loadTrack]);
+  }, [state.playlist, state.currentTrackIndex, state.status, loadTrack]);
 
   return {
     state,

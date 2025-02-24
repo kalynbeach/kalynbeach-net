@@ -18,6 +18,18 @@ const TEST_TRACKS: WavePlayerTrack[] = [
     },
     isLoop: true,
   },
+  {
+    id: 2,
+    title: '1_workflows',
+    artist: 'Kalyn Beach',
+    record: 'loops',
+    src: 'https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/1_workflows.wav',
+    image: {
+      src: '/globe.svg',
+      alt: 'workflows',
+    },
+    isLoop: true,
+  },
 ];
 
 // TODO: replace this placeholder playlist
