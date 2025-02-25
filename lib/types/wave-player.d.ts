@@ -99,7 +99,7 @@ export interface WavePlayerControls {
 export type WavePlayerContextValue = {
   state: WavePlayerState;
   controls: WavePlayerControls;
-  initialize: () => Promise<void>;
+  initialize: () => Promise<boolean>;
   loadTrack: (track: WavePlayerTrack) => Promise<void>;
   retryLoad: () => void;
   cleanup: () => void;

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useWavePlayer } from "@/hooks/wave-player/use-wave-player";
 import WavePlayerTrackInfo from "./wave-player-track-info";
 import WavePlayerTrackVisual from "./wave-player-track-visual";
@@ -16,16 +15,8 @@ import { Button } from "@/components/ui/button";
 // TODO: create a WavePlayerSkeleton component
 
 export default function WavePlayer() {
-  const { state, initialize, retryLoad, controls } = useWavePlayer();
-  const [needsActivation, setNeedsActivation] = useState(true);
-
-  useEffect(() => {
-    if (needsActivation && state.status === "idle") {
-      console.log("[WavePlayer] initializing audio context");
-      initialize();
-      setNeedsActivation(false);
-    }
-  }, [state.status, needsActivation, initialize]);
+  const { state, retryLoad, controls } = useWavePlayer();
+  // Initialization is now handled entirely in the useWavePlayer hook
 
   // TODO: refactor and clean up error UI
   if (state.error) {
@@ -47,7 +38,10 @@ export default function WavePlayer() {
   if (!state.track || state.status === "loading") {
     return (
       <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none">
-        <CardHeader className="p-4"></CardHeader>
+        <CardHeader className="p-4">
+          {/* Show track info if we have it, even during loading */}
+          {state.track && <WavePlayerTrackInfo track={state.track} />}
+        </CardHeader>
         <CardContent className="w-full h-full flex flex-col items-center justify-center p-4 gap-2">
           <div className="h-4 w-full bg-secondary relative">
             <div 
@@ -55,9 +49,22 @@ export default function WavePlayer() {
               style={{ width: `${state.bufferProgress}%` }}
             />
           </div>
-          <p className="text-sm font-mono">loading...</p>
+          <p className="text-sm font-mono">
+            {state.track ? "changing track..." : "loading..."}
+          </p>
         </CardContent>
-        <CardFooter className="flex flex-col items-center justify-center p-4"></CardFooter>
+        <CardFooter className="flex flex-col items-center justify-center p-4">
+          {/* Keep controls visible but disabled during loading */}
+          {state.track && (
+            <WavePlayerTrackControls
+              status={state.status}
+              currentTime={state.currentTime}
+              duration={state.duration}
+              controls={controls}
+              isLooping={state.isLooping}
+            />
+          )}
+        </CardFooter>
       </Card>
     );
   }
@@ -79,6 +86,7 @@ export default function WavePlayer() {
           currentTime={state.currentTime}
           duration={state.duration}
           controls={controls}
+          isLooping={state.isLooping}
         />
       </CardFooter>
     </Card>
