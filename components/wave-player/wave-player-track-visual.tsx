@@ -101,7 +101,7 @@ export default function WavePlayerTrackVisual({ image, visualization }: WavePlay
       {visualizationMode === "waveform" && (
         <canvas 
           ref={canvasRef}
-          className="size-[342px] border border-muted"
+          className="size-[362px] border border-muted"
         />
       )}
     </div>

@@ -30,7 +30,7 @@ export default function WavePlayer() {
   // TODO: refactor and clean up error UI
   if (state.error) {
     return (
-      <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border">
+      <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none">
         <CardHeader className="p-4"></CardHeader>
         <CardContent className="p-4 flex flex-col items-center gap-4">
           <div className="text-red-500 font-mono">Error: {state.error.message}</div>
@@ -46,7 +46,7 @@ export default function WavePlayer() {
   // TODO: refactor and clean up loading UI (use skeleton)
   if (!state.track || state.status === "loading") {
     return (
-      <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border border-primary rounded-none">
+      <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none">
         <CardHeader className="p-4"></CardHeader>
         <CardContent className="w-full h-full flex flex-col items-center justify-center p-4 gap-2">
           <div className="h-4 w-full bg-secondary relative">
@@ -63,7 +63,7 @@ export default function WavePlayer() {
   }
 
   return (
-    <Card className="wave-player aspect-[5/7] w-full sm:w-[320px] md:w-[360px] flex flex-col border rounded-none">
+    <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none">
       <CardHeader className="w-full p-2">
         <WavePlayerTrackInfo track={state.track} />
       </CardHeader>
