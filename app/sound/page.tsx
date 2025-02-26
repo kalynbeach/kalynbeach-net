@@ -1,19 +1,30 @@
-import { Suspense } from "react";
-import { SoundContextProvider } from "@/contexts/sound-context";
+import Link from "next/link";
 import SitePageHeader from "@/components/site/site-page-header";
-import SoundBlock from "@/components/sound/sound-block";
 
 export default function Sound() {
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4 py-4">
       <SitePageHeader title="sound" />
-      <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-        <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-          <SoundContextProvider>
-            <SoundBlock />
-          </SoundContextProvider>
-        </Suspense>
-      </div>
+      <main>
+        <ul className="list-disc list-inside">
+          <li>
+            <Link
+              href="/sound/wave-player"
+              className="font-mono transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
+            >
+              WavePlayer
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/sound/wave-lab"
+              className="font-mono transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
+            >
+              WaveLab
+            </Link>
+          </li>
+        </ul>
+      </main>
     </div>
   );
 }
