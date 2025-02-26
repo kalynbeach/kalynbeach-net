@@ -33,7 +33,7 @@ export default function WavePlayerLoading({
   isLooping
 }: WavePlayerLoadingProps) {
   return (
-    <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none">
+    <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none bg-background">
       <CardHeader className="w-full p-2">
         {track ? (
           <WavePlayerTrackInfo track={track} />

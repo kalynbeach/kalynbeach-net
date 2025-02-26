@@ -11,7 +11,7 @@ import {
  */
 export default function WavePlayerSkeleton() {
   return (
-    <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none">
+    <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none bg-background">
       {/* Track Info Skeleton */}
       <CardHeader className="w-full p-2">
         <div className="wave-player-track-info w-full h-full flex flex-col gap-1 border border-muted/50 p-2">

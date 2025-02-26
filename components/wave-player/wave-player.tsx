@@ -16,18 +16,15 @@ import {
 
 export default function WavePlayer() {
   const { state, retryLoad, controls } = useWavePlayer();
-  
-  // Handle error state with improved error UI
+
   if (state.error) {
     return <WavePlayerError error={state.error} track={state.track} onRetry={retryLoad} />;
   }
 
-  // Handle initial loading state with skeleton
   if (!state.audioContext || !state.playlist) {
     return <WavePlayerSkeleton />;
   }
 
-  // Handle track loading state with progress indicator
   if (!state.track || state.status === "loading") {
     return (
       <WavePlayerLoading
@@ -42,9 +39,8 @@ export default function WavePlayer() {
     );
   }
 
-  // Render the fully loaded player
   return (
-    <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none">
+    <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none bg-background">
       <CardHeader className="w-full p-2">
         <WavePlayerTrackInfo track={state.track} />
       </CardHeader>

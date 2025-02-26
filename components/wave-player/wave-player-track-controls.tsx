@@ -2,7 +2,6 @@
 
 import { formatTime } from "@/lib/utils";
 import type { WavePlayerState, WavePlayerControls } from "@/lib/types/wave-player";
-// import { useWavePlayer } from "@/hooks/wave-player/use-wave-player";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { 
@@ -29,21 +28,20 @@ export default function WavePlayerTrackControls({
   controls,
   isLooping = false 
 }: WavePlayerTrackControlsProps) {
-  // const { state, controls } = useWavePlayer();
   const isLoading = status === "loading";
 
   return (
-    <div className="wave-player-track-controls w-full flex flex-col items-center justify-center gap-2 border border-muted/50 p-4 relative">
+    <div className="wave-player-track-controls w-full flex flex-col items-center justify-center gap-2 border border-muted/50 py-4 px-3 relative">
       {/* Progress Slider */}
-      <div className="w-full space-y-2 flex flex-col items-center justify-center px-2">
+      <div className="w-full space-y-2 flex flex-col items-center justify-center">
         <Slider
           value={[currentTime]}
           max={duration}
           onValueChange={([value]) => controls.seek(value)}
           disabled={isLoading}
-          className="w-full"
+          className="w-full cursor-pointer"
         />
-        <div className="w-full flex flex-row justify-between text-sm">
+        <div className="w-full flex flex-row justify-between font-mono text-sm">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
@@ -56,7 +54,7 @@ export default function WavePlayerTrackControls({
           size="icon"
           onClick={controls.previousTrack}
           disabled={isLoading}
-          className="hover:bg-secondary"
+          className="hover:bg-secondary cursor-pointer"
         >
           <SkipBack className="h-5 w-5" />
         </Button>
@@ -66,7 +64,7 @@ export default function WavePlayerTrackControls({
           size="icon"
           onClick={() => status === "playing" ? controls.pause() : controls.play()}
           disabled={isLoading}
-          className="h-10 w-10"
+          className="h-10 w-10 cursor-pointer"
         >
           {status === "playing" ? (
             <Pause className="h-6 w-6" />
@@ -80,7 +78,7 @@ export default function WavePlayerTrackControls({
           size="icon"
           onClick={controls.nextTrack}
           disabled={isLoading}
-          className="hover:bg-secondary"
+          className="hover:bg-secondary cursor-pointer"
         >
           <SkipForward className="h-5 w-5" />
         </Button>
