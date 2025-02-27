@@ -160,6 +160,7 @@ describe("SoundContext", () => {
       const { result } = renderHook(() => useSoundContext(), { wrapper });
 
       await act(async () => {
+        await result.current.initialize();
         if (result.current.audioContext instanceof MockAudioContext) {
           result.current.audioContext.simulateStateChange("running");
         }
