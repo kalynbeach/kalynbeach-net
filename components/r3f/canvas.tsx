@@ -13,7 +13,7 @@ export default function ThreeCanvas() {
   return (
     <>
       <Suspense fallback={null}>
-        <div className="border-primary relative h-full w-full border-2">
+        <div className="relative h-full w-full border border-primary">
           <SceneProvider>
             <SceneControls />
             <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>

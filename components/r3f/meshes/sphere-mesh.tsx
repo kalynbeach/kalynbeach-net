@@ -6,20 +6,23 @@ import { Mesh } from "three";
 
 type SphereMeshProps = {
   color: string;
+  radius: number;
+  segments: number;
 };
 
-export default function SphereMesh({ color }: SphereMeshProps) {
+export default function SphereMesh({ color, radius, segments }: SphereMeshProps) {
   const meshRef = useRef<Mesh>(null);
 
-  useFrame((_, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y -= delta * 0.0114;
-    }
-  });
+  // useFrame((_, delta) => {
+  //   if (meshRef.current) {
+  //     meshRef.current.rotation.y += delta * 1.0114;
+  //     // meshRef.current.rotation.y -= delta * 0.0114;
+  //   }
+  // });
 
   return (
-    <mesh ref={meshRef} rotation={[1.5708, 1.5708, 0]}>
-      <sphereGeometry args={[2, 32, 32]} />
+    <mesh ref={meshRef} rotation={[0, 1.5708, 0]}>
+      <sphereGeometry args={[radius, segments, segments]} />
       <meshStandardMaterial color={color} wireframe />
     </mesh>
   );

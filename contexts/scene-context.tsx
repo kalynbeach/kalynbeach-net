@@ -2,7 +2,7 @@
 
 import { createContext, useState, ReactNode, useContext } from "react";
 
-type SceneType = "sphere" | "torus";
+type SceneType = "kb" | "sphere" | "torus";
 
 interface SceneContextType {
   currentScene: SceneType;
@@ -12,7 +12,7 @@ interface SceneContextType {
 const SceneContext = createContext<SceneContextType | undefined>(undefined);
 
 export function SceneProvider({ children }: { children: ReactNode }) {
-  const [currentScene, setCurrentScene] = useState<SceneType>("sphere");
+  const [currentScene, setCurrentScene] = useState<SceneType>("kb");
 
   return (
     <SceneContext.Provider value={{ currentScene, setCurrentScene }}>

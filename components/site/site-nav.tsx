@@ -6,10 +6,18 @@ import { cn } from "@/lib/utils";
 import type { SiteNavPage } from "@/lib/types";
 import SiteCommandMenu from "./site-command-menu";
 
-const pages: SiteNavPage[] = [
+const siteNavPages: SiteNavPage[] = [
   { label: "home", route: "/" },
   { label: "code", route: "/code" },
   { label: "sound", route: "/sound" },
+];
+
+const commandMenuPages: SiteNavPage[] = [
+  { label: "home", route: "/" },
+  { label: "code", route: "/code" },
+  { label: "sound", route: "/sound" },
+  { label: "sound/wave-player", route: "/sound/wave-player" },
+  { label: "sound/wave-lab", route: "/sound/wave-lab" },
   { label: "lab", route: "/lab" },
 ];
 
@@ -18,7 +26,7 @@ export default function SiteNav() {
 
   return (
     <nav className="site-nav w-fit flex flex-row items-center justify-between gap-3 sm:gap-5">
-      {pages.slice(1).map((page) => (
+      {siteNavPages.slice(1).map((page) => (
         <Link
           key={page.route}
           href={page.route}
@@ -31,7 +39,7 @@ export default function SiteNav() {
           {page.label}
         </Link>
       ))}
-      <SiteCommandMenu pages={pages} />
+      <SiteCommandMenu pages={commandMenuPages} />
     </nav>
   );
 }
