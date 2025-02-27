@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import SitePageHeader from "@/components/site/site-page-header";
-import ThreeCanvas from "@/components/r3f/canvas";
+import MeshSVGExporter from "@/components/r3f/mesh-svg-exporter";
+// import ThreeCanvas from "@/components/r3f/canvas";
 
 export default function Lab() {
   return (
@@ -8,8 +9,11 @@ export default function Lab() {
       <SitePageHeader title="lab" />
       <div className="size-full flex flex-col items-center justify-center">
         <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-          <ThreeCanvas />
+          <MeshSVGExporter />
         </Suspense>
+        {/* <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+          <ThreeCanvas />
+        </Suspense> */}
       </div>
     </div>
   );
