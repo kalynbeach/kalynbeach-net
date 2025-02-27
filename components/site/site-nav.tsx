@@ -8,16 +8,16 @@ import SiteCommandMenu from "./site-command-menu";
 
 const siteNavPages: SiteNavPage[] = [
   { label: "home", route: "/" },
-  { label: "code", route: "/code" },
+  { label: "about", route: "/about" },
+  { label: "tech", route: "/tech" },
   { label: "sound", route: "/sound" },
 ];
 
 const commandMenuPages: SiteNavPage[] = [
-  { label: "home", route: "/" },
-  { label: "code", route: "/code" },
-  { label: "sound", route: "/sound" },
+  ...siteNavPages,
   { label: "sound/wave-player", route: "/sound/wave-player" },
   { label: "sound/wave-lab", route: "/sound/wave-lab" },
+  { label: "dashboard", route: "/dashboard" },
   { label: "lab", route: "/lab" },
 ];
 

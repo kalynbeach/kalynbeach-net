@@ -3,8 +3,9 @@ import { auth } from "@/auth";
 export default auth((req) => {
   // TODO: find out if there's a better way
   const protectedRoutes = [
-    "/sound",
+    "/sound", // TEMP: remove once specific sound route pages/components are protected
     "/dashboard",
+    "/lab",
   ];
 
   if (!req.auth && protectedRoutes.includes(req.nextUrl.pathname)) {
