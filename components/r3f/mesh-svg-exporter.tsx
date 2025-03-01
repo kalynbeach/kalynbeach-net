@@ -1,7 +1,7 @@
 'use client';
 
 import * as THREE from 'three';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, Suspense } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { generateSVGString, downloadSVG } from '@/lib/svg-tools/mesh-svg';
@@ -20,17 +20,21 @@ function MeshCapture({
   onCapture: (svg: string) => void;
   registerCapture: (captureMethod: () => void) => void;
 }) {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   const meshRef = useRef<THREE.Mesh>(null);
   
   // Capture function that generates SVG from the current mesh
   function capture() {
     if (meshRef.current) {
+      // Use fixed dimensions for consistent SVG output
+      const fixedWidth = 400;
+      const fixedHeight = 400;
+      
       const svg = generateSVGString(
         meshRef.current,
         camera,
-        800,
-        800,
+        fixedWidth,
+        fixedHeight,
         { 
           stroke: '#ffffff',
           strokeWidth: 1,
@@ -54,21 +58,53 @@ function MeshCapture({
 
   return (
     <mesh ref={meshRef}>
-      {meshType === 'sphere' && <sphereGeometry args={[1, 24, 16]} />}
-      {meshType === 'torus' && <torusGeometry args={[0.7, 0.3, 16, 32]} />}
+      {meshType === 'sphere' && <sphereGeometry args={[1, 16, 16]} />}
+      {meshType === 'torus' && <torusGeometry args={[1, 1, 32, 32]} />}
       {meshType === 'box' && <boxGeometry args={[1, 1, 1]} />}
       <meshBasicMaterial color="#ffffff" wireframe={wireframe} />
     </mesh>
   );
 }
 
+// Canvas 3D Scene component with loading state
+function CanvasScene({ 
+  meshType, 
+  onCapture, 
+  registerCapture 
+}: { 
+  meshType: 'sphere' | 'torus' | 'box';
+  onCapture: (svg: string) => void;
+  registerCapture: (captureMethod: () => void) => void;
+}) {
+  return (
+    <Canvas camera={{ position: [0, 0, 3] }} gl={{ preserveDrawingBuffer: true }}>
+      <MeshCapture 
+        meshType={meshType} 
+        wireframe={true} 
+        onCapture={onCapture}
+        registerCapture={registerCapture}
+      />
+      <OrbitControls />
+    </Canvas>
+  );
+}
+
+// Skeleton loading component for any content
+function Skeleton({ className = "" }: { className?: string }) {
+  return (
+    <div className={`animate-pulse bg-muted rounded-md ${className}`} />
+  );
+}
+
 export default function MeshSVGExporter() {
   const [svgData, setSvgData] = useState<string | null>(null);
   const [meshType, setMeshType] = useState<'sphere' | 'torus' | 'box'>('sphere');
+  const [isLoading, setIsLoading] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   function handleCapture(svg: string) {
     setSvgData(svg);
+    setIsLoading(false);
   }
 
   function handleDownload() {
@@ -86,79 +122,108 @@ export default function MeshSVGExporter() {
   }
   
   function triggerCapture() {
+    setIsLoading(true);
     // Simply call the capture method directly through the ref
     if (captureMethodRef.current) {
       captureMethodRef.current();
     }
   }
 
+  // Reset loading state when mesh type changes
+  useEffect(() => {
+    setIsLoading(true);
+  }, [meshType]);
+
   return (
-    <div className="flex flex-col space-y-4 w-full max-w-4xl mx-auto p-4">
+    <div className="flex flex-col space-y-4 w-full max-w-4xl mx-auto">
       <div className="flex flex-col md:flex-row gap-6">
+        {/* Canvas Container */}
         <div 
           ref={canvasRef}
-          className="w-full md:w-2/3 bg-black border border-gray-800 rounded-lg overflow-hidden h-[400px]"
+          className="w-full md:w-2/3 bg-black border border-primary rounded-lg overflow-hidden"
+          style={{ aspectRatio: "1/1" }}
         >
-          <Canvas camera={{ position: [0, 0, 3] }} gl={{ preserveDrawingBuffer: true }}>
-            <MeshCapture 
+          <Suspense fallback={
+            <div className="h-full w-full flex items-center justify-center">
+              <div className="font-mono text-sm">loading...</div>
+            </div>
+          }>
+            <CanvasScene 
               meshType={meshType} 
-              wireframe={true} 
-              onCapture={handleCapture}
-              registerCapture={registerCaptureMethod}
+              onCapture={handleCapture} 
+              registerCapture={registerCaptureMethod} 
             />
-            <OrbitControls />
-          </Canvas>
+          </Suspense>
         </div>
         
+        {/* Controls and Preview */}
         <div className="w-full md:w-1/3 space-y-4">
-          <div className="border border-gray-200 rounded-lg p-4 space-y-4">
-            <h3 className="text-lg font-medium">Mesh Settings</h3>
+          {/* Mesh Settings Panel */}
+          <div className="border border-primary p-4 space-y-4">
+            <h3 className="text-lg font-mono font-medium">Mesh Settings</h3>
             
             <RadioGroup 
               value={meshType} 
               onValueChange={(value) => setMeshType(value as 'sphere' | 'torus' | 'box')}
-              className="space-y-2"
+              className="space-y-2 font-mono"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="sphere" id="sphere" />
+                <RadioGroupItem value="sphere" id="sphere" className="cursor-pointer" />
                 <Label htmlFor="sphere">Sphere</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="torus" id="torus" />
+                <RadioGroupItem value="torus" id="torus" className="cursor-pointer" />
                 <Label htmlFor="torus">Torus</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="box" id="box" />
+                <RadioGroupItem value="box" id="box" className="cursor-pointer" />
                 <Label htmlFor="box">Box</Label>
               </div>
             </RadioGroup>
             
             <Button 
               onClick={triggerCapture}
-              className="w-full"
+              className="w-full cursor-pointer"
+              disabled={isLoading}
             >
-              Capture SVG
+              {isLoading ? "Capturing..." : "Capture SVG"}
             </Button>
             
             <Button 
               onClick={handleDownload}
-              disabled={!svgData}
+              disabled={!svgData || isLoading}
               variant="outline"
-              className="w-full"
+              className="w-full cursor-pointer"
             >
               Download SVG
             </Button>
           </div>
           
-          {svgData && (
-            <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="text-lg font-medium mb-2">Preview</h3>
-              <div 
-                className="w-full h-40 bg-black flex items-center justify-center overflow-hidden"
-                dangerouslySetInnerHTML={{ __html: svgData }}
-              />
+          {/* SVG Preview Section - Always render the container to prevent layout shift */}
+          <div className="border border-primary p-4 space-y-4">
+            <h3 className="text-lg font-mono font-medium">SVG Preview</h3>
+            
+            <div
+              className="w-full bg-black flex items-center justify-center overflow-hidden"
+              style={{ aspectRatio: "1/1", maxWidth: "100%" }}
+            >
+              {isLoading ? (
+                <Skeleton className="w-3/4 h-3/4" />
+              ) : svgData ? (
+                <div 
+                  className="w-full h-full flex items-center justify-center overflow-hidden"
+                  style={{ maxWidth: "100%" }}
+                >
+                  <div 
+                    className="w-full h-full flex items-center justify-center"
+                    dangerouslySetInnerHTML={{ __html: svgData.replace('<svg', '<svg style="max-width:100%;height:auto" ') }} 
+                  />
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground font-mono">No preview available</div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

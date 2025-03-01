@@ -68,10 +68,11 @@ function projectToSVG(
     }
     
     // Convert NDC to SVG coordinates
-    const startX = (startNDC.x * 0.5 + 0.5) * width;
-    const startY = (-startNDC.y * 0.5 + 0.5) * height;
-    const endX = (endNDC.x * 0.5 + 0.5) * width;
-    const endY = (-endNDC.y * 0.5 + 0.5) * height;
+    // The correct transformation: map from [-1,1] to [0,width/height]
+    const startX = (startNDC.x + 1) * 0.5 * width;
+    const startY = (1 - startNDC.y) * 0.5 * height;
+    const endX = (endNDC.x + 1) * 0.5 * width;
+    const endY = (1 - endNDC.y) * 0.5 * height;
     
     const path = `M${startX},${startY} L${endX},${endY}`;
     svgPaths.push(path);
