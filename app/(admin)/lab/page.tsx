@@ -9,7 +9,6 @@ function SkeletonLoader() {
       <div className="flex flex-col md:flex-row gap-6">
         {/* Canvas skeleton */}
         <div className="w-full md:w-2/3 bg-muted rounded-lg" style={{ aspectRatio: "1/1" }} />
-        
         {/* Controls skeleton */}
         <div className="w-full md:w-1/3 space-y-4">
           <div className="h-64 bg-muted rounded-lg" />
@@ -24,7 +23,8 @@ export default function Lab() {
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4 py-4">
       <SitePageHeader title="lab" />
-      <div className="w-full max-w-full overflow-hidden">
+      <h2 className="font-mono text-lg font-medium">MeshSVGExporter</h2>
+      <div className="w-full h-full flex flex-col items-center justify-center">
         <Suspense fallback={<SkeletonLoader />}>
           <MeshSVGExporter />
         </Suspense>
