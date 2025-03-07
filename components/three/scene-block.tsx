@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { ComponentProps } from "react";
+import { ThreeSceneSkeleton } from "@/components/three/scene";
 
 type ThreeSceneProps = ComponentProps<typeof import("./scene").ThreeScene>;
 
@@ -9,36 +10,18 @@ const ThreeSceneClient = dynamic(
   () => import("./scene").then((mod) => ({ default: mod.ThreeScene })),
   {
     ssr: false,
-    loading: () => (<ThreeSceneBlockSkeleton />),
+    loading: () => (<ThreeSceneSkeleton />),
   }
 );
 
-export function ThreeSceneBlockSkeleton() {
-  return (
-    <div className="h-[400px] w-full flex items-center justify-center bg-background">
-      <div className="font-mono text-sm">loading...</div>
-    </div>
-  );
-}
-
-export function ThreeSceneBlock({
-  className,
-  fallbackText = "loading...",
-}: {
-  className?: string;
-  fallbackText?: string;
-}) {
+export function ThreeSceneBlock({ className }: { className?: string }) {
   const clientProps: Partial<ThreeSceneProps> = {
-    className: "w-full h-full",
-    fallback: (
-      <div className="h-full w-full flex items-center justify-center bg-background">
-        <p className="font-mono text-lg">{fallbackText}</p>
-      </div>
-    ),
+    className: className,
+    fallback: <ThreeSceneSkeleton />,
   };
 
   return (
-    <div className={className || "relative h-[400px] w-full"}>
+    <div className={className || "relative size-96 bg-background"}>
       <ThreeSceneClient {...clientProps} />
     </div>
   );
