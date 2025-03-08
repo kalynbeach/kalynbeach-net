@@ -1,4 +1,4 @@
-import { ThreeSceneBlock } from "@/components/three/scene-block";
+import { ThreeSceneBlock } from "@/components/r3f/scene-block";
 
 export default function Home() {
   return (

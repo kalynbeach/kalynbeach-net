@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { ThreeSceneSkeleton } from "@/components/three/scene";
+import { ThreeSceneSkeleton } from "@/components/r3f/scene";
 
 const ThreeSceneClient = dynamic(
   () => import("./scene").then((mod) => mod.ThreeScene),

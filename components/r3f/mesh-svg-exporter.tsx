@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ThreeScene, ThreeSceneSkeleton } from "@/components/three/scene";
+import { ThreeScene, ThreeSceneSkeleton } from "@/components/r3f/scene";
 
 /**
  * Component that renders a 3D mesh and captures it as SVG
@@ -75,7 +75,7 @@ function MeshCapture({
 
   useEffect(() => {
     registerCapture(manualCapture);
-  }, [registerCapture]);
+  }, [registerCapture]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (isReady && meshRef.current) {
@@ -85,7 +85,7 @@ function MeshCapture({
 
       return () => clearTimeout(timer);
     }
-  }, [isReady, meshType]);
+  }, [isReady, meshType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <mesh ref={meshRef} rotation={[0, Math.PI / 4, 0]}>
