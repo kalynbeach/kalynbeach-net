@@ -38,9 +38,7 @@ export function useThreeSetup({
     gl.toneMapping = toneMapping;
     gl.outputColorSpace = outputColorSpace;
     gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
     gl.info.autoReset = false;
-
     scene.background = backgroundColorObj;
 
     return true;
