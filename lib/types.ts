@@ -1,6 +1,6 @@
 // Site
 
-export type SiteNavPage = {
+export type SitePage = {
   label: string;
   route: string;
 };

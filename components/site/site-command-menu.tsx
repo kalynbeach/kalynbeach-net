@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { SiteNavPage } from "@/lib/types";
+import type { SitePage } from "@/lib/types";
 import {
   CommandDialog,
   CommandEmpty,
@@ -15,14 +15,14 @@ import {
 } from "@/components/ui/command";
 
 type SiteCommandMenuProps = {
-  pages: SiteNavPage[];
+  pages: SitePage[];
 };
 
 export default function SiteCommandMenu({ pages }: SiteCommandMenuProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  function navigateToPage(page: SiteNavPage) {
+  function navigateToPage(page: SitePage) {
     setOpen(false);
     router.push(page.route);
   }
@@ -39,9 +39,9 @@ export default function SiteCommandMenu({ pages }: SiteCommandMenuProps) {
   }, []);
 
   return (
-    <div className="site-command-menu">
+    <div className="site-command-menu hidden sm:block">
       <p className="font-mono font-medium text-xs text-muted-foreground leading-none">
-        <kbd className="h-5 pointer-events-none select-none inline-flex flex-row justify-center items-center gap-0.5 border border-muted bg-muted/30 px-1 opacity-100">
+        <kbd className="font-mono font-medium text-xs text-muted-foreground leading-non h-5 pointer-events-none select-none inline-flex flex-row justify-center items-center gap-0.5 border border-muted bg-muted/30 px-1 opacity-100">
           <span className="text-xs">⌘</span>K
         </kbd>
       </p>
@@ -56,7 +56,7 @@ export default function SiteCommandMenu({ pages }: SiteCommandMenuProps) {
   );
 }
 
-function PagesCommandGroup({ pages, handler }: { pages: SiteNavPage[], handler: (page: SiteNavPage) => void}) {
+function PagesCommandGroup({ pages, handler }: { pages: SitePage[], handler: (page: SitePage) => void}) {
   return (
     <CommandGroup heading="pages" className="p-2">
       {pages.map((page) => (

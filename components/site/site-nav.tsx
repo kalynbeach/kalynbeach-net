@@ -1,45 +1,21 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import type { SiteNavPage } from "@/lib/types";
-import SiteCommandMenu from "./site-command-menu";
+import type { SitePage } from "@/lib/types";
+import SiteNavLink from "./site-nav-link";
 
-const siteNavPages: SiteNavPage[] = [
-  { label: "home", route: "/" },
-  { label: "about", route: "/about" },
-  { label: "tech", route: "/tech" },
-  { label: "sound", route: "/sound" },
-];
+type SiteNavProps = {
+  pages: SitePage[];
+};
 
-const commandMenuPages: SiteNavPage[] = [
-  ...siteNavPages,
-  { label: "sound/wave-player", route: "/sound/wave-player" },
-  { label: "sound/wave-lab", route: "/sound/wave-lab" },
-  { label: "dashboard", route: "/dashboard" },
-  { label: "lab", route: "/lab" },
-];
-
-export default function SiteNav() {
+export default function SiteNav({ pages }: SiteNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="site-nav w-fit flex flex-row items-center justify-between gap-3 sm:gap-5">
-      {siteNavPages.slice(1).map((page) => (
-        <Link
-          key={page.route}
-          href={page.route}
-          className={cn(
-            "text-xs sm:text-sm font-mono font-semibold dark:font-normal",
-            "transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green",
-            `${pathname.includes(page.route) ? "text-kb-blue dark:text-kb-green" : ""}`
-          )}
-        >
-          {page.label}
-        </Link>
+    <nav className="site-nav hidden sm:flex flex-row items-center justify-between gap-3 sm:gap-5 ml-auto">
+      {pages.slice(1).map((page) => (
+        <SiteNavLink key={page.route} page={page} isActive={pathname === page.route} />
       ))}
-      <SiteCommandMenu pages={commandMenuPages} />
     </nav>
   );
 }
