@@ -1,21 +1,14 @@
 "use client";
 
 import * as THREE from "three";
-import type React from "react";
-import {
-  Suspense,
-  useState,
-  useEffect,
-  memo,
-  cache,
-  useDeferredValue,
-} from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
+import React, { Suspense, memo, useDeferredValue, useState, useEffect } from "react";
 import { Html, Preload } from "@react-three/drei";
 import { Perf } from "r3f-perf";
 import { Loader } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useThreeSetup } from "@/hooks/three/use-three-setup";
+import { checkWebGLAvailability } from "@/lib/webgl";
 import TorusMesh from "@/components/r3f/meshes/torus-mesh";
 
 const Scene = memo(function Scene() {
@@ -59,27 +52,47 @@ const Scene = memo(function Scene() {
   );
 });
 
-const checkWebGLAvailability = cache(() => {
-  if (typeof window === "undefined") return null;
+// Export the Scene component
+export { Scene };
 
-  try {
-    const canvas = document.createElement("canvas");
-    const gl =
-      canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-    return !!gl;
-  } catch (e) {
-    return false;
-  }
-});
+/**
+ * Custom hook to access the Three.js renderer and scene
+ * Useful for SVG capture or other operations that need direct access to renderer
+ */
+export function useThreeInstance() {
+  const { gl, scene } = useThree();
+  
+  return {
+    renderer: gl,
+    scene
+  };
+}
 
 export function ThreeScene({
   className = "relative size-96 bg-background",
   fallback = <WebGLFallback />,
   showPerformanceMonitor = false,
+  children,
+  glProps = {},
+  captureProps,
 }: {
   className?: string;
   fallback?: React.ReactNode;
   showPerformanceMonitor?: boolean;
+  children?: React.ReactNode;
+  glProps?: {
+    preserveDrawingBuffer?: boolean;
+    antialias?: boolean;
+    alpha?: boolean;
+    stencil?: boolean;
+    depth?: boolean;
+    powerPreference?: "high-performance" | "low-power" | "default";
+    [key: string]: any;
+  };
+  captureProps?: {
+    onCapture?: (svg: string) => void;
+    registerCapture?: (captureMethod: () => void) => void;
+  };
 }) {
   const [isWebGLAvailable, setIsWebGLAvailable] = useState<boolean | null>(
     null
@@ -92,21 +105,36 @@ export function ThreeScene({
   if (isWebGLAvailable === null) return <ThreeSceneSkeleton />;
   if (!isWebGLAvailable) return <div className={className}>{fallback}</div>;
 
+  const defaultGlProps = {
+    powerPreference: "high-performance" as const,
+    antialias: true,
+    stencil: false,
+    depth: true,
+    ...glProps
+  };
+
+  const childrenWithProps = captureProps 
+    ? React.Children.map(children, child => {
+        if (React.isValidElement(child)) {
+          console.log("Passing capture props to child component");
+          return React.cloneElement(child, {
+            ...(captureProps as any)
+          });
+        }
+        return child;
+      })
+    : children;
+
   return (
     <div className={className}>
       <Canvas
         camera={{ position: [0, 0, 5], fov: 75 }}
         dpr={window.devicePixelRatio > 2 ? 2 : window.devicePixelRatio} // Cap DPR for performance
-        gl={{
-          powerPreference: "high-performance",
-          antialias: true,
-          stencil: false,
-          depth: true,
-        }}
+        gl={defaultGlProps}
         performance={{ min: 0.5 }} // Adaptive performance scaling
       >
-        <Scene />
-        {showPerformanceMonitor && <Perf position="top-left" />}
+        {childrenWithProps || <Scene />}
+        {showPerformanceMonitor && <Perf position="top-right" />}
       </Canvas>
     </div>
   );
