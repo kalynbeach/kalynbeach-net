@@ -2,21 +2,30 @@
 
 import * as THREE from "three";
 import type React from "react";
+import {
+  Suspense,
+  useState,
+  useEffect,
+  memo,
+  cache,
+  useDeferredValue,
+} from "react";
+import { Canvas } from "@react-three/fiber";
+import { Html, Preload } from "@react-three/drei";
+import { Perf } from "r3f-perf";
+import { Loader } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Suspense, useRef, useState, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Environment, Html } from "@react-three/drei";
-// import { ErrorBoundary } from "react-error-boundary";
 import { useThreeSetup } from "@/hooks/three/use-three-setup";
 import TorusMesh from "@/components/r3f/meshes/torus-mesh";
-import SphereMesh from "@/components/r3f/meshes/sphere-mesh";
-import { Loader } from "lucide-react";
 
-function Scene() {
+const Scene = memo(function Scene() {
   const { resolvedTheme } = useTheme();
 
+  const deferredTheme = useDeferredValue(resolvedTheme);
+  const isDarkTheme = deferredTheme === "dark";
+
   useThreeSetup({
-    backgroundColor: resolvedTheme === "dark" ? "#000000" : "#FFFFFF",
+    backgroundColor: isDarkTheme ? "#000000" : "#FFFFFF",
     enableShadows: true,
     toneMapping: THREE.ACESFilmicToneMapping,
     outputColorSpace: THREE.SRGBColorSpace,
@@ -25,74 +34,88 @@ function Scene() {
   return (
     <Suspense
       fallback={
-        <Html center><ThreeSceneSkeleton /></Html>
+        <Html center>
+          <ThreeSceneSkeleton />
+        </Html>
       }
     >
       <ambientLight intensity={2.4} />
       {/* <pointLight position={[10, 10, 10]} intensity={1} castShadow /> */}
       <TorusMesh
-        color={resolvedTheme === "dark" ? "#FFFFFF" : "#000000"}
-        radius={1}
-        tube={1}
+        color={isDarkTheme ? "#FFFFFF" : "#000000"}
+        radius={1.14}
+        tube={1.14}
         segments={32}
       />
-      {/* <SphereMesh
-        radius={0.6}
-        segments={16}
-        color={resolvedTheme === "dark" ? "#FFFFFF" : "#000000"}
-      /> */}
       {/* <Environment preset="city" /> */}
-      {/* <OrbitControls makeDefault /> */}
+      {/* <OrbitControls
+        makeDefault
+        enableZoom={false}
+        enablePan={false}
+        enableRotate={true}
+      /> */}
+      <Preload all />
     </Suspense>
   );
-}
+});
+
+const checkWebGLAvailability = cache(() => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const canvas = document.createElement("canvas");
+    const gl =
+      canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    return !!gl;
+  } catch (e) {
+    return false;
+  }
+});
 
 export function ThreeScene({
   className = "relative size-96 bg-background",
   fallback = <WebGLFallback />,
+  showPerformanceMonitor = false,
 }: {
   className?: string;
   fallback?: React.ReactNode;
+  showPerformanceMonitor?: boolean;
 }) {
   const [isWebGLAvailable, setIsWebGLAvailable] = useState<boolean | null>(
     null
   );
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const canvas = document.createElement("canvas");
-        const gl =
-          canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-        setIsWebGLAvailable(!!gl);
-      } catch (e) {
-        setIsWebGLAvailable(false);
-      }
-    }
+    setIsWebGLAvailable(checkWebGLAvailability());
   }, []);
 
-  if (isWebGLAvailable === null) return null;
-
+  if (isWebGLAvailable === null) return <ThreeSceneSkeleton />;
   if (!isWebGLAvailable) return <div className={className}>{fallback}</div>;
 
   return (
     <div className={className}>
-      <Canvas camera={{ position: [0, 0, 5], fov: 75 }} dpr={[1, 2]}>
+      <Canvas
+        camera={{ position: [0, 0, 5], fov: 75 }}
+        dpr={window.devicePixelRatio > 2 ? 2 : window.devicePixelRatio} // Cap DPR for performance
+        gl={{
+          powerPreference: "high-performance",
+          antialias: true,
+          stencil: false,
+          depth: true,
+        }}
+        performance={{ min: 0.5 }} // Adaptive performance scaling
+      >
         <Scene />
+        {showPerformanceMonitor && <Perf position="top-left" />}
       </Canvas>
-      {/* <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <Canvas camera={{ position: [0, 0, 5], fov: 75 }} dpr={[1, 2]} shadows>
-          <Scene />
-        </Canvas>
-      </ErrorBoundary> */}
     </div>
   );
 }
 
 export function ThreeSceneSkeleton() {
   return (
-    <div className="size-96 flex items-center justify-center bg-background">
-      <Loader className="size-4 animate-spin" />
+    <div className="bg-background flex size-96 items-center justify-center">
+      <Loader className="size-5 animate-spin" />
     </div>
   );
 }
@@ -105,8 +128,8 @@ function WebGLFallback() {
           WebGL Not Available
         </h3>
         <p className="text-gray-600">
-          Your browser or device doesn&apos;t support WebGL, which is required for
-          3D rendering.
+          Your browser or device doesn&apos;t support WebGL, which is required
+          for 3D rendering.
         </p>
       </div>
     </div>

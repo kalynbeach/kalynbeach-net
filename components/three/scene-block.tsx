@@ -1,28 +1,27 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { ComponentProps } from "react";
 import { ThreeSceneSkeleton } from "@/components/three/scene";
+// import type { ComponentProps } from "react";
 
-type ThreeSceneProps = ComponentProps<typeof import("./scene").ThreeScene>;
+// type ThreeSceneProps = ComponentProps<typeof import("./scene").ThreeScene>;
 
 const ThreeSceneClient = dynamic(
-  () => import("./scene").then((mod) => ({ default: mod.ThreeScene })),
+  () => import("./scene").then((mod) => mod.ThreeScene),
   {
     ssr: false,
-    loading: () => (<ThreeSceneSkeleton />),
+    loading: () => <ThreeSceneSkeleton />
   }
 );
 
 export function ThreeSceneBlock({ className }: { className?: string }) {
-  const clientProps: Partial<ThreeSceneProps> = {
-    className: className,
-    fallback: <ThreeSceneSkeleton />,
-  };
-
   return (
     <div className={className || "relative size-96 bg-background"}>
-      <ThreeSceneClient {...clientProps} />
+      <ThreeSceneClient
+        className={className}
+        fallback={<ThreeSceneSkeleton />}
+        showPerformanceMonitor={process.env.NODE_ENV === "development"}
+      />
     </div>
   );
 }
