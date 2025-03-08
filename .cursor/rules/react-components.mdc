@@ -1,0 +1,13 @@
+---
+description: Rules for writing React components.
+globs: *.tsx
+alwaysApply: false
+---
+# React Components
+
+When writing React component code, follow these rules:
+
+- Use React 19 (latest) and its best practices.
+- Use React Compiler.
+- Declare components with `function` instead of `const` (unless there is a specific reason to use `const`).
+
