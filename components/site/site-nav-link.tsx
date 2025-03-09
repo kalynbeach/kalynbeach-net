@@ -14,7 +14,7 @@ export default function SiteNavLink({ page, isActive, onClick }: SiteNavLinkProp
       key={page.route}
       href={page.route}
       className={cn(
-        "text-xs sm:text-sm font-mono font-semibold dark:font-normal",
+        "text-sm font-mono font-semibold dark:font-normal",
         "transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green",
         `${isActive && "text-kb-blue dark:text-kb-green"}`
       )}

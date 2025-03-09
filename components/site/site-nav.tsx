@@ -14,7 +14,7 @@ export default function SiteNav({ pages }: SiteNavProps) {
   return (
     <nav className="site-nav hidden sm:flex flex-row items-center justify-between gap-3 sm:gap-5 ml-auto">
       {pages.slice(1).map((page) => (
-        <SiteNavLink key={page.route} page={page} isActive={pathname === page.route} />
+        <SiteNavLink key={page.route} page={page} isActive={pathname.includes(page.route)} />
       ))}
     </nav>
   );

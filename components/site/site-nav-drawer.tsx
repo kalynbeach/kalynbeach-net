@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import type { SitePage } from "@/lib/types";
@@ -32,15 +33,19 @@ export default function SiteNavDrawer({ pages }: SiteNavDrawerProps) {
         </DrawerTrigger>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle className="font-mono">🌐</DrawerTitle>
+            <DrawerTitle className="font-mono">
+              <Link href="/" className="font-mono">
+                kalynbeach
+              </Link>
+            </DrawerTitle>
             <DrawerDescription className="font-mono"></DrawerDescription>
           </DrawerHeader>
-          <div className="flex flex-col justify-center gap-2 p-4">
-            {pages.map((page) => (
+          <div className="flex flex-col justify-center gap-3 p-4">
+            {pages.slice(1).map((page) => (
               <SiteNavLink
                 key={page.route}
                 page={page}
-                isActive={pathname === page.route}
+                isActive={pathname.includes(page.route)}
                 onClick={() => setOpen(false)}
               />
             ))}
