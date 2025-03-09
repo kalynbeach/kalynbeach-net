@@ -10,7 +10,7 @@ export default function Sound() {
           <li>
             <Link
               href="/sound/wave-player"
-              className="font-mono transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
+              className="text-lg font-mono transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
             >
               WavePlayer
             </Link>
@@ -18,7 +18,7 @@ export default function Sound() {
           <li>
             <Link
               href="/sound/wave-lab"
-              className="font-mono transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
+              className="text-lg font-mono transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
             >
               WaveLab
             </Link>
