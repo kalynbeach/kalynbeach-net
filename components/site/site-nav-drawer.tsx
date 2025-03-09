@@ -28,12 +28,12 @@ export default function SiteNavDrawer({ pages }: SiteNavDrawerProps) {
   return (
     <div className="site-nav-drawer flex flex-row items-center justify-center sm:hidden">
       <Drawer open={open} onOpenChange={setOpen} direction="right">
-        <DrawerTrigger className="">
+        <DrawerTrigger>
           <Menu className="w-5 h-5" />
         </DrawerTrigger>
-        <DrawerContent>
+        <DrawerContent className="border border-l-secondary">
           <DrawerHeader>
-            <DrawerTitle className="font-mono">
+            <DrawerTitle>
               <Link href="/" className="font-mono">
                 kalynbeach
               </Link>
@@ -50,12 +50,7 @@ export default function SiteNavDrawer({ pages }: SiteNavDrawerProps) {
               />
             ))}
           </div>
-          <DrawerFooter>
-            {/* <Button>Submit</Button> */}
-            {/* <DrawerClose>
-              <Button variant="outline">Cancel</Button>
-            </DrawerClose> */}
-          </DrawerFooter>
+          <DrawerFooter></DrawerFooter>
         </DrawerContent>
       </Drawer>
     </div>
