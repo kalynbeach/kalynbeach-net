@@ -191,11 +191,11 @@ export default function MeshSVGExporter() {
   }, [meshType]);
 
   return (
-    <div className="border-primary-foreground flex w-full flex-col gap-4 border p-4 md:flex-row md:p-4">
+    <div className="w-full flex flex-col gap-4 border border-primary p-4 md:flex-row md:p-4">
       {/* Canvas Container */}
       <div
         ref={canvasRef}
-        className="w-full overflow-hidden rounded-lg border border-primary bg-black md:w-2/3"
+        className="w-full overflow-hidden rounded-lg border border-primary/60 bg-black md:w-2/3"
         style={{ aspectRatio: "1/1" }}
       >
         <Suspense fallback={<ThreeSceneSkeleton />}>
@@ -221,7 +221,7 @@ export default function MeshSVGExporter() {
       {/* Controls and Preview */}
       <div className="flex w-full flex-col justify-between gap-4 md:h-full md:w-1/3">
         {/* Mesh Settings Panel */}
-        <div className="border-muted space-y-4 border p-4">
+        <div className="space-y-4 border border-primary/30 p-4">
           <h3 className="font-mono text-lg font-medium">Mesh Settings</h3>
           <RadioGroup
             value={meshType}
@@ -268,7 +268,7 @@ export default function MeshSVGExporter() {
           </Button>
         </div>
         {/* SVG Preview Section */}
-        <div className="border-secondary space-y-4 border p-4">
+        <div className="space-y-4 border border-primary/30 p-4">
           <h3 className="font-mono text-lg font-medium">SVG Preview</h3>
           <div
             className="flex w-full items-center justify-center overflow-hidden bg-black"
