@@ -28,7 +28,7 @@ export const Scene = memo(function Scene() {
   const isDarkTheme = deferredTheme === "dark";
 
   useThreeSetup({
-    backgroundColor: isDarkTheme ? "#000000" : "#FFFFFF",
+    backgroundColor: isDarkTheme ? "#030303" : "#FFFFFF",
     enableShadows: true,
     toneMapping: THREE.ACESFilmicToneMapping,
     outputColorSpace: THREE.SRGBColorSpace,
@@ -44,7 +44,7 @@ export const Scene = memo(function Scene() {
     >
       <ambientLight intensity={2.4} />
       <TorusMesh
-        color={isDarkTheme ? "#FFFFFF" : "#000000"}
+        color={isDarkTheme ? "#FFFFFF" : "#030303"}
         radius={1.14}
         tube={1.14}
         segments={32}
@@ -62,7 +62,7 @@ export const Scene = memo(function Scene() {
 
 export function ThreeScene({
   children,
-  className = "relative size-96 bg-background",
+  className = "three-scene relative size-96",
   glProps = {},
   captureProps,
   showPerformanceMonitor = false,

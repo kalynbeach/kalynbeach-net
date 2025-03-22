@@ -19,7 +19,7 @@ type ThreeSetupOptions = {
  * Optimized for React 19 with proper dependency tracking and memoization.
  */
 export function useThreeSetup({
-  backgroundColor = "#000000",
+  backgroundColor = "#030303",
   enableShadows = true,
   toneMapping = THREE.ACESFilmicToneMapping,
   outputColorSpace = THREE.SRGBColorSpace,
