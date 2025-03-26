@@ -34,6 +34,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      playlists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      tracks: {
+        Row: {
+          artist: string
+          created_at: string
+          id: number
+          image: Json | null
+          isLoop: boolean
+          record: string | null
+          src: string
+          title: string
+        }
+        Insert: {
+          artist: string
+          created_at?: string
+          id?: number
+          image?: Json | null
+          isLoop?: boolean
+          record?: string | null
+          src: string
+          title: string
+        }
+        Update: {
+          artist?: string
+          created_at?: string
+          id?: number
+          image?: Json | null
+          isLoop?: boolean
+          record?: string | null
+          src?: string
+          title?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string
