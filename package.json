@@ -10,6 +10,9 @@
     "test": "vitest",
     "format": "bunx prettier . --write",
     "format:check": "bunx prettier . --check",
+    "db:status": "supabase status",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
     "db:migrate": "supabase migration up",
     "db:types": "supabase gen types typescript --linked > lib/types/database.ts"
   },
