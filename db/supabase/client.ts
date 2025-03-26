@@ -1,6 +1,6 @@
 "use client";
 
-import type { Database } from "@/lib/types/database-generated";
+import type { Database } from "@/lib/types/database";
 import { createBrowserClient } from "@supabase/ssr";
 import { env } from "./env.client";
 

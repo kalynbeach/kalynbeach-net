@@ -11,7 +11,7 @@
     "format": "bunx prettier . --write",
     "format:check": "bunx prettier . --check",
     "db:migrate": "supabase migration up",
-    "db:types": "supabase gen types typescript --linked > lib/types/database-generated.ts"
+    "db:types": "supabase gen types typescript --linked > lib/types/database.ts"
   },
   "dependencies": {
     "@auth/core": "^0.38.0",

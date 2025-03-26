@@ -1,4 +1,4 @@
-import type { Database } from "@/lib/types/database-generated";
+import type { Database } from "@/lib/types/database";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { cache } from "react";

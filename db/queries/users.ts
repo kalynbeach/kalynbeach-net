@@ -1,24 +1,28 @@
-import type { QueryResult, QueryData, QueryError } from "@supabase/supabase-js";
+import { cache } from "react";
+import type { Tables } from "@/lib/types/database";
 import { createSupabaseServerClient } from "@/db/supabase/server";
 
-export async function getUsers(limit: number = 10, offset: number = 0) {
-  console.log(`[getUsers] querying users - limit: ${limit} offset: ${offset}`);
-  const supabase = await createSupabaseServerClient();
+/**
+ * Get users from the Supabase Postgres database
+ * @param limit - The number of users to get
+ * @param offset - The offset of the users to get
+ * @returns The users from the database
+ */
+export const getUsers = cache(
+  async (limit: number = 10, offset: number = 0): Promise<Tables<"users">[]> => {
+    const supabase = await createSupabaseServerClient();
 
-  const usersQuery = supabase
-    .from("users")
-    .select("*", { count: "exact" })
-    .range(offset, offset + limit);
+    const usersQuery = supabase
+      .from("users")
+      .select("*", { count: "exact" })
+      .range(offset, offset + limit);
 
-  type Users = QueryData<typeof usersQuery>;
+    const { data, error } = await usersQuery;
 
-  const { data, error } = await usersQuery;
+    if (error) {
+      throw error;
+    }
 
-  if (error) {
-    throw error;
+    return data;
   }
-
-  const users: Users = data;
-
-  return users;
-}
+);
