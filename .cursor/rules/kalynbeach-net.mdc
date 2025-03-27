@@ -1,0 +1,33 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# `kalynbeach-net` Project
+
+This document outlines background context and rules to follow when working on the `kalynbeach-net` project.
+
+## Overview
+
+`kalynbeach-net` is Kalyn Beach's web headquarters. At its core, it is a Next.js application with public and protected routes, and it serves as the foundation for my presence on the web.
+
+The public side serves as my personal website, including my portfolio and any other work or creations I want to share with the world.
+
+The protected side of the app serves two purposes:
+- **Admin Routes**: Pages and APIs only accessible by me (the `admin` user)
+- **VIP Routes**: Pages and APIs only accessible by `vip` users and the `admin` user
+
+<!-- TOOD: Add more to Overview -->
+
+## Tech Stack
+
+[kalynbeach-tech-stack.mdc](mdc:.cursor/rules/kalynbeach-tech-stack.mdc)
+
+## Design
+
+<!-- TODO -->
+
+## Project Rules
+
+<!-- TODO -->
+
