@@ -1,4 +1,6 @@
 import { PlaylistService } from "@/db/services/playlist-service";
+import { dbPlaylistToWavePlayerPlaylist } from "@/db/schemas/playlists";
+import { dbTrackToWavePlayerTrack } from "@/db/schemas/tracks";
 import type { WavePlayerPlaylist, WavePlayerTrack } from "@/lib/types/wave-player";
 
 /**
@@ -7,27 +9,13 @@ import type { WavePlayerPlaylist, WavePlayerTrack } from "@/lib/types/wave-playe
  * @returns The playlist with tracks or null if not found
  */
 export async function getPlaylist(playlistId: number): Promise<WavePlayerPlaylist | null> {
-  const { playlist, tracks } = await PlaylistService.getWithTracks(playlistId);
+  const { playlist, tracks } = await PlaylistService.getPlaylistWithTracks(playlistId);
 
   if (!playlist) return null;
 
-  const wavePlayerTracks: WavePlayerTrack[] = tracks.map((track) => ({
-    id: track.id,
-    title: track.title,
-    artist: track.artist,
-    record: track.record || "",
-    src: track.src,
-    image: track.image as { src: string; alt: string },
-    isLoop: track.isLoop,
-  }));
+  const wavePlayerTracks: WavePlayerTrack[] = tracks.map(dbTrackToWavePlayerTrack);
 
-  return {
-    id: playlist.id,
-    title: playlist.title,
-    tracks: wavePlayerTracks,
-    createdAt: new Date(playlist.created_at),
-    updatedAt: new Date(playlist.created_at), // Using created_at since there's no updated_at field
-  };
+  return dbPlaylistToWavePlayerPlaylist(playlist, wavePlayerTracks);
 }
 
 /**

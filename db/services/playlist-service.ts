@@ -30,7 +30,7 @@ export class PlaylistService extends BaseService {
    * @param playlistId - The ID of the playlist to get
    * @returns Playlist and its tracks
    */
-  static getWithTracks = cache(async (playlistId: number): Promise<{
+  static getPlaylistWithTracks = cache(async (playlistId: number): Promise<{
     playlist: Tables<"playlists"> | null;
     tracks: Tables<"tracks">[];
   }> => {
@@ -76,7 +76,7 @@ export class PlaylistService extends BaseService {
    * @param position - The position in the playlist (optional, will append to end if not specified)
    * @returns Success indicator
    */
-  static addTrack = async (
+  static addPlaylistTrack = async (
     playlistId: number, 
     trackId: number, 
     position?: number
@@ -112,7 +112,7 @@ export class PlaylistService extends BaseService {
    * @param trackId - The ID of the track to remove
    * @returns Success indicator
    */
-  static removeTrack = async (
+  static removePlaylistTrack = async (
     playlistId: number, 
     trackId: number
   ): Promise<boolean> => {
@@ -137,7 +137,7 @@ export class PlaylistService extends BaseService {
    * @param newPosition - The new position for the track
    * @returns Success indicator
    */
-  static reorderTrack = async (
+  static reorderPlaylistTrack = async (
     playlistId: number, 
     trackId: number, 
     newPosition: number
