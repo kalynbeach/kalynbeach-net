@@ -37,7 +37,7 @@ export default async function WavePlayerPage() {
   const playlist = await getInitialPlaylist();
 
   return (
-    <div className="w-full flex flex-col items-start justify-start gap-4 py-4">
+    <div className="w-full flex flex-col items-start justify-start gap-4">
       <SitePageHeader title="Sound" />
       {/* <h2 className="text-xl font-mono">WavePlayer</h2> */}
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">

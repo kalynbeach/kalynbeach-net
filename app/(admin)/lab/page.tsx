@@ -21,7 +21,7 @@ function SkeletonLoader() {
 
 export default function Lab() {
   return (
-    <div className="w-full flex flex-col items-start justify-start gap-4 py-4">
+    <div className="w-full flex flex-col items-start justify-start gap-4">
       <SitePageHeader title="lab" />
       <h2 className="font-mono text-lg font-medium">MeshSVGExporter</h2>
       <div className="w-full h-full flex flex-col items-center justify-center">

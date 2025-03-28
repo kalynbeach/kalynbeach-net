@@ -8,7 +8,7 @@ import SoundBlock from "@/components/sound/sound-block";
 // TODO: add and optimally render WaveLab in WaveLabPage
 export default function WaveLabPage() {
   return (
-    <div className="w-full flex flex-col items-start justify-start gap-4 py-4">
+    <div className="w-full flex flex-col items-start justify-start gap-4">
       <SitePageHeader title="Sound" />
       {/* <p className="text-lg">🚧 🚧 🚧</p> */}
       <h2 className="text-xl font-mono">WaveLab</h2>
