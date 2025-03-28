@@ -1,54 +1,40 @@
 import { Suspense } from "react";
-import type { WavePlayerTrack, WavePlayerPlaylist } from "@/lib/types/wave-player";
+import { getTracks } from "@/db/queries/tracks";
+import { getPlaylist } from "@/db/queries/playlists";
+import type { WavePlayerPlaylist } from "@/lib/types/wave-player";
 import { WavePlayerProvider } from "@/contexts/wave-player-context";
 import WavePlayer from "@/components/wave-player/wave-player";
 import SitePageHeader from "@/components/site/site-page-header";
 
-// TODO: implement proper functions for WavePlayer data fetching (playlists, tracks, etc.)
-async function getPlaylist() {
-  // TODO: replace placeholder tracks
-  const TEST_TRACKS: WavePlayerTrack[] = [
-    {
-      id: 1,
-      title: "0_initializer",
-      artist: "Kalyn Beach",
-      record: "loops",
-      src: "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/0_initializer.wav",
-      image: {
-        src: "/icon.svg",
-        alt: "0_initializer",
-      },
-      isLoop: true,
-    },
-    {
-      id: 2,
-      title: '1_workflows',
-      artist: 'Kalyn Beach',
-      record: 'loops',
-      src: 'https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/1_workflows.wav',
-      image: {
-        src: '/globe.svg',
-        alt: 'workflows',
-      },
-      isLoop: true,
-    },
-  ];
+/**
+ * Get the initial playlist for the wave player
+ * Attempts to fetch playlist with ID 1, falls back to track list if not found
+ */
+async function getInitialPlaylist() {
+  // Try to get the first playlist
+  const playlist = await getPlaylist(1);
+  
+  if (playlist) {
+    return playlist;
+  }
+  
+  // Fallback: Create a temporary playlist from all tracks
+  const initialTracks = await getTracks();
 
-  // TODO: replace placeholder playlist
-  const TEST_PLAYLIST: WavePlayerPlaylist = {
-    id: 1,
-    title: "playlist_0",
-    tracks: TEST_TRACKS,
+  const fallbackPlaylist: WavePlayerPlaylist = {
+    id: 0,
+    title: "all",
+    tracks: initialTracks,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
-  return TEST_PLAYLIST;
+  return fallbackPlaylist;
 }
 
 // TODO: optimize WavePlayer rendering in WavePlayerPage
 export default async function WavePlayerPage() {
-  const playlist = await getPlaylist();
+  const playlist = await getInitialPlaylist();
 
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4 py-4">
