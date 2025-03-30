@@ -11,7 +11,7 @@ export default function WaveLabPage() {
     <div className="w-full flex flex-col items-start justify-start gap-4">
       <SitePageHeader title="Sound" />
       {/* <p className="text-lg">🚧 🚧 🚧</p> */}
-      <h2 className="text-xl font-mono">WaveLab</h2>
+      {/* <h2 className="text-xl font-mono">WaveLab</h2> */}
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
           <SoundContextProvider>

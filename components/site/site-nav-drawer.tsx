@@ -34,7 +34,7 @@ export default function SiteNavDrawer({ pages }: SiteNavDrawerProps) {
         <DrawerContent className="border border-l-secondary">
           <DrawerHeader>
             <DrawerTitle>
-              <Link href="/" className="font-mono">
+              <Link href="/" className="text-lg font-mono font-medium">
                 kalynbeach
               </Link>
             </DrawerTitle>

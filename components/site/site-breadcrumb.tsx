@@ -25,13 +25,13 @@ export default function SiteBreadcrumb() {
               <BreadcrumbItem>
                 {index === pathnameParts.length - 1 ? (
                   <BreadcrumbPage>
-                    <span className="text-xl md:text-2xl font-mono font-semibold">
+                    <span className="text-2xl lg:text-3xl font-mono">
                       {part}
                     </span>
                   </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink href={`/${part}`}>
-                    <span className="text-xl md:text-2xl font-mono font-semibold">
+                    <span className="text-2xl lg:text-3xl font-mono">
                       {part}
                     </span>
                   </BreadcrumbLink>

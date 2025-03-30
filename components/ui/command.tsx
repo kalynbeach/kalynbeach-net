@@ -30,7 +30,7 @@ function CommandDialog({ children, ...props }: DialogProps) {
   return (
     <Dialog {...props}>
       <DialogContent
-        className="border-primary overflow-hidden p-0"
+        className="border-secondary overflow-hidden p-0"
         aria-describedby={undefined}
       >
         <VisuallyHidden.Root>
@@ -50,7 +50,7 @@ function CommandInput({
 }: React.ComponentProps<typeof CommandPrimitive.Input>) {
   return (
     <div
-      className="border-b-primary flex items-center border-b px-3"
+      className="border-b-secondary flex items-center border-b px-3"
       cmdk-input-wrapper=""
       data-slot="input-wrapper"
     >
