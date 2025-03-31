@@ -33,7 +33,7 @@
     "@react-three/drei": "^10.0.5",
     "@react-three/fiber": "^9.1.0",
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.49.3",
+    "@supabase/supabase-js": "^2.49.4",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "class-variance-authority": "^0.7.1",
@@ -47,7 +47,7 @@
     "r3f-perf": "^7.2.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwind-merge": "^3.0.2",
+    "tailwind-merge": "^3.1.0",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.175.0",
     "type-fest": "^4.38.0",
@@ -68,8 +68,8 @@
     "@types/react-dom": "^19.0.4",
     "@types/three": "^0.175.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "@vitest/web-worker": "^3.0.9",
-    "babel-plugin-react-compiler": "^19.0.0-beta-e552027-20250112",
+    "@vitest/web-worker": "^3.1.1",
+    "babel-plugin-react-compiler": "^19.0.0-beta-e993439-20250328",
     "eslint": "^9.23.0",
     "eslint-config-next": "15.2.4",
     "eslint-config-prettier": "^10.1.1",
@@ -81,7 +81,7 @@
     "tailwindcss": "^4.0.17",
     "typescript": "^5.8.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.0.9"
+    "vitest": "^3.1.1"
   },
   "prettier": {
     "semi": true,
