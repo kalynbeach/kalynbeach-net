@@ -1,7 +1,14 @@
+import { unstable_cache } from "next/cache";
 import { Suspense } from "react";
 import { getUsers } from "@/db/queries/users";
 import SitePageHeader from "@/components/site/site-page-header";
 import SiteAuth from "@/components/site/site-auth";
+
+// const getCachedUsers = unstable_cache(
+//   getUsers,
+//   ["users"],
+//   { revalidate: 3600, tags: ["users"] }
+// );
 
 export default async function Dashboard() {
   const users = await getUsers();
