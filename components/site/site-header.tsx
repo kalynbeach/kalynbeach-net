@@ -22,7 +22,7 @@ const commandMenuPages: SitePage[] = [
 
 export default function SiteHeader() {
   return (
-    <header className="site-header w-full h-full flex flex-row items-center justify-between gap-6">
+    <header className="site-header w-full h-full flex flex-row items-center justify-between">
       <div className="flex flex-row items-center gap-3">
         <Image
           src="/icon.svg"

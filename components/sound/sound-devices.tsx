@@ -23,7 +23,7 @@ export default function SoundDevices({
     <div className="sound-devices relative w-full flex flex-row items-center justify-end gap-2">
       {/* Device Selector */}
       <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
-        <SelectTrigger id="sound-device" className="w-[334px] sm:w-96 md:w-[448px] font-mono font-bold dark:font-medium border-primary">
+        <SelectTrigger id="sound-device" className="w-[334px] sm:w-fit md:w-[448px] font-mono font-bold dark:font-medium border-primary">
           <SelectValue placeholder="Select sound input" />
         </SelectTrigger>
         <SelectContent

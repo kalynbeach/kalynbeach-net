@@ -27,7 +27,7 @@ export default function SoundBlock() {
   const [activeVisualizers, setActiveVisualizers] = useState<string[]>(["waveform"]);
 
   return (
-    <div className="sound-block w-full flex flex-col items-start justify-start gap-2 border-2 border-primary p-2">
+    <div className="sound-block flex flex-col items-start justify-start gap-2 border border-primary p-2">
       {/* Sound Block Header */}
       <div className="w-full flex flex-col-reverse sm:flex-row sm:items-center gap-2">
         <SoundDevices
