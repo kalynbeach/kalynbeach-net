@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import type { SitePage } from "@/lib/types";
+import type { SitePage } from "@/lib/types/site";
 import SiteNavLink from "./site-nav-link";
 import { Menu } from "lucide-react";
 import {

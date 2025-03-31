@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import type { SoundContextValue, SoundStatus, SoundError } from "@/lib/types";
+import type { SoundContextValue, SoundStatus, SoundError } from "@/lib/types/sound";
 
 export const FFT_SIZE = 2048;
 export const SMOOTHING_TIME_CONSTANT = 0.8;

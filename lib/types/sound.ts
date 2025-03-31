@@ -1,12 +1,3 @@
-// Site
-
-export type SitePage = {
-  label: string;
-  route: string;
-};
-
-// Sound
-
 export type SoundStatus = "idle" | "loading" | "active" | "suspended" | "error";
 
 export interface SoundDevicesData {

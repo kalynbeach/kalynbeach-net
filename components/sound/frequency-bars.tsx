@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useFrequencyData } from "@/hooks/sound/use-frequency-data";
-import type { VisualizerProps } from "@/lib/types";
+import type { VisualizerProps } from "@/lib/types/sound";
 
 function FrequencyBars({ analyser, isInitialized }: VisualizerProps) {
   const mesh = useRef<THREE.InstancedMesh>(null);

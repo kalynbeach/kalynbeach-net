@@ -1,4 +1,4 @@
-import { unstable_cache } from "next/cache";
+// import { unstable_cache } from "next/cache";
 import { Suspense } from "react";
 import { getUsers } from "@/db/queries/users";
 import SitePageHeader from "@/components/site/site-page-header";
@@ -10,6 +10,7 @@ import SiteAuth from "@/components/site/site-auth";
 //   { revalidate: 3600, tags: ["users"] }
 // );
 
+// TODO: check if user is admin before rendering
 export default async function Dashboard() {
   const users = await getUsers();
 

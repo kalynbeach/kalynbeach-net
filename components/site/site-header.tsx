@@ -3,7 +3,7 @@ import Image from "next/image";
 import SiteNav from "./site-nav";
 import SiteNavDrawer from "./site-nav-drawer";
 import SiteCommandMenu from "./site-command-menu";
-import type { SitePage } from "@/lib/types";
+import type { SitePage } from "@/lib/types/site";
 
 const siteNavPages: SitePage[] = [
   { label: "home", route: "/" },

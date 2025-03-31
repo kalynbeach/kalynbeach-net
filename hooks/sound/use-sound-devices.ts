@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { SoundDevicesData } from "@/lib/types";
+import type { SoundDevicesData } from "@/lib/types/sound";
 
 export function useSoundDevices(): SoundDevicesData {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);

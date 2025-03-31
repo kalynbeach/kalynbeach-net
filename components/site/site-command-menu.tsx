@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { SitePage } from "@/lib/types";
+import type { SitePage } from "@/lib/types/site";
 import {
   CommandDialog,
   CommandEmpty,

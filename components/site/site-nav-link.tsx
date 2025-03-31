@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { SitePage } from "@/lib/types";
+import type { SitePage } from "@/lib/types/site";
 
 type SiteNavLinkProps = {
   page: SitePage;
