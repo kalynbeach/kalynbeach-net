@@ -94,6 +94,27 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name: string
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
       tracks: {
         Row: {
           artist: string
@@ -124,27 +145,6 @@ export type Database = {
           record?: string | null
           src?: string
           title?: string
-        }
-        Relationships: []
-      }
-      users: {
-        Row: {
-          created_at: string
-          email: string
-          id: number
-          role: Database["public"]["Enums"]["user_role"]
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: number
-          role: Database["public"]["Enums"]["user_role"]
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: number
-          role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: []
       }

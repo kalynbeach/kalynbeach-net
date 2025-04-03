@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { Tables, TablesInsert, TablesUpdate } from "@/lib/types/database";
 
+// TODO: update for profiles table instead of users table
+
 /**
  * Schema for user roles
  */
@@ -45,35 +47,35 @@ export const userUpdateSchema = z.object({
 /**
  * Transform a database user to an application user
  */
-export function dbUserToAppUser(dbUser: Tables<"users">) {
-  return appUserSchema.parse({
-    id: dbUser.id,
-    email: dbUser.email,
-    role: dbUser.role,
-    createdAt: new Date(dbUser.created_at),
-  });
-}
+// export function dbUserToAppUser(dbUser: Tables<"users">) {
+//   return appUserSchema.parse({
+//     id: dbUser.id,
+//     email: dbUser.email,
+//     role: dbUser.role,
+//     createdAt: new Date(dbUser.created_at),
+//   });
+// }
 
 /**
  * Transform an application user to a database user (for insert)
  */
-export function appUserToDbUser(user: Omit<z.infer<typeof appUserSchema>, "id" | "createdAt">): TablesInsert<"users"> {
-  return {
-    email: user.email,
-    role: user.role,
-  };
-}
+// export function appUserToDbUser(user: Omit<z.infer<typeof appUserSchema>, "id" | "createdAt">): TablesInsert<"users"> {
+//   return {
+//     email: user.email,
+//     role: user.role,
+//   };
+// }
 
 /**
  * Transform a partial application user to a database user update
  */
-export function appUserUpdateToDbUserUpdate(
-  userUpdate: Partial<Omit<z.infer<typeof appUserSchema>, "id" | "createdAt">>
-): TablesUpdate<"users"> {
-  const dbUpdate: TablesUpdate<"users"> = {};
+// export function appUserUpdateToDbUserUpdate(
+//   userUpdate: Partial<Omit<z.infer<typeof appUserSchema>, "id" | "createdAt">>
+// ): TablesUpdate<"users"> {
+//   const dbUpdate: TablesUpdate<"users"> = {};
 
-  if (userUpdate.email !== undefined) dbUpdate.email = userUpdate.email;
-  if (userUpdate.role !== undefined) dbUpdate.role = userUpdate.role;
+//   if (userUpdate.email !== undefined) dbUpdate.email = userUpdate.email;
+//   if (userUpdate.role !== undefined) dbUpdate.role = userUpdate.role;
 
-  return dbUpdate;
-}
+//   return dbUpdate;
+// }

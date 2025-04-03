@@ -12,13 +12,13 @@ export function createSupabaseClient() {
   return createBrowserClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      global: {
-        fetch: fetch.bind(window),
-      },
-      auth: {
-        persistSession: false, // We're using Auth.js, so we don't need Supabase Auth session persistence
-      },
-    }
+    // {
+    //   global: {
+    //     fetch: fetch.bind(window),
+    //   },
+    //   auth: {
+    //     persistSession: false,
+    //   },
+    // }
   );
 }

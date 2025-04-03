@@ -7,7 +7,7 @@ export default function Login() {
     <div className="w-full flex flex-col items-start justify-start gap-4">
       <SitePageHeader title="login" />
       <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-        <SiteAuth />
+        <SiteAuth user={null} />
       </Suspense>
     </div>
   );
