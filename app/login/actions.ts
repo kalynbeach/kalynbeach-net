@@ -26,8 +26,6 @@ export async function githubLogin() {
     redirect("/login/error");
   }
 
-  // console.log("[githubLogin] data:", data);
-
   if (data.url) {
     // TODO?: revalidate the path
     // revalidatePath("/", "layout");

@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 export default function SiteSignOut() {
   return (
     <form action={logout}>
-      <Button type="submit" variant="outline" size="sm" className="">
-        sign out
+      <Button type="submit" variant="outline" size="sm" className="font-mono">
+        logout
       </Button>
     </form>
   );

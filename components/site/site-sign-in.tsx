@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 export default function SiteSignIn() {
   return (
     <form action={githubLogin}>
-      <Button type="submit" variant="outline" size="sm" className="">
-        sign in
+      <Button type="submit" variant="outline" size="sm" className="font-mono">
+        login
       </Button>
     </form>
   );
