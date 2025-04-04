@@ -48,13 +48,13 @@
     "tailwind-merge": "^3.1.0",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.175.0",
-    "type-fest": "^4.39.0",
+    "type-fest": "^4.39.1",
     "vaul": "^1.1.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@tailwindcss/postcss": "^4.1.1",
+    "@tailwindcss/postcss": "^4.1.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -76,7 +76,7 @@
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "supabase": "^2.20.5",
-    "tailwindcss": "^4.1.1",
+    "tailwindcss": "^4.1.2",
     "typescript": "^5.8.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.1.1"
