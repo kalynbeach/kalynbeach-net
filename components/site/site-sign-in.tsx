@@ -1,17 +1,11 @@
-import { signIn } from "@/auth";
+import { githubLogin } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
 
 export default function SiteSignIn() {
   return (
-    <form
-      action={async () => {
-        "use server";
-        // TODO: redirect to protected route that redirected to `/login` (`/dashboard` or `/sound`)
-        await signIn("github", { redirectTo: "/dashboard" });
-      }}
-    >
-      <Button type="submit" variant="outline" size="sm" className="">
-        sign in
+    <form action={githubLogin}>
+      <Button type="submit" variant="outline" size="sm" className="font-mono">
+        login
       </Button>
     </form>
   );

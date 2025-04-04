@@ -31,12 +31,12 @@ export const createSupabaseServerClient = cache(async () => {
           }
         },
       },
-      global: {
-        fetch: fetch.bind(globalThis),
-      },
-      auth: {
-        persistSession: false, // We're using Auth.js, so we don't need Supabase Auth session persistence
-      },
+      // global: {
+      //   fetch: fetch.bind(globalThis),
+      // },
+      // auth: {
+      //   persistSession: false,
+      // },
     }
   );
 });
