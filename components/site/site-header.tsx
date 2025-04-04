@@ -16,6 +16,7 @@ const commandMenuPages: SitePage[] = [
   ...siteNavPages,
   { label: "sound/wave-player", route: "/sound/wave-player" },
   { label: "sound/wave-lab", route: "/sound/wave-lab" },
+  { label: "style", route: "/style" },
   { label: "dashboard", route: "/dashboard" },
   { label: "lab", route: "/lab" },
 ];
