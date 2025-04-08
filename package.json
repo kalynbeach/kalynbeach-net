@@ -46,7 +46,6 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwind-merge": "^3.2.0",
-    "tailwindcss-animate": "^1.0.7",
     "three": "^0.175.0",
     "type-fest": "^4.39.1",
     "vaul": "^1.1.2",
@@ -77,6 +76,7 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "supabase": "^2.20.5",
     "tailwindcss": "^4.1.3",
+    "tw-animate-css": "^1.2.5",
     "typescript": "^5.8.3",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.1.1"
