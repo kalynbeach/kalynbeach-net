@@ -1,5 +1,6 @@
 import SitePageHeader from "@/components/site/site-page-header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function Style() {
   return (
@@ -35,6 +36,11 @@ export default function Style() {
             <Button>default</Button>
             <Button size="lg">lg</Button>
             <Button size="icon">icon</Button>
+          </div>
+          <h3 className="font-mono text-lg font-semibold">Input</h3>
+          <div className="flex flex-row flex-wrap gap-2">
+            <Input />
+            <Input placeholder="placeholder" />
           </div>
         </section>
       </main>

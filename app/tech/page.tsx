@@ -10,7 +10,7 @@ export default function Tech() {
           <p className="text-sm font-mono">technology!</p>
         </section> */}
         <section className="flex flex-col gap-4">
-          <h2 className="text-xl md:text-2xl font-mono">code</h2>
+          <h2 className="text-xl md:text-2xl font-mono font-medium dark:font-normal">code</h2>
           {/* GitHub Info */}
           <div className="flex flex-col gap-3">
             <a

@@ -46,7 +46,7 @@ export default function SiteCommandMenu({ pages }: SiteCommandMenuProps) {
         </kbd>
       </p> */}
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Type a command or search..." />
+        <CommandInput placeholder="Type a command or search..." className="font-mono" />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <PagesCommandGroup pages={pages} handler={navigateToPage} />
@@ -63,7 +63,7 @@ function PagesCommandGroup({ pages, handler }: { pages: SitePage[], handler: (pa
         <CommandItem
           key={page.label}
           onSelect={() => handler(page)}
-          className="font-mono"
+          className="font-mono font-medium"
         >
           {page.label}
         </CommandItem>
