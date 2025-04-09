@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import SitePageHeader from "@/components/site/site-page-header";
 import MeshSVGExporter from "@/components/r3f/mesh-svg-exporter";
 // import ThreeCanvas from "@/components/r3f/canvas";
+
+export const metadata: Metadata = {
+  title: "lab",
+};
 
 function SkeletonLoader() {
   return (

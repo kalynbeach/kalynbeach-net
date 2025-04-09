@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import SitePageHeader from "@/components/site/site-page-header";
+
+export const metadata: Metadata = {
+  title: "tech",
+};
 
 export default function Tech() {
   return (

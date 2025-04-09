@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/db/supabase/server";
 import { getProfile } from "@/db/queries/profiles";
 import SitePageHeader from "@/components/site/site-page-header";
 import SiteAuth from "@/components/site/site-auth";
+
+export const metadata: Metadata = {
+  title: "dashboard",
+};
 
 export default async function Dashboard() {
   const supabase = await createSupabaseServerClient();

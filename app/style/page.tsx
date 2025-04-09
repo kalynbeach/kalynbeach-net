@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import SitePageHeader from "@/components/site/site-page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+export const metadata: Metadata = {
+  title: "style",
+};
 
 export default function Style() {
   return (

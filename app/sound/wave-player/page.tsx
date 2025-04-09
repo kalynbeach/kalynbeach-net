@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTracks } from "@/db/queries/tracks";
 import { getPlaylist } from "@/db/queries/playlists";
@@ -5,6 +6,10 @@ import type { WavePlayerPlaylist } from "@/lib/types/wave-player";
 import { WavePlayerProvider } from "@/contexts/wave-player-context";
 import WavePlayer from "@/components/wave-player/wave-player";
 import SitePageHeader from "@/components/site/site-page-header";
+
+export const metadata: Metadata = {
+  title: "wave-player",
+};
 
 /**
  * Get the initial playlist for the wave player

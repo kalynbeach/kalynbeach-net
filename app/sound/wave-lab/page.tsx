@@ -1,7 +1,12 @@
-import SitePageHeader from "@/components/site/site-page-header";
+import type { Metadata } from "next";
 import { Suspense } from "react";
+import SitePageHeader from "@/components/site/site-page-header";
 import { SoundContextProvider } from "@/contexts/sound-context";
 import SoundBlock from "@/components/sound/sound-block";
+
+export const metadata: Metadata = {
+  title: "wave-lab",
+};
 
 // TODO: rename SoundBlock to WaveLab
 // TODO: refactor and optimize WaveLab audio code

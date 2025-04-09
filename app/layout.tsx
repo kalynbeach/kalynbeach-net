@@ -21,7 +21,10 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "kalynbeach.net",
+  title: {
+    default: "kalynbeach.net",
+    template: "%s | kalynbeach.net",
+  },
   description: "kalynbeach",
 };
 

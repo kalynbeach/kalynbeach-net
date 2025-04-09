@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import SitePageHeader from "@/components/site/site-page-header";
+
+export const metadata: Metadata = {
+  title: "sound",
+};
 
 export default function Sound() {
   return (
