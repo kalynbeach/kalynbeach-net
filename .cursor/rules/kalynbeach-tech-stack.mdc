@@ -10,18 +10,54 @@ alwaysApply: true
 This is Kalyn Beach's core tech stack for web development (used for `kalynbeach-net` as well as other web projects). Note that this is not an exhaustive list, but rather the foundation of Kalyn Beach's preferred stack.
 
 - **Runtime**: Bun
-  - Node.js APIs (only when absolutely necessary!)
+  - Alternative: Node.js (only when absolutely necessary!)
 - **Framework**: Next.js 15
+- **Testing**: Vitest, Bun
 - **Styles**: Tailwind CSS v4
+- `prettier-plugin-tailwindcss`
 - **UI**: React 19
   - React Compiler
-- **UI Components**: Shadcn/ui (using `radix-ui`)
+- **UI Components**: Shadcn/ui
+  - `radix-ui`
 - **Icons**: Lucide
-- **3D Graphics**: Three.js
+  - `lucide-react`
+- **Graphics**: Three.js
   - `react-three-fiber`
   - `react-three/drei`
-- **Authentication**: Auth.js
+- **Authentication**: Supabase Auth
 - **Database**: Supabase Postgres
   - `supabase/supabase-js`
   - `supabase/ssr`
+- **Validation**: Zod
+- **Formatting**: Prettier
+- **Linting**: ESLint v9
+  - `eslint-config-next`
+  - `eslint-config-prettier`
 - **Hosting**: Vercel
+- **AI**: AI SDK
+
+---
+
+## Development Commands
+
+Follow these rules and use these terminal commands when necessary.
+
+General rules:
+- Use `bun` instead of `npm` or `pnpm`
+- Use `bunx` instead of `npx`
+
+## Dependencies
+
+- Add dependencies: `bun add [-D] [...]`
+- Install dependencies: `bun i`
+
+## Components
+
+- Add shadcn/ui components: `bunx --bun shadcn@canary add [components]`
+
+
+## Tests
+
+- Run tests: `bun run test run`
+- Run tests in watch mode: `bun run test`
+
