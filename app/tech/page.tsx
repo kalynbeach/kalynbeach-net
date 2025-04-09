@@ -3,14 +3,14 @@ import SitePageHeader from "@/components/site/site-page-header";
 export default function Tech() {
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader title="tech" />
+      <SitePageHeader />
       <main className="flex flex-col gap-4">
         {/* TODO: Tech Overview */}
         {/* <section className="flex flex-col gap-2">
           <p className="text-sm font-mono">technology!</p>
         </section> */}
         <section className="flex flex-col gap-4">
-          <h2 className="text-xl md:text-2xl font-mono font-medium dark:font-normal">code</h2>
+          <h2 className="text-xl font-mono font-semibold dark:font-normal">code</h2>
           {/* GitHub Info */}
           <div className="flex flex-col gap-3">
             <a

@@ -191,7 +191,7 @@ export default function MeshSVGExporter() {
   }, [meshType]);
 
   return (
-    <div className="w-full flex flex-col gap-4 border border-primary p-4 md:flex-row md:p-4">
+    <div className="w-full flex flex-col gap-2 border border-primary p-2 md:flex-row">
       {/* Canvas Container */}
       <div
         ref={canvasRef}
@@ -219,16 +219,16 @@ export default function MeshSVGExporter() {
       </div>
 
       {/* Controls and Preview */}
-      <div className="flex w-full flex-col justify-between gap-4 md:h-full md:w-1/3">
+      <div className="flex w-full flex-col justify-between gap-2 md:h-full md:w-1/3">
         {/* Mesh Settings Panel */}
-        <div className="space-y-4 border border-primary/30 p-4">
+        <div className="space-y-2 border border-primary/30 p-2 md:h-full flex flex-col justify-between">
           <h3 className="font-mono text-lg font-medium">Mesh Settings</h3>
           <RadioGroup
             value={meshType}
             onValueChange={(value) =>
               setMeshType(value as "sphere" | "torus" | "box")
             }
-            className="space-y-2 font-mono"
+            className="space-y-2 pb-2 font-mono"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem
@@ -251,24 +251,26 @@ export default function MeshSVGExporter() {
               <Label htmlFor="box">Box</Label>
             </div>
           </RadioGroup>
-          <Button
-            onClick={triggerCapture}
-            className="w-full cursor-pointer"
-            disabled={isLoading}
-          >
-            {isLoading ? "Capturing..." : "Capture SVG"}
-          </Button>
-          <Button
-            onClick={handleDownload}
-            disabled={!svgData || isLoading}
-            variant="outline"
-            className="w-full cursor-pointer"
-          >
-            Download SVG
-          </Button>
+          <div className="flex flex-col items-center space-y-2">
+            <Button
+              onClick={triggerCapture}
+              className="w-full cursor-pointer"
+              disabled={isLoading}
+            >
+              {isLoading ? "Capturing..." : "Capture SVG"}
+            </Button>
+            <Button
+              onClick={handleDownload}
+              disabled={!svgData || isLoading}
+              variant="outline"
+              className="w-full cursor-pointer"
+            >
+              Download SVG
+            </Button>
+          </div>
         </div>
         {/* SVG Preview Section */}
-        <div className="space-y-4 border border-primary/30 p-4">
+        <div className="space-y-2 border border-primary/30 p-2">
           <h3 className="font-mono text-lg font-medium">SVG Preview</h3>
           <div
             className="flex w-full items-center justify-center overflow-hidden bg-black"

@@ -38,7 +38,7 @@ export default async function WavePlayerPage() {
 
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader title="Sound" />
+      <SitePageHeader />
       {/* <h2 className="text-xl font-mono">WavePlayer</h2> */}
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>

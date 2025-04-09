@@ -5,7 +5,7 @@ import SiteAuth from "@/components/site/site-auth";
 export default function Login() {
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader title="login" />
+      <SitePageHeader />
       <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
         <SiteAuth user={null} />
       </Suspense>

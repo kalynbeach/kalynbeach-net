@@ -20,7 +20,7 @@ export default async function Dashboard() {
   
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader title="dashboard" />
+      <SitePageHeader />
       <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
         <SiteAuth user={user} />
       </Suspense>

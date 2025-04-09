@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 export default function Style() {
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader title="style" />
+      <SitePageHeader />
       <main className="flex flex-col items-start justify-start gap-4 font-mono">
         {/* TODO: build typography section */}
         {/* <section className="flex flex-col items-start justify-start gap-4">

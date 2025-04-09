@@ -4,7 +4,7 @@ import SitePageHeader from "@/components/site/site-page-header";
 export default function Sound() {
   return (
     <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader title="sound" />
+      <SitePageHeader />
       <main>
         <ul className="list-disc list-inside">
           <li>
