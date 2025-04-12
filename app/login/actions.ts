@@ -28,7 +28,7 @@ export async function githubLogin() {
 
   if (data.url) {
     // TODO?: revalidate the path
-    // revalidatePath("/", "layout");
+    revalidatePath("/", "layout");
     redirect(data.url);
   }
 }

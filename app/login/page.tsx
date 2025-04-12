@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import SitePageHeader from "@/components/site/site-page-header";
+import SitePage from "@/components/site/site-page";
 import SiteAuth from "@/components/site/site-auth";
 
 export const metadata: Metadata = {
@@ -9,11 +9,12 @@ export const metadata: Metadata = {
 
 export default function Login() {
   return (
-    <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader />
-      <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-        <SiteAuth user={null} />
-      </Suspense>
-    </div>
+    <SitePage>
+      <main className="size-full flex flex-col gap-4">
+        <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+          <SiteAuth user={null} />
+        </Suspense>  
+      </main>
+    </SitePage>
   );
 }

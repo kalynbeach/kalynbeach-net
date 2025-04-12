@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import SitePageHeader from "@/components/site/site-page-header";
+import SitePage from "@/components/site/site-page";
 
 export const metadata: Metadata = {
   title: "about",
@@ -7,13 +7,12 @@ export const metadata: Metadata = {
 
 export default function About() {
   return (
-    <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader />
-      <main className="flex flex-col gap-4">
+    <SitePage>
+      <main className="size-full flex flex-col gap-4">
         <section className="flex flex-col gap-2">
-          <p className="text-sm font-mono">thinking...</p>
+          <p className="font-mono">thinking...</p>
         </section>
       </main>
-    </div>
+    </SitePage>
   );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import SitePageHeader from "@/components/site/site-page-header";
+import SitePage from "@/components/site/site-page";
 
 export const metadata: Metadata = {
   title: "sound",
@@ -8,9 +8,8 @@ export const metadata: Metadata = {
 
 export default function Sound() {
   return (
-    <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader />
-      <main>
+    <SitePage>
+      <main className="size-full flex flex-col gap-4">
         <ul className="list-disc list-inside">
           <li>
             <Link
@@ -30,6 +29,6 @@ export default function Sound() {
           </li>
         </ul>
       </main>
-    </div>
+    </SitePage>
   );
 }

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-// import Script from "next/script";
 import localFont from "next/font/local";
 import { Geist } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -35,28 +34,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* <head>
-        <Script src="https://unpkg.com/react-scan/dist/auto.global.js" />
-      </head> */}
       <body
         className={cn(
-          "relative min-h-screen bg-background font-sans antialiased",
+          "relative font-sans antialiased",
           berkeleyMono.variable,
           geistSans.variable,
         )}
       >
-        <div className="container w-full min-h-screen grid grid-rows-layout-root md:grid-rows-layout-root-md">
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="container size-full min-h-screen grid grid-rows-layout-root md:grid-rows-layout-root-md">
             <SiteHeader />
             {children}
             <SiteFooter />
-          </ThemeProvider>
-        </div>
+          </div>
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

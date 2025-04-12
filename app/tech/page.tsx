@@ -1,41 +1,43 @@
 import type { Metadata } from "next";
-import SitePageHeader from "@/components/site/site-page-header";
+import SitePage from "@/components/site/site-page";
 
 export const metadata: Metadata = {
   title: "tech",
 };
 
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="w-fit text-xl leading-none font-mono font-semibold dark:font-medium bg-accent/30 border-l-2 border-accent-foreground/20 px-4 py-2">
+      {children}
+    </h2>
+  );
+}
+
 export default function Tech() {
   return (
-    <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader />
-      <main className="flex flex-col gap-4">
-        {/* TODO: Tech Overview */}
-        {/* <section className="flex flex-col gap-2">
+    <SitePage>
+      <main className="size-full flex flex-col gap-10">
+        {/* OVERVIEW SECTION */}
+        {/* <section className="flex flex-col gap-3">
           <p className="text-sm font-mono">technology!</p>
         </section> */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xl font-mono font-semibold dark:font-normal">code</h2>
-          {/* GitHub Info */}
-          <div className="flex flex-col gap-3">
-            <a
-              href="https://github.com/kalynbeach"
-              target="_blank"
-              className="font-mono text-sm text-kb-blue dark:text-kb-green transition-colors duration-200 hover:text-blue-300 dark:hover:text-green-300"
-            >
-              github.com/kalynbeach
-            </a>
-          </div>
-          {/* TODO: Code project card grid */}
-          {/* <div className="flex flex-col gap-3">
-            <h3 className="text-lg font-mono">PROJECTS</h3>
-          </div> */}
+        {/* CODE SECTION */}
+        <section className="flex flex-col gap-5">
+          <SectionHeader>CODE</SectionHeader>
+          <a
+            href="https://github.com/kalynbeach"
+            target="_blank"
+            className="w-fit text-sm font-mono text-kb-blue dark:text-kb-green transition-colors duration-200 hover:text-blue-300 dark:hover:text-green-300"
+          >
+            github.com/kalynbeach
+          </a>
         </section>
-        {/* TODO: Work section content */}
-        {/* <section className="">
-          <h2 className="text-xl font-mono font-medium">WORK</h2>
-        </section> */}
+        {/* PROJECTS SECTION */}
+        <section className="flex flex-col gap-5">
+          <SectionHeader>PROJECTS</SectionHeader>
+          <p className="text-sm font-mono">*under construction*</p>
+        </section>
       </main>
-    </div>
+    </SitePage>
   );
 }

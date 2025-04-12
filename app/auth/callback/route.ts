@@ -10,6 +10,10 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get("next") ?? "/";
   const origin = getURL();
 
+  console.log("[auth/callback] code:", code);
+  console.log("[auth/callback] next:", next);
+  console.log("[auth/callback] origin:", origin);
+
   if (code) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);

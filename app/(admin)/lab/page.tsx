@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import SitePageHeader from "@/components/site/site-page-header";
+import SitePage from "@/components/site/site-page";
 import MeshSVGExporter from "@/components/r3f/mesh-svg-exporter";
-// import ThreeCanvas from "@/components/r3f/canvas";
 
 export const metadata: Metadata = {
   title: "lab",
 };
 
-function SkeletonLoader() {
+function MeshSVGExporterSkeleton() {
   return (
     <div className="w-full max-w-4xl mx-auto animate-pulse">
       <div className="flex flex-col md:flex-row gap-6">
@@ -26,17 +25,12 @@ function SkeletonLoader() {
 
 export default function Lab() {
   return (
-    <div className="w-full flex flex-col items-start justify-start gap-4">
-      <SitePageHeader />
-      {/* <h2 className="font-mono text-lg font-medium">MeshSVGExporter</h2> */}
-      <div className="w-full h-full flex flex-col items-center justify-center">
-        <Suspense fallback={<SkeletonLoader />}>
+    <SitePage>
+      <main className="w-full h-full flex flex-col items-center justify-center">
+        <Suspense fallback={<MeshSVGExporterSkeleton />}>
           <MeshSVGExporter />
         </Suspense>
-        {/* <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-          <ThreeCanvas />
-        </Suspense> */}
-      </div>
-    </div>
+      </main>
+    </SitePage>
   );
 }
