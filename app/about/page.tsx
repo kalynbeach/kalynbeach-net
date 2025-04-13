@@ -10,7 +10,7 @@ export default function About() {
     <SitePage>
       <main className="size-full flex flex-col gap-4">
         <section className="flex flex-col gap-2">
-          <p className="font-mono">thinking...</p>
+          <p className="font-mono font-medium dark:font-normal">thinking...</p>
         </section>
       </main>
     </SitePage>
