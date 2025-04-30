@@ -79,19 +79,19 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /* kalynbeach */
-  --kb-smoke-50: hsl(0 0% 96%);
-  --kb-smoke-100: hsl(0 0% 91%);
-  --kb-smoke-200: hsl(0 0% 82%);
-  --kb-smoke-300: hsl(0 0% 69%);
-  --kb-smoke-400: hsl(0 0% 53%);
-  --kb-smoke-500: hsl(0 0% 43%);
-  --kb-smoke-600: hsl(0 0% 37%);
-  --kb-smoke-700: hsl(0 0% 31%);
-  --kb-smoke-800: hsl(0 0% 27%);
-  --kb-smoke-900: hsl(0 0% 24%);
-  --kb-smoke-950: hsl(0 0% 8%);
-  --kb-blue: hsl(214 100% 50%);
-  --kb-green: hsl(114 97% 46%);
+  --kb-smoke-50: oklch(0.97 0 0);
+  --kb-smoke-100: oklch(0.93 0 0);
+  --kb-smoke-200: oklch(0.86 0 0);
+  --kb-smoke-300: oklch(0.76 0 0);
+  --kb-smoke-400: oklch(0.62 0 0);
+  --kb-smoke-500: oklch(0.53 0 0);
+  --kb-smoke-600: oklch(0.48 0 0);
+  --kb-smoke-700: oklch(0.43 0 0);
+  --kb-smoke-800: oklch(0.39 0 0);
+  --kb-smoke-900: oklch(0.36 0 0);
+  --kb-smoke-950: oklch(0.19 0 0);
+  --kb-blue: oklch(0.58 0.231 259.56)
+  --kb-green: oklch(0.81 0.2713 142.16);
 }
 
 .dark {
