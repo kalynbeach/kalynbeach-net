@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ["three"],
   experimental: {
     reactCompiler: true,
+    viewTransition: true,
   },
 };
 

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Geist } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
+import { unstable_ViewTransition as ViewTransition } from "react";
 import { cn } from "@/lib/utils";
 import ThemeProvider from "@/components/site/theme-provider";
 import SiteHeader from "@/components/site/site-header";
@@ -47,11 +48,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="container size-full min-h-screen grid grid-rows-layout-root md:grid-rows-layout-root-md">
-            <SiteHeader />
-            {children}
-            <SiteFooter />
-          </div>
+          <ViewTransition name="root-layout">
+            <div className="container size-full min-h-screen grid grid-rows-layout-root md:grid-rows-layout-root-md">
+              <SiteHeader />
+              {children}
+              <SiteFooter />
+            </div>
+          </ViewTransition>
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />
