@@ -11,6 +11,15 @@ function Divider() {
   return <div className="w-full h-px bg-primary" />;
 }
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="w-full flex flex-col items-start justify-start gap-4">
+      <SectionHeader>{title}</SectionHeader>
+      {children}
+    </section>
+  );
+}
+
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="w-fit text-xl font-mono text-center bg-background border border-primary px-6 py-3 mb-4">
@@ -31,8 +40,7 @@ export default function Style() {
         </section> */}
         <Divider />
         {/* TODO: continue building components section */}
-        <section className="w-full flex flex-col items-start justify-start gap-4">
-          <SectionHeader>COMPONENTS</SectionHeader>
+        <Section title="COMPONENTS">
           <h3 className="font-mono text-lg mb-2">Button</h3>
           <div className="flex flex-row flex-wrap gap-4">
             <Button>default</Button>
@@ -52,10 +60,9 @@ export default function Style() {
           <div className="flex flex-row flex-wrap gap-4">
             <Input placeholder="placeholder" />
           </div>
-        </section>
+        </Section>
         <Divider />
-        <section className="w-full flex flex-col items-start justify-start gap-4">
-          <SectionHeader>TYPOGRAPHY</SectionHeader>
+        <Section title="TYPOGRAPHY">
           <div className="flex flex-col gap-2">
             <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
               The Joke Tax Chronicles
@@ -172,7 +179,7 @@ export default function Style() {
               laugh and always be careful of bad ideas.
             </p>
           </div>
-        </section>
+        </Section>
         <Divider />
       </main>
     </SitePage>
