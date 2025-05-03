@@ -155,3 +155,7 @@
     max-width: 1024px;
   }
 }
+
+::view-transition-group(*) {
+  animation-duration: 150ms;
+}

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import SiteNav from "./site-nav";
-import SiteNavDrawer from "./site-nav-drawer";
-import SiteCommandMenu from "./site-command-menu";
+import SiteNav from "@/components/site/site-nav";
+import SiteNavDrawer from "@/components/site/site-nav-drawer";
+import SiteCommandMenu from "@/components/site/site-command-menu";
+import SphereIcon from "@/components/site/icons/sphere-icon";
 import type { SitePage } from "@/lib/types/site";
 
 const siteNavPages: SitePage[] = [
@@ -25,15 +26,8 @@ export default function SiteHeader() {
   return (
     <header className="site-header w-full h-full flex flex-row items-center justify-between">
       <div className="flex flex-row items-center gap-3">
-        <Image
-          src="/icon.svg"
-          alt="kb"
-          width={36}
-          height={36}
-          className="w-9 h-9 rounded-full"
-          priority
-        />
-        <Link href="/" className="text-lg sm:text-xl font-mono font-medium">
+        {/* <SphereIcon className="size-9 rounded-full" /> */}
+        <Link href="/" className="text-xl font-mono font-bold underline underline-offset-2">
           kalynbeach
         </Link>
       </div>

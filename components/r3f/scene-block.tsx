@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import { cn } from "@/lib/utils";
 import { ThreeSceneSkeleton } from "@/components/r3f/scene";
 
 const ThreeSceneClient = dynamic(
@@ -18,7 +19,7 @@ const DefaultScene = dynamic(() => import("./scene").then((mod) => mod.Scene), {
 
 export function ThreeSceneBlock({ className }: { className?: string }) {
   return (
-    <div className={className || "bg-background relative size-96"}>
+    <div className={cn("bg-background relative size-96", className)}>
       <ThreeSceneClient
         className={className}
         fallback={<ThreeSceneSkeleton />}
