@@ -1,0 +1,10 @@
+---
+description: Implementing UI designs and building UI components
+globs: 
+alwaysApply: false
+---
+This project uses **shadcn/ui** for its UI components. These components are located in `components/ui/` and are the UI primatives we can build with.
+
+- Reuse existing UI components from `components/ui/`
+- Ask the user how they want to proceed when there are missing components and designs
+- Create new components by orchestrating UI components if you can't find any existing components that solve the problem

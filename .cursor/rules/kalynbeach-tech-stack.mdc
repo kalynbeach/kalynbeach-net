@@ -1,7 +1,7 @@
 ---
-description: 
+description: The tech stack used for this project
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 # `kalynbeach` Tech Stack
 
