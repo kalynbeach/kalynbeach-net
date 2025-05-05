@@ -30,8 +30,8 @@ function ChromaComponent({ data }: ChromaProps) {
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="chroma w-full h-16 border border-primary">
-      <div className="chroma-container w-full h-full flex flex-row items-center justify-evenly">
+    <div className="chroma w-full h-16 border border-secondary">
+      <div className="chroma-container w-full h-full flex flex-row items-center justify-evenly bg-background">
         {PITCH_CLASSES.map((pitchClass, i) => (
           <ChromaBar
             key={pitchClass}
@@ -56,9 +56,9 @@ const ChromaBar = memo(function ChromaBar({ pitchClass, intensity }: ChromaBarPr
         "chroma-bar w-full h-full flex flex-col justify-center",
         "transition-colors duration-100",
         intensity >= 0.9 && "bg-primary",
-        intensity >= 0.6 && intensity < 0.9 && "bg-secondary/60",
-        intensity >= 0.3 && intensity < 0.6 && "bg-secondary/30",
-        intensity < 0.3 && "bg-secondary",
+        intensity >= 0.6 && intensity < 0.9 && "bg-primary-foreground/50",
+        intensity >= 0.3 && intensity < 0.6 && "bg-primary-foreground/30",
+        intensity < 0.3 && "bg-primary-foreground/10",
       )}
     >
       <div className="chroma-label text-sm font-mono font-semibold text-center text-secondary">

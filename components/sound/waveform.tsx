@@ -142,7 +142,7 @@ export default function Waveform({
 
   return (
     <Suspense fallback={<WaveformSkeleton />}>
-      <div className="waveform w-fit h-56 sm:h-64 md:h-72 lg:h-96 flex items-center justify-center bg-muted/30 border border-primary">
+      <div className="waveform w-fit h-56 sm:h-64 md:h-72 lg:h-96 flex items-center justify-center bg-muted/30 border border-secondary">
         <canvas ref={canvasRef} className="w-full min-w-[376px] h-[222px] sm:w-[588px] sm:h-[254px] md:w-[714px] md:h-[286px] lg:w-[970px] lg:h-[382px]" />
       </div>
     </Suspense>
@@ -151,7 +151,7 @@ export default function Waveform({
 
 export function WaveformSkeleton() {
   return (
-    <div className="waveform-skeleton w-full h-56 sm:h-64 md:h-72 lg:h-96 flex items-center justify-center bg-muted/30 border border-primary">
+    <div className="waveform-skeleton w-full h-56 sm:h-64 md:h-72 lg:h-96 flex items-center justify-center bg-muted/30 border border-secondary">
       <span className="font-mono text-medium text-sm text-muted-foreground">waveform</span>
     </div>
   );

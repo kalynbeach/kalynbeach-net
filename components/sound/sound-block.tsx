@@ -24,10 +24,10 @@ export default function SoundBlock() {
   const { devices, selectedDevice, setSelectedDevice } = useSoundDevices();
   const { stream, analyser, isInitialized } = useSoundDeviceStream(selectedDevice);
   const { features, meydaInitializing, meydaError } = useMeyda(audioContext, stream);
-  const [activeVisualizers, setActiveVisualizers] = useState<string[]>(["waveform"]);
+  const [activeVisualizers, setActiveVisualizers] = useState<string[]>(["waveform", "chroma"]);
 
   return (
-    <div className="sound-block flex flex-col items-start justify-start gap-2 border border-primary p-2">
+    <div className="sound-block flex flex-col items-start justify-start gap-2 border border-secondary p-2">
       {/* Sound Block Header */}
       <div className="w-full flex flex-col-reverse sm:flex-row sm:items-center gap-2">
         <SoundDevices
@@ -43,9 +43,9 @@ export default function SoundBlock() {
           <Badge
             variant="outline"
             className={cn(
-              "w-16 sm:w-20 justify-center border-muted-foreground bg-muted/30",
+              "w-16 sm:w-20 justify-center border-muted bg-muted/30",
               "font-mono font-semibold text-xs",
-              isInitialized && !meydaInitializing && !meydaError && "text-kb-blue dark:text-kb-green",
+              isInitialized && !meydaInitializing && !meydaError && "text-kb-blue dark:text-kb-green border-muted-foreground/30",
               meydaInitializing && "text-yellow-500",
               meydaError && "text-red-500"
             )}
@@ -71,7 +71,7 @@ export default function SoundBlock() {
         {activeVisualizers.includes("chroma") && features && features.chroma ? (
           <Chroma data={features.chroma} />
         ) : (
-          <div className="chroma-skeleton w-full h-16 flex items-center justify-center bg-muted/30 border border-primary">
+          <div className="chroma-skeleton w-full h-16 flex items-center justify-center bg-muted/30 border border-secondary">
             <span className="font-mono text-sm text-muted-foreground">chroma</span>
           </div>
         )}
@@ -89,14 +89,14 @@ function SoundBlockControls({ activeVisualizers, setActiveVisualizers }: SoundBl
   return (
     <ToggleGroup type="multiple" variant="outline" value={activeVisualizers} onValueChange={setActiveVisualizers}>
       <ToggleGroupItem
-        className="group hover:cursor-pointer hover:bg-muted/50 hover:border-muted-foreground/60 data-[state=on]:border-primary data-[state=on]:bg-muted/50"
+        className="group hover:cursor-pointer hover:bg-muted/50 hover:border-muted-foreground/30 data-[state=on]:border-muted-foreground/30 data-[state=on]:bg-muted/50"
         value="waveform"
         aria-label="Toggle Waveform"
       >
         <AudioWaveform className="h-4 w-4 stroke-muted-foreground group-data-[state=on]:stroke-kb-blue dark:group-data-[state=on]:stroke-kb-green" />
       </ToggleGroupItem>
       <ToggleGroupItem
-        className="group hover:cursor-pointer hover:bg-muted/50 hover:border-muted-foreground/60 data-[state=on]:border-primary data-[state=on]:bg-muted/50"
+        className="group hover:cursor-pointer hover:bg-muted/50 hover:border-muted-foreground/30 data-[state=on]:border-muted-foreground/30 data-[state=on]:bg-muted/50"
         value="chroma"
         aria-label="Toggle Chroma"
       >
