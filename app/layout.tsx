@@ -35,30 +35,32 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={cn(
-          "relative font-sans antialiased",
-          berkeleyMono.variable,
-          geistSans.variable,
-        )}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+      <ViewTransition name="root-layout">
+        <body
+          className={cn(
+            "relative font-sans antialiased",
+            berkeleyMono.variable,
+            geistSans.variable,
+          )}
         >
-          <ViewTransition name="root-layout">
-            <div className="container size-full min-h-screen grid grid-rows-layout-root md:grid-rows-layout-root-md">
-              <SiteHeader />
-              {children}
-              <SiteFooter />
-            </div>
-          </ViewTransition>
-        </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
-      </body>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {/* <ViewTransition name="root-layout"> */}
+              <div className="container size-full min-h-screen grid grid-rows-layout-root md:grid-rows-layout-root-md">
+                <SiteHeader />
+                {children}
+                <SiteFooter />
+              </div>
+            {/* </ViewTransition> */}
+          </ThemeProvider>
+          <Analytics />
+          <SpeedInsights />
+        </body>
+      </ViewTransition>
     </html>
   );
 }

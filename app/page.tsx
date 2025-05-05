@@ -7,7 +7,8 @@ export default function Home() {
   return (
     <SitePage includeHeader={false}>
       <main className="size-full flex items-center justify-center">
-        <ViewTransition name="site-logo">
+        {/* TODO: Update site-logo transition animation to scale SVG down and back up (like it's warping to the footer) */}
+        <ViewTransition name="site-logo" default="quick-out">
           <SiteLogo />
           {/* <ThreeSceneBlock /> */}
         </ViewTransition>
