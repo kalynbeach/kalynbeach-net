@@ -1,0 +1,47 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Sound
+
+This is an outline of the audio-related ("sound") code in this project.
+
+Doc: [sound.md](mdc:docs/sound/sound.md)
+
+## Sound Code
+
+**Types**
+- [sound.ts](mdc:lib/types/sound.ts)
+
+**Context**
+- [sound-context.tsx](mdc:contexts/sound-context.tsx)
+
+**Hooks**
+- [use-sound-devices.ts](mdc:hooks/sound/use-sound-devices.ts)
+- [use-sound-device-stream.ts](mdc:hooks/sound/use-sound-device-stream.ts)
+- [use-frequency-data.ts](mdc:hooks/sound/use-frequency-data.ts)
+- [use-waveform-data.ts](mdc:hooks/sound/use-waveform-data.ts)
+- [use-meyda.ts](mdc:hooks/sound/use-meyda.ts)
+
+**Components**
+- [sound-block.tsx](mdc:components/sound/sound-block.tsx)
+- [sound-devices.tsx](mdc:components/sound/sound-devices.tsx)
+- [waveform.tsx](mdc:components/sound/waveform.tsx)
+- [chroma.tsx](mdc:components/sound/chroma.tsx)
+- [frequency-bars.tsx](mdc:components/sound/frequency-bars.tsx)
+
+**Pages**
+- [page.tsx](mdc:app/sound/wave-lab/page.tsx)
+
+**Tests**
+- [sound-context.test.tsx](mdc:tests/contexts/sound-context.test.tsx)
+- [use-sound-devices.test.ts](mdc:tests/hooks/sound/use-sound-devices.test.ts)
+- [use-sound-device-stream.test.tsx](mdc:tests/hooks/sound/use-sound-device-stream.test.tsx)
+- [use-frequency-data.test.ts](mdc:tests/hooks/sound/use-frequency-data.test.ts)
+- [use-waveform-data.test.ts](mdc:tests/hooks/sound/use-waveform-data.test.ts)
+
+## Sound Code Rules
+
+- Make use of React Compiler its benefits
+- Make use of React's newer `use` API instead of `useContext` for Context
