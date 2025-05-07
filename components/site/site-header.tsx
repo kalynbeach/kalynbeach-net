@@ -14,11 +14,11 @@ const siteNavPages: SitePage[] = [
 
 const commandMenuPages: SitePage[] = [
   ...siteNavPages,
-  { label: "sound/wave-player", route: "/sound/wave-player" },
-  { label: "sound/wave-lab", route: "/sound/wave-lab" },
   { label: "style", route: "/style" },
-  { label: "dashboard", route: "/dashboard" },
   { label: "lab", route: "/lab" },
+  { label: "dashboard", route: "/dashboard" },
+  // { label: "sound/wave-player", route: "/sound/wave-player" },
+  // { label: "sound/wave-lab", route: "/sound/wave-lab" },
 ];
 
 export default function SiteHeader() {
@@ -26,7 +26,7 @@ export default function SiteHeader() {
     <header className="site-header w-full h-full flex flex-row items-center justify-between">
       <div className="flex flex-row items-center gap-3">
         {/* <SphereIcon className="size-9 rounded-full" /> */}
-        <Link href="/" className="text-xl font-mono font-medium underline underline-offset-3 decoration-secondary hover:decoration-secondary-foreground transition-colors duration-150">
+        <Link href="/" className="text-xl font-mono font-medium underline underline-offset-3 decoration-secondary hover:decoration-secondary-foreground transition duration-150">
           kalynbeach
         </Link>
       </div>

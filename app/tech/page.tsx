@@ -27,7 +27,7 @@ export default function Tech() {
           <a
             href="https://github.com/kalynbeach"
             target="_blank"
-            className="w-fit font-mono text-kb-blue dark:text-kb-green transition-colors duration-200 hover:text-blue-300 dark:hover:text-green-300"
+            className="w-fit text-sm font-mono text-secondary-foreground underline underline-offset-2 decoration-accent dark:decoration-muted-foreground transition duration-150 hover:text-kb-blue hover:decoration-kb-blue/50 dark:hover:text-kb-green dark:hover:decoration-kb-green/50"
           >
             github.com/kalynbeach
           </a>
