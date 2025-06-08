@@ -7,9 +7,16 @@ alwaysApply: false
 
 This is an outline of the audio-related ("sound") code in this project.
 
-Doc: [sound.md](mdc:docs/sound/sound.md)
+## Sound Docs
 
-## Sound Code
+- Old sound doc: [sound.md](mdc:docs/sound/sound.md)
+- Refactored sound doc: [refactor-sound.md](mdc:docs/sound/refactor-sound.md)
+
+## Refactor
+
+The sound codebase is currently being refactored on branch `refactor/sound`. Read the refactor doc [refactor-sound.md](mdc:docs/sound/refactor-sound.md) as well as the old sound doc [sound.md](mdc:docs/sound/sound.md) and make sure you understand the differences between the old and refactored codebases, the goals of the refactor, and the remaining refactor TODOs.
+
+### Old Sound Code
 
 **Types**
 - [sound.ts](mdc:lib/types/sound.ts)
@@ -41,7 +48,19 @@ Doc: [sound.md](mdc:docs/sound/sound.md)
 - [use-frequency-data.test.ts](mdc:tests/hooks/sound/use-frequency-data.test.ts)
 - [use-waveform-data.test.ts](mdc:tests/hooks/sound/use-waveform-data.test.ts)
 
-## Sound Code Rules
 
-- Make use of React Compiler its benefits
-- Make use of React's newer `use` API instead of `useContext` for Context
+### Refactored Sound Code
+
+**Libraries**
+- [sound.ts](mdc:lib/sound.ts)
+
+**Hooks**
+- [use-sound.ts](mdc:hooks/use-sound.ts)
+- [use-sound-visualizer.ts](mdc:hooks/use-sound-visualizer.ts)
+
+**Components**
+- [sound.tsx](mdc:components/sound.tsx)
+- [sound-card.tsx](mdc:components/sound-card.tsx)
+- [sound-card-skeleton.tsx](mdc:components/sound-card-skeleton.tsx)
+- [sound-device-select.tsx](mdc:components/sound-device-select.tsx)
+- [sound-visualizer.tsx](mdc:components/sound-visualizer.tsx)
