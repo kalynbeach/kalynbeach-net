@@ -65,11 +65,13 @@ export function SoundDeviceSelect({
       setDevices(inputDevices);
 
       // If no device is selected yet, select the default one
-      if (!selectedDeviceId && inputDevices.length > 0) {
-        // Find the default device or use the first one
-        const defaultDevice =
-          inputDevices.find((d) => d.isDefault) || inputDevices[0];
-        onDeviceChange(defaultDevice.deviceId);
+      if (!selectedDeviceId || selectedDeviceId === "") {
+        if (inputDevices.length > 0) {
+          // Find the default device or use the first one
+          const defaultDevice =
+            inputDevices.find((d) => d.isDefault) || inputDevices[0];
+          onDeviceChange(defaultDevice.deviceId);
+        }
       }
 
       setIsLoading(false);
@@ -100,7 +102,7 @@ export function SoundDeviceSelect({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="w-full space-y-1 relative">
+    <div className="w-full space-y-1">
       <Label
         htmlFor="sound-device-select"
         className="flex cursor-auto items-center gap-1 font-mono text-xs"
@@ -110,13 +112,13 @@ export function SoundDeviceSelect({
         SoundDeviceSelect
       </Label>
       <Select
-        value={selectedDeviceId}
+        value={selectedDeviceId || ""}
         onValueChange={onDeviceChange}
         disabled={disabled || isLoading}
       >
         <SelectTrigger
           id="sound-device-select"
-          className="cursor-pointer w-full text-xs md:text-sm font-mono font-bold"
+          className="w-full font-mono font-medium"
         >
           <SelectValue
             placeholder={isLoading ? "Loading devices..." : "Select microphone"}
@@ -132,7 +134,7 @@ export function SoundDeviceSelect({
             <SelectItem
               key={device.deviceId}
               value={device.deviceId}
-              className="cursor-pointer font-mono font-semibold text-sm"
+              className="font-mono text-sm"
             >
               {device.label}
             </SelectItem>

@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useEffect, useRef } from "react";
 
 interface SoundVisualizerProps {
@@ -41,7 +40,7 @@ export function SoundVisualizer({ canvasRef }: SoundVisualizerProps) {
   return (
     <div
       ref={containerRef}
-      className="relative size-full overflow-hidden rounded-sm bg-background border"
+      className="bg-background relative size-full overflow-hidden rounded-sm border"
     >
       <canvas
         ref={canvasRef}

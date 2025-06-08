@@ -31,14 +31,14 @@ export function SoundCard() {
   const { canvasRef } = useSoundVisualizer(analyserNode);
 
   return (
-    <Card className="sound-card w-full border-muted-foreground/30 rounded-sm border py-0 shadow-xs">
+    <Card className="sound-card border-muted-foreground/50 rounded-sm border py-0 shadow-xs">
       <CardContent className="bg-card flex flex-col gap-3 rounded-sm p-3">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div className="flex w-full flex-row items-center justify-between">
             <h1 className="font-mono font-semibold">SoundCard</h1>
             <p
               className={cn(
-                "text-muted-foreground border-muted bg-muted/30 rounded-sm border px-2.5 py-1.5 font-mono text-xs transition-all",
+                "text-muted-foreground border-muted-foreground/5 bg-muted/30 rounded-sm border px-2.5 py-1.5 font-mono text-xs transition-all",
                 isInitialized && "text-primary border-primary/30"
               )}
             >
@@ -46,7 +46,7 @@ export function SoundCard() {
             </p>
           </div>
           <div className="flex flex-row items-center justify-end gap-3">
-            <div className="w-[100px] h-[30px] border-accent flex items-center space-x-2 rounded-sm border px-2">
+            <div className="border-muted-foreground/10 flex h-[30px] w-[100px] items-center space-x-2 rounded-sm border px-2">
               <Label
                 htmlFor="sound-output-toggle"
                 className="font-mono text-xs"
@@ -85,7 +85,7 @@ export function SoundCard() {
         <div className="w-full items-end justify-between gap-3 md:flex md:flex-row">
           <SoundDeviceSelect
             onDeviceChange={changeDevice}
-            selectedDeviceId={selectedDeviceId || undefined}
+            selectedDeviceId={selectedDeviceId}
             disabled={isDeviceSwitching}
           />
           <div className="hidden flex-row items-center gap-3 md:flex">
@@ -114,7 +114,7 @@ export function SoundCard() {
 
         <div className="flex h-48 w-full flex-col justify-evenly gap-2 rounded-sm border p-3">
           <div className="flex w-full flex-row items-center justify-between">
-            <p className="text-muted-foreground font-mono text-xs sm:text-sm">
+            <p className="text-muted-foreground font-mono text-sm">
               audioContext.state:
             </p>
             <p className="text-muted-foreground font-mono text-sm">
@@ -124,7 +124,7 @@ export function SoundCard() {
             </p>
           </div>
           <div className="flex w-full flex-row items-center justify-between">
-            <p className="text-muted-foreground font-mono text-xs sm:text-sm">
+            <p className="text-muted-foreground font-mono text-sm">
               stream.id:
             </p>
             <p className="text-muted-foreground font-mono text-sm">
@@ -134,7 +134,7 @@ export function SoundCard() {
             </p>
           </div>
           <div className="flex w-full flex-row items-center justify-between">
-            <p className="text-muted-foreground font-mono text-xs sm:text-sm">
+            <p className="text-muted-foreground font-mono text-sm">
               sourceNode.channelCount:
             </p>
             <p className="text-muted-foreground font-mono text-sm">
@@ -142,7 +142,7 @@ export function SoundCard() {
             </p>
           </div>
           <div className="flex w-full flex-row items-center justify-between">
-            <p className="text-muted-foreground font-mono text-xs sm:text-sm">
+            <p className="text-muted-foreground font-mono text-sm">
               gainNode.gain.value:
             </p>
             <p className="text-muted-foreground font-mono text-sm">
@@ -150,7 +150,7 @@ export function SoundCard() {
             </p>
           </div>
           <div className="flex w-full flex-row items-center justify-between">
-            <p className="text-muted-foreground font-mono text-xs sm:text-sm">
+            <p className="text-muted-foreground font-mono text-sm">
               analyserNode.fftSize:
             </p>
             <p className="text-muted-foreground font-mono text-sm">
@@ -158,7 +158,7 @@ export function SoundCard() {
             </p>
           </div>
           <div className="flex w-full flex-row items-center justify-between">
-            <p className="text-muted-foreground font-mono text-xs sm:text-sm">
+            <p className="text-muted-foreground font-mono text-sm">
               analyserNode.frequencyBinCount:
             </p>
             <p className="text-muted-foreground font-mono text-sm">

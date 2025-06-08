@@ -9,7 +9,7 @@ import {
 export function useSound() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [isDeviceSwitching, setIsDeviceSwitching] = useState(false);
   const [outputEnabled, setOutputEnabled] = useState(false);
 
@@ -26,7 +26,10 @@ export function useSound() {
         setErrorMessage(null);
         setIsDeviceSwitching(true);
 
-        audioContextRef.current = audioContextRef.current ?? getAudioContext();
+        // Create AudioContext if it doesn't exist or if it's closed
+        if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+          audioContextRef.current = getAudioContext();
+        }
 
         if (!audioContextRef.current) {
           console.error("Failed to create AudioContext");
@@ -45,7 +48,7 @@ export function useSound() {
 
         // Request microphone access with specific device if provided
         const constraints: MediaStreamConstraints = {
-          audio: deviceId ? { deviceId: { exact: deviceId } } : true,
+          audio: deviceId && deviceId !== "" ? { deviceId: { exact: deviceId } } : true,
         };
 
         streamRef.current = await getMediaStream(constraints);
@@ -76,7 +79,7 @@ export function useSound() {
         setIsDeviceSwitching(false);
 
         // Update selected device ID
-        if (deviceId) {
+        if (deviceId && deviceId !== "") {
           setSelectedDeviceId(deviceId);
         }
       } catch (error) {
@@ -93,7 +96,7 @@ export function useSound() {
     [outputEnabled]
   );
 
-  // Cleanup audio resources
+  // Cleanup audio resources (suspend AudioContext, keep it alive)
   const cleanupAudio = useCallback(() => {
     if (sourceNodeRef.current) {
       sourceNodeRef.current.disconnect();
@@ -111,11 +114,10 @@ export function useSound() {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
 
-    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
-      audioContextRef.current.close();
+    if (audioContextRef.current && audioContextRef.current.state === "running") {
+      audioContextRef.current.suspend();
     }
 
-    audioContextRef.current = null;
     streamRef.current = null;
     sourceNodeRef.current = null;
     gainNodeRef.current = null;
@@ -123,6 +125,17 @@ export function useSound() {
 
     setIsInitialized(false);
   }, []);
+
+  // Final cleanup for unmount (actually close AudioContext)
+  const finalCleanup = useCallback(() => {
+    cleanupAudio();
+    
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+      audioContextRef.current.close();
+    }
+
+    audioContextRef.current = null;
+  }, [cleanupAudio]);
 
   const changeDevice = useCallback(
     (deviceId: string) => {
@@ -144,7 +157,7 @@ export function useSound() {
 
   const start = useCallback(() => {
     if (!isInitialized) {
-      initializeAudio(selectedDeviceId || undefined);
+      initializeAudio(selectedDeviceId !== "" ? selectedDeviceId : undefined);
     }
   }, [isInitialized, initializeAudio, selectedDeviceId]);
 
@@ -154,12 +167,11 @@ export function useSound() {
     }
   }, [isInitialized, cleanupAudio]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      cleanupAudio();
+      finalCleanup();
     };
-  }, [cleanupAudio]);
+  }, [finalCleanup]);
 
   const toggleOutput = useCallback((enabled: boolean) => {
     setOutputEnabled(enabled);
