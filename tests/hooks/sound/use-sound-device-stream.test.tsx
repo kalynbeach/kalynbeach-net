@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useSoundDeviceStream } from "@/hooks/sound/use-sound-device-stream";
+import { useSoundDeviceStream } from "@/hooks/wave-lab/use-sound-device-stream";
 import { SoundContextProvider, SoundContext } from "@/contexts/sound-context";
 import type { SoundContextValue } from "@/lib/types";
 

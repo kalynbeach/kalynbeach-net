@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { useWaveformData } from "@/hooks/sound/use-waveform-data";
+import { useWaveformData } from "@/hooks/wave-lab/use-waveform-data";
 
 class MockAnalyserNode {
   frequencyBinCount = 1024;

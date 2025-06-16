@@ -1,0 +1,66 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Sound
+
+This is an outline of the audio-related ("sound") code in this project.
+
+## Sound Docs
+
+- Old sound doc: [sound.md](mdc:docs/sound/sound.md)
+- Refactored sound doc: [refactor-sound.md](mdc:docs/sound/refactor-sound.md)
+
+## Refactor
+
+The sound codebase is currently being refactored on branch `refactor/sound`. Read the refactor doc [refactor-sound.md](mdc:docs/sound/refactor-sound.md) as well as the old sound doc [sound.md](mdc:docs/sound/sound.md) and make sure you understand the differences between the old and refactored codebases, the goals of the refactor, and the remaining refactor TODOs.
+
+### Old Sound Code
+
+**Types**
+- [sound.ts](mdc:lib/types/sound.ts)
+
+**Context**
+- [sound-context.tsx](mdc:contexts/sound-context.tsx)
+
+**Hooks**
+- [use-sound-devices.ts](mdc:hooks/sound/use-sound-devices.ts)
+- [use-sound-device-stream.ts](mdc:hooks/sound/use-sound-device-stream.ts)
+- [use-frequency-data.ts](mdc:hooks/sound/use-frequency-data.ts)
+- [use-waveform-data.ts](mdc:hooks/sound/use-waveform-data.ts)
+- [use-meyda.ts](mdc:hooks/sound/use-meyda.ts)
+
+**Components**
+- [sound-block.tsx](mdc:components/sound/sound-block.tsx)
+- [sound-devices.tsx](mdc:components/sound/sound-devices.tsx)
+- [waveform.tsx](mdc:components/sound/waveform.tsx)
+- [chroma.tsx](mdc:components/sound/chroma.tsx)
+- [frequency-bars.tsx](mdc:components/sound/frequency-bars.tsx)
+
+**Pages**
+- [page.tsx](mdc:app/sound/wave-lab/page.tsx)
+
+**Tests**
+- [sound-context.test.tsx](mdc:tests/contexts/sound-context.test.tsx)
+- [use-sound-devices.test.ts](mdc:tests/hooks/sound/use-sound-devices.test.ts)
+- [use-sound-device-stream.test.tsx](mdc:tests/hooks/sound/use-sound-device-stream.test.tsx)
+- [use-frequency-data.test.ts](mdc:tests/hooks/sound/use-frequency-data.test.ts)
+- [use-waveform-data.test.ts](mdc:tests/hooks/sound/use-waveform-data.test.ts)
+
+
+### Refactored Sound Code
+
+**Libraries**
+- [sound.ts](mdc:lib/sound.ts)
+
+**Hooks**
+- [use-sound.ts](mdc:hooks/use-sound.ts)
+- [use-sound-visualizer.ts](mdc:hooks/use-sound-visualizer.ts)
+
+**Components**
+- [sound.tsx](mdc:components/sound.tsx)
+- [sound-card.tsx](mdc:components/sound-card.tsx)
+- [sound-card-skeleton.tsx](mdc:components/sound-card-skeleton.tsx)
+- [sound-device-select.tsx](mdc:components/sound-device-select.tsx)
+- [sound-visualizer.tsx](mdc:components/sound-visualizer.tsx)

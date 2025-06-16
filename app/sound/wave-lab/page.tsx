@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import SitePage from "@/components/site/site-page";
 import { SoundContextProvider } from "@/contexts/sound-context";
-import SoundBlock from "@/components/sound/sound-block";
+import SoundBlock from "@/components/wave-lab/sound-block";
 
 export const metadata: Metadata = {
   title: "wave-lab",

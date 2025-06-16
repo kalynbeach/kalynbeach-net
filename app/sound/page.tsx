@@ -11,22 +11,22 @@ export default function Sound() {
     <SitePage>
       <main className="size-full flex flex-col gap-4">
         <ul className="list-disc list-inside">
-          {/* <li>
+          <li>
             <Link
-              href="/sound/wave-player"
+              href="/sound/sound-card"
               className="font-mono font-medium transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
             >
-              WavePlayer
+              SoundCard
             </Link>
-          </li> */}
-          <li>
+          </li>
+          {/* <li>
             <Link
               href="/sound/wave-lab"
               className="font-mono font-medium transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
             >
               WaveLab
             </Link>
-          </li>
+          </li> */}
         </ul>
       </main>
     </SitePage>
