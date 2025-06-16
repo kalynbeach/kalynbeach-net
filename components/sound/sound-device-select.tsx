@@ -99,7 +99,7 @@ export function SoundDeviceSelect({
         handleDeviceChange
       );
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="w-full space-y-1">

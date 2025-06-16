@@ -1,10 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useSound } from "@/hooks/use-sound";
-import { useSoundVisualizer } from "@/hooks/use-sound-visualizer";
-import { SoundVisualizer } from "@/components/sound-visualizer";
-import { SoundDeviceSelect } from "@/components/sound-device-select";
+import { useSound } from "@/hooks/sound/use-sound";
+import { useSoundVisualizer } from "@/hooks/sound/use-sound-visualizer";
+import { SoundVisualizer } from "@/components/sound/sound-visualizer";
+import { SoundDeviceSelect } from "@/components/sound/sound-device-select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";

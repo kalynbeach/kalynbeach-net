@@ -5,16 +5,16 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useSoundContext } from "@/contexts/sound-context";
-import { useSoundDevices } from "@/hooks/sound/use-sound-devices";
-import { useSoundDeviceStream } from "@/hooks/sound/use-sound-device-stream";
-import { useMeyda } from "@/hooks/sound/use-meyda";
+import { useSoundDevices } from "@/hooks/wave-lab/use-sound-devices";
+import { useSoundDeviceStream } from "@/hooks/wave-lab/use-sound-device-stream";
+import { useMeyda } from "@/hooks/wave-lab/use-meyda";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Badge } from "@/components/ui/badge";
 import { AudioWaveform, Music } from "lucide-react";
-import SoundDevices from "@/components/sound/sound-devices";
-import Chroma from "@/components/sound/chroma";
-import { WaveformSkeleton } from "@/components/sound/waveform";
-import Waveform from "@/components/sound/waveform";
+import SoundDevices from "@/components/wave-lab/sound-devices";
+import Chroma from "@/components/wave-lab/chroma";
+import { WaveformSkeleton } from "@/components/wave-lab/waveform";
+import Waveform from "@/components/wave-lab/waveform";
 
 // const Waveform = dynamic(() => import("@/components/sound/waveform"), { ssr: false });
 

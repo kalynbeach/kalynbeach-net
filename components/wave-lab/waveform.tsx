@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, Suspense } from "react";
-import { useWaveformData } from "@/hooks/sound/use-waveform-data";
+import { useWaveformData } from "@/hooks/wave-lab/use-waveform-data";
 
 type WaveformProps = {
   analyser: AnalyserNode | null;

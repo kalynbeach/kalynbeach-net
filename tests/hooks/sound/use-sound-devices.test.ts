@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useSoundDevices } from "@/hooks/sound/use-sound-devices";
+import { useSoundDevices } from "@/hooks/wave-lab/use-sound-devices";
 
 // Mock MediaStream
 class MockMediaStream {

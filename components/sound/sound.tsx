@@ -2,11 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { SoundCardSkeleton } from "@/components/sound-card-skeleton";
+import { SoundCardSkeleton } from "@/components/sound/sound-card-skeleton";
 
 const SoundCard = dynamic(
   () =>
-    import("@/components/sound-card").then(
+    import("@/components/sound/sound-card").then(
       (mod) => mod.SoundCard
     ),
   {

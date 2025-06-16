@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { useFrequencyData } from "@/hooks/sound/use-frequency-data";
+import { useFrequencyData } from "@/hooks/wave-lab/use-frequency-data";
 
 class MockAnalyserNode {
   frequencyBinCount = 1024;

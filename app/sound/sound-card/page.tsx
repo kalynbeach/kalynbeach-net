@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import SitePage from "@/components/site/site-page";
-import { Sound } from "@/components/sound";
-import { SoundCardSkeleton } from "@/components/sound-card-skeleton";
+import { Sound } from "@/components/sound/sound";
+import { SoundCardSkeleton } from "@/components/sound/sound-card-skeleton";
 
 export default function SoundBlockPage() {
   return (

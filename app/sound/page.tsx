@@ -19,14 +19,14 @@ export default function Sound() {
               SoundCard
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link
               href="/sound/wave-lab"
               className="font-mono font-medium transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
             >
               WaveLab
             </Link>
-          </li>
+          </li> */}
         </ul>
       </main>
     </SitePage>

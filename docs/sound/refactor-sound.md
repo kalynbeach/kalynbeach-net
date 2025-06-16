@@ -17,6 +17,7 @@ This document outlines the refactor for my application's core audio ("sound") co
 
 ### Old Sound Code
 
+- `contexts/sound-context.tsx`
 - `components/sound/sound-block.tsx`
 - `components/sound/sound-devices.tsx`
 - `components/sound/chroma.tsx`
@@ -36,11 +37,9 @@ This document outlines the refactor for my application's core audio ("sound") co
 
 ## TODOs
 
-- [ ] Update `SoundCard` color styles so they resemble `WaveLab` color styles
-- [ ] Reorganize refactored sound code
-- [ ] Clean up old sound code
-- [ ] Write tests for refactored sound code (might be better suited in `kalynbeach-registry` repo?)
-- [ ] Create mermaid diagrams for sound system structure and audio data flow
-- [ ] Integrate `meyda`, `tonal`, and other relevant libraries
+- [x] Reorganize refactored sound code
+- [ ] Remove old sound code
+- [ ] Update documentation in `docs/sound/sound.md`
+  - [ ] Create mermaid diagrams for refactored sound system structure and audio data flow
 - [ ] Review branch code
 - [ ] Create PR and merge `refactor/sound` branch into `main`
