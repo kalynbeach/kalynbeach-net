@@ -15,7 +15,7 @@ export function SoundCardSkeleton() {
           {/* 1b: Output Toggle & Mobile Buttons */}
           <div className="flex flex-row items-center justify-end gap-3">
             {/* Output Toggle Box (w-[100px] h-[30px]) */}
-            <div className="flex h-[30px] w-[100px] items-center space-x-2 rounded-sm border border-accent px-2">
+            <div className="flex h-[30px] w-[100px] items-center space-x-2 rounded-sm border border-accent px-2 dark:bg-input/10 dark:border-input/80">
               {/* Combined placeholder for "output" label and Switch */}
               <Skeleton className="h-5 w-full rounded-sm" />
             </div>

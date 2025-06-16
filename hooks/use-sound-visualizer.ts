@@ -23,11 +23,10 @@ export function useSoundVisualizer(analyserNode: AnalyserNode | null) {
 
       analyserNode.getByteTimeDomainData(dataArray);
 
-      ctx.fillStyle = "oklch(0.9851 0 0)";
+      // NOTE: Canvas styles are set in the SoundVisualizer component and updated based on theme
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.lineWidth = 2;
-      ctx.strokeStyle = "oklch(0.145 0 0)";
       ctx.beginPath();
 
       const sliceWidth = canvas.width / bufferLength;

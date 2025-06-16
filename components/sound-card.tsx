@@ -31,22 +31,22 @@ export function SoundCard() {
   const { canvasRef } = useSoundVisualizer(analyserNode);
 
   return (
-    <Card className="sound-card border-muted-foreground/50 rounded-sm border py-0 shadow-xs">
+    <Card className="sound-card rounded-sm border py-0 shadow-xs border-accent-foreground/10">
       <CardContent className="bg-card flex flex-col gap-3 rounded-sm p-3">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div className="flex w-full flex-row items-center justify-between">
             <h1 className="font-mono font-semibold">SoundCard</h1>
             <p
               className={cn(
-                "text-muted-foreground border-muted-foreground/5 bg-muted/30 rounded-sm border px-2.5 py-1.5 font-mono text-xs transition-all",
-                isInitialized && "text-primary border-primary/30"
+                "text-muted-foreground border-muted-foreground/20 rounded-sm border px-2.5 py-1.5 font-mono text-xs transition-all",
+                isInitialized && "text-ring border-ring/80"
               )}
             >
-              {isInitialized ? "initialized" : "idle"}
+              {isInitialized ? "active" : "idle"}
             </p>
           </div>
           <div className="flex flex-row items-center justify-end gap-3">
-            <div className="border-muted-foreground/10 flex h-[30px] w-[100px] items-center space-x-2 rounded-sm border px-2">
+            <div className="border-muted-foreground/20 dark:bg-input/10 dark:border-input/80 flex h-[30px] w-[100px] items-center space-x-2 rounded-sm border px-2">
               <Label
                 htmlFor="sound-output-toggle"
                 className="font-mono text-xs"

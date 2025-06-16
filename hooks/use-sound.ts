@@ -1,10 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import {
-  getAudioContext,
-  getMediaStream,
-} from "@/lib/sound";
+import { getAudioContext, getMediaStream } from "@/lib/sound";
 
 export function useSound() {
   const [isInitialized, setIsInitialized] = useState(false);
