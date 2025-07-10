@@ -63,7 +63,7 @@ export class PlaylistService extends BaseService {
 
     // Extract tracks and maintain their order
     const tracks = playlistTracks 
-      ? playlistTracks.map(item => item.tracks as Tables<"tracks">)
+      ? playlistTracks.map(item => item.tracks[0] as Tables<"tracks">)
       : [];
 
     return { playlist, tracks };
