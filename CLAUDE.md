@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Next.js 15 personal website (`kalynbeach-net`) featuring three parallel audio systems, 3D graphics, and music-related functionality. The site includes:
+Next.js 16 personal website featuring three parallel audio systems, 3D graphics, and music-related functionality:
 
-- **Audio Systems**: Three coexisting sound architectures (refactored sound, legacy wave-lab, wave-player)
-- **3D Graphics**: Three.js/React Three Fiber components for interactive 3D scenes
-- **Authentication**: Supabase-based auth with protected admin routes
-- **Database**: Supabase with playlist, track, and user management
-- **UI**: shadcn/ui components with Tailwind CSS and dark/light theme support
+- **Audio Systems**: Three coexisting architectures (refactored sound, legacy wave-lab, wave-player)
+- **3D Graphics**: Three.js/React Three Fiber
+- **Auth**: Supabase Auth with admin and VIP route protection
+- **Database**: Supabase Postgres (playlists, tracks, users)
+- **UI**: shadcn/ui + Tailwind CSS v4 + Zod validation
 
 ## Development Commands
 
@@ -56,8 +56,10 @@ This is a Next.js 15 personal website (`kalynbeach-net`) featuring three paralle
 **IMPORTANT**: This codebase currently has three coexisting audio systems due to ongoing refactoring:
 
 1. **Refactored Sound System** (Current/Active)
-   - `components/sound/` - Modern streamlined components
-   - `hooks/sound/` - Simplified sound hooks  
+   - `lib/sound.ts` - Core sound functions
+   - `hooks/use-sound.ts` - AudioContext, MediaDevice, MediaStream management
+   - `hooks/use-sound-visualizer.ts` - Visualization logic
+   - `components/sound.tsx`, `components/sound-card.tsx` - Main components
    - Used in `/sound/sound-card` route
    - This is the target architecture
 
@@ -83,10 +85,12 @@ This is a Next.js 15 personal website (`kalynbeach-net`) featuring three paralle
 - Wave-player has its own context system
 - Refactored sound system uses simplified approach
 
-**Database Layer**:
-- Service-oriented architecture with `BaseService` class
-- Server-side and client-side Supabase clients
-- Cached database operations using React's `cache()`
+**Database Layer** (`db/`):
+- `services/` - Service-oriented architecture with `BaseService` class
+- `queries/` - Database query functions
+- `schemas/` - Zod validation schemas
+- `supabase/` - Server-side and client-side Supabase clients
+- Uses React's `cache()` for server-side caching
 
 **3D Graphics**:
 - React Three Fiber with custom scene components
@@ -115,8 +119,13 @@ Based on `docs/sound/refactor-sound.md`:
 
 - Uses Vitest with jsdom environment
 - Tests located in `tests/` directory
-- Strong test coverage for audio hooks and contexts
+- Run tests once: `bun run test run`
+- Run tests in watch mode: `bun run test`
 - Run single test: `bun test [test-file-name]`
+
+## Adding Components
+
+- Add shadcn/ui components: `bunx --bun shadcn@canary add [components]`
 
 ## Important Notes
 
