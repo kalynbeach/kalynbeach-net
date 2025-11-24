@@ -11,7 +11,7 @@ This plan outlines a complete migration from Supabase (PostgreSQL + Auth + S3) t
 - Keep `@auth/core` for OAuth providers
 
 ### 1.2 Initialize Convex
-- Run `npx convex dev` to create convex directory
+- Run `bunx convex dev` to create convex directory
 - Set up environment variables:
   - `NEXT_PUBLIC_CONVEX_URL`
   - `AUTH_GITHUB_ID` (reuse from Supabase)
@@ -422,10 +422,10 @@ exportData();
 ### 7.2 Import to Convex
 ```bash
 # Import data
-npx convex import --table profiles profiles.jsonl
-npx convex import --table tracks tracks.jsonl
-npx convex import --table playlists playlists.jsonl
-npx convex import --table playlistTracks playlistTracks.jsonl
+bunx convex import --table profiles profiles.jsonl
+bunx convex import --table tracks tracks.jsonl
+bunx convex import --table playlists playlists.jsonl
+bunx convex import --table playlistTracks playlistTracks.jsonl
 ```
 
 ## Phase 8: Update Development Workflow

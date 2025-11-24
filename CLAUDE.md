@@ -1,3 +1,22 @@
+<!-- OPENSPEC:START -->
+# OpenSpec Instructions
+
+These instructions are for AI assistants working in this project.
+
+Always open `@/openspec/AGENTS.md` when the request:
+- Mentions planning or proposals (words like proposal, spec, change, plan)
+- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
+- Sounds ambiguous and you need the authoritative spec before coding
+
+Use `@/openspec/AGENTS.md` to learn:
+- How to create and apply change proposals
+- Spec format and conventions
+- Project structure and guidelines
+
+Keep this managed block so 'openspec update' can refresh the instructions.
+
+<!-- OPENSPEC:END -->
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -6,11 +25,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Next.js 16 personal website featuring three parallel audio systems, 3D graphics, and music-related functionality:
 
+- **UI**: React 19.2, shadcn/ui + Tailwind CSS v4 + Zod validation
+- **3D Graphics**: Three.js, @react-three/fiber, @react-three/drei
 - **Audio Systems**: Three coexisting architectures (refactored sound, legacy wave-lab, wave-player)
-- **3D Graphics**: Three.js/React Three Fiber
 - **Auth**: Supabase Auth with admin and VIP route protection
 - **Database**: Supabase Postgres (playlists, tracks, users)
-- **UI**: shadcn/ui + Tailwind CSS v4 + Zod validation
 
 ## Development Commands
 
