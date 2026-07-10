@@ -24,13 +24,13 @@ class MockAudioContext {
   }));
   resume = vi.fn(() => Promise.resolve());
   suspend = vi.fn(() => Promise.resolve());
-  private listeners: { type: string; callback: Function }[] = [];
+  private listeners: { type: string; callback: EventListener }[] = [];
 
-  addEventListener(type: string, callback: Function) {
+  addEventListener(type: string, callback: EventListener) {
     this.listeners.push({ type, callback });
   }
 
-  removeEventListener(type: string, callback: Function) {
+  removeEventListener(type: string, callback: EventListener) {
     this.listeners = this.listeners.filter(
       (l) => l.type !== type || l.callback !== callback
     );
@@ -41,7 +41,7 @@ class MockAudioContext {
     this.state = newState;
     this.listeners
       .filter((l) => l.type === "statechange")
-      .forEach((l) => l.callback());
+      .forEach((l) => l.callback(new Event("statechange")));
   }
 }
 
@@ -143,7 +143,7 @@ describe("SoundContext", () => {
       await act(async () => {
         try {
           await result.current.initialize();
-        } catch (e) {
+        } catch {
           // Expected error
         }
       });

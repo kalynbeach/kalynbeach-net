@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useSoundDeviceStream } from "@/hooks/wave-lab/use-sound-device-stream";
-import { SoundContextProvider, SoundContext } from "@/contexts/sound-context";
-import type { SoundContextValue } from "@/lib/types";
+import { SoundContext } from "@/contexts/sound-context";
+import type { SoundContextValue } from "@/lib/types/sound";
 
 // Simplified mock implementations that only include what we need for tests
 class MockAnalyserNode {
@@ -142,12 +142,9 @@ describe("useSoundDeviceStream", () => {
       Promise.resolve(mockStream)
     );
 
-    const { result, unmount } = renderHook(
-      () => useSoundDeviceStream(deviceId),
-      {
-        wrapper: createWrapper("active"),
-      }
-    );
+    const { unmount } = renderHook(() => useSoundDeviceStream(deviceId), {
+      wrapper: createWrapper("active"),
+    });
 
     // Wait for initialization
     await act(async () => {

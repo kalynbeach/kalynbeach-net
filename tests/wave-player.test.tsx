@@ -1,16 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { WavePlayerProvider, useWavePlayerContext } from "@/contexts/wave-player-context";
+import {
+  WavePlayerProvider,
+  useWavePlayerContext,
+} from "@/contexts/wave-player-context";
 import { useWavePlayer } from "@/hooks/wave-player/use-wave-player";
-import type { WavePlayerTrack, WavePlayerPlaylist } from "@/lib/types/wave-player";
+import type {
+  WavePlayerTrack,
+  WavePlayerPlaylist,
+} from "@/lib/types/wave-player";
 
 // Mock the WavePlayerBufferPool class
-const mockLoadTrackChunked = vi.fn().mockImplementation(async (track: WavePlayerTrack) => {
-  if (track.src === "invalid-url") {
-    throw new Error("Failed to load track");
-  }
-  return {} as AudioBuffer;
-});
+const mockLoadTrackChunked = vi
+  .fn()
+  .mockImplementation(async (track: WavePlayerTrack) => {
+    if (track.src === "invalid-url") {
+      throw new Error("Failed to load track");
+    }
+    return {} as AudioBuffer;
+  });
 
 const mockCleanup = vi.fn();
 const mockGetCurrentBuffer = vi.fn().mockReturnValue({} as AudioBuffer);
@@ -31,7 +39,11 @@ const mockBufferPoolInstance = {
 
 // Use vi.mock with factory function to mock the WavePlayerBufferPool
 vi.mock("@/lib/wave-player/buffer-pool", () => ({
-  WavePlayerBufferPool: vi.fn().mockImplementation(() => mockBufferPoolInstance)
+  WavePlayerBufferPool: vi
+    .fn()
+    .mockImplementation(function MockWavePlayerBufferPoolConstructor() {
+      return mockBufferPoolInstance;
+    }),
 }));
 
 // Mock Web Audio API
@@ -102,7 +114,12 @@ const mockPlaylist: WavePlayerPlaylist = {
 describe("WavePlayer System", () => {
   beforeEach(() => {
     // Mock Web Audio API
-    vi.stubGlobal("AudioContext", vi.fn(() => mockAudioContext));
+    vi.stubGlobal(
+      "AudioContext",
+      vi.fn(function MockAudioContextConstructor() {
+        return mockAudioContext;
+      })
+    );
     mockAudioContext.createBufferSource = vi.fn(() => mockSourceNode);
     mockAudioContext.createAnalyser = vi.fn(() => mockAnalyserNode);
     mockAudioContext.createGain = vi.fn(() => mockGainNode);
@@ -119,33 +136,38 @@ describe("WavePlayer System", () => {
   describe("WavePlayerBufferPool", () => {
     it("should manage buffers and cleanup correctly", () => {
       // Test buffer management using our mocked methods directly
-      
+
       // Set a buffer
       mockSetNextBuffer({} as AudioBuffer);
       expect(mockSetNextBuffer).toHaveBeenCalled();
-      
+
       // Promote next buffer to current
       mockPromoteNextBuffer();
       expect(mockPromoteNextBuffer).toHaveBeenCalled();
-      
+
       // Cleanup
       mockCleanup();
       expect(mockCleanup).toHaveBeenCalled();
     });
-    
+
     it("should handle track loading", async () => {
       // Test track loading using our mocked method
       const result = await mockLoadTrackChunked(mockTrack, mockAudioContext);
-      
-      expect(mockLoadTrackChunked).toHaveBeenCalledWith(mockTrack, mockAudioContext);
+
+      expect(mockLoadTrackChunked).toHaveBeenCalledWith(
+        mockTrack,
+        mockAudioContext
+      );
       expect(result).toBeDefined();
     });
-    
+
     it("should handle track loading errors", async () => {
       // Test error handling
       const invalidTrack = { ...mockTrack, src: "invalid-url" };
-      
-      await expect(mockLoadTrackChunked(invalidTrack, mockAudioContext)).rejects.toThrow("Failed to load track");
+
+      await expect(
+        mockLoadTrackChunked(invalidTrack, mockAudioContext)
+      ).rejects.toThrow("Failed to load track");
     });
   });
 
@@ -153,7 +175,9 @@ describe("WavePlayer System", () => {
     it("should throw error when used outside provider", () => {
       expect(() => {
         renderHook(() => useWavePlayerContext());
-      }).toThrow("useWavePlayerContext must be used within a WavePlayerProvider");
+      }).toThrow(
+        "useWavePlayerContext must be used within a WavePlayerProvider"
+      );
     });
 
     it("should initialize with default state", () => {
@@ -186,7 +210,9 @@ describe("WavePlayer System", () => {
 
     it("should initialize with provided playlist", () => {
       const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <WavePlayerProvider playlist={mockPlaylist}>{children}</WavePlayerProvider>
+        <WavePlayerProvider playlist={mockPlaylist}>
+          {children}
+        </WavePlayerProvider>
       );
 
       const { result } = renderHook(() => useWavePlayerContext(), { wrapper });
@@ -236,7 +262,7 @@ describe("WavePlayer System", () => {
     it("should handle track loading errors", async () => {
       // Configure it to reject for this test
       mockLoadTrackChunked.mockRejectedValueOnce(new Error("Loading failed"));
-      
+
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <WavePlayerProvider>{children}</WavePlayerProvider>
       );
@@ -252,7 +278,7 @@ describe("WavePlayer System", () => {
       await act(async () => {
         try {
           await result.current.loadTrack({ ...mockTrack, src: "invalid-url" });
-        } catch (error) {
+        } catch {
           // Expected error
         }
       });
@@ -341,17 +367,17 @@ describe("WavePlayer System", () => {
       // Initialize first and set up a source node
       await act(async () => {
         await result.current.initialize();
-        
+
         // Create a source node to test cleanup
         result.current.state.audioContext = mockAudioContext;
         mockAudioContext.createBufferSource();
-        
+
         // In actual implementation, we need to have a sourceNode for it to be stopped
         // We'll simulate this by setting a buffer and ready state
         result.current.state.buffer = {} as AudioBuffer;
         result.current.state.track = mockTrack;
         result.current.state.status = "playing";
-        
+
         // Set the sourceNodeRef internal value by calling play
         await result.current.controls.play();
       });
@@ -377,7 +403,7 @@ describe("WavePlayer System", () => {
 
       // Wait for initialization effects
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       });
 
       // In a real scenario, AudioContext would be called by now
@@ -388,16 +414,18 @@ describe("WavePlayer System", () => {
     it("should load track from playlist automatically", async () => {
       // Reset the mockLoadTrackChunked so we can check it gets called
       mockLoadTrackChunked.mockClear();
-      
+
       const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <WavePlayerProvider playlist={mockPlaylist}>{children}</WavePlayerProvider>
+        <WavePlayerProvider playlist={mockPlaylist}>
+          {children}
+        </WavePlayerProvider>
       );
 
       const { result } = renderHook(() => useWavePlayer(), { wrapper });
 
       // Wait for initialization and effects
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       });
 
       // Due to how testing library handles effects timing, we need to check this differently
@@ -439,24 +467,24 @@ describe("WavePlayer System", () => {
       // Simulate a failed first load attempt
       await act(async () => {
         await result.current.initialize();
-        
+
         try {
           await result.current.loadTrack(mockTrack);
-        } catch (error) {
+        } catch {
           // Expected error
         }
       });
-      
+
       // Set error state for testing
       act(() => {
         result.current.state.error = new Error("Failed to load track");
         result.current.state.status = "error";
       });
-      
+
       // Verify the error state
       expect(result.current.state.error).toBeDefined();
       expect(result.current.state.status).toBe("error");
-      
+
       // Retry loading
       await act(async () => {
         await result.current.retryLoad();
@@ -468,5 +496,3 @@ describe("WavePlayer System", () => {
     });
   });
 });
-
-
