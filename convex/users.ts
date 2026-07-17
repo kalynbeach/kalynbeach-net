@@ -48,20 +48,17 @@ export const claimConfiguredAdmin = mutation({
     const identity = await requireIdentity(ctx);
     const configuredAdminId = process.env.INITIAL_ADMIN_CLERK_USER_ID;
 
-    if (!configuredAdminId) {
-      throw new Error("INITIAL_ADMIN_CLERK_USER_ID is not configured");
-    }
-
-    if (identity.subject !== configuredAdminId) {
-      throw new Error("Current Clerk user is not the configured initial admin");
-    }
-
     const existingUser = await ctx.db
       .query("users")
       .withIndex("by_clerk_user_id", (query) =>
         query.eq("clerkUserId", identity.subject)
       )
       .unique();
+
+    if (!configuredAdminId || identity.subject !== configuredAdminId) {
+      return { role: existingUser?.role ?? ("guest" as const) };
+    }
+
     const now = Date.now();
 
     if (!existingUser) {
