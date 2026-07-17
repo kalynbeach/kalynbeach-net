@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
+import { getConvexToken } from "@/lib/convex/clerk-token";
 import {
   toWavePlayerPlaylist,
   toWavePlayerTrack,
@@ -13,26 +14,9 @@ import type {
   WavePlayerTrack,
 } from "@/lib/types/wave-player";
 
-const CONVEX_JWT_TEMPLATE = "convex";
-
-async function getConvexToken(): Promise<string | null> {
-  const { userId, getToken } = await auth();
-
-  if (!userId) {
-    return null;
-  }
-
-  const token = await getToken({ template: CONVEX_JWT_TEMPLATE });
-
-  if (!token) {
-    throw new Error("Clerk did not issue the Convex JWT template");
-  }
-
-  return token;
-}
-
 export async function requireConvexAdmin(): Promise<void> {
-  const token = await getConvexToken();
+  const { userId, sessionClaims, getToken } = await auth();
+  const token = await getConvexToken({ userId, sessionClaims, getToken });
 
   if (!token) {
     redirect("/login");
