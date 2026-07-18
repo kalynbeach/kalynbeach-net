@@ -1,8 +1,9 @@
 ---
 description: The tech stack used for this project
-globs: 
+globs:
 alwaysApply: false
 ---
+
 # `kalynbeach` Tech Stack
 
 ## Web Development
@@ -11,7 +12,7 @@ This is Kalyn Beach's core tech stack for web development (used for `kalynbeach-
 
 - **Runtime**: Bun
   - Alternative: Node.js (only when absolutely necessary!)
-- **Framework**: Next.js 15
+- **Framework**: Next.js 16
 - **Testing**: Vitest, Bun
 - **Styles**: Tailwind CSS v4
 - `prettier-plugin-tailwindcss`
@@ -24,10 +25,11 @@ This is Kalyn Beach's core tech stack for web development (used for `kalynbeach-
 - **Graphics**: Three.js
   - `react-three-fiber`
   - `react-three/drei`
-- **Authentication**: Supabase Auth
-- **Database**: Supabase Postgres
-  - `supabase/supabase-js`
-  - `supabase/ssr`
+- **Authentication**: Clerk
+  - `@clerk/nextjs`
+- **Database and Roles**: Convex
+  - `convex`
+  - Application roles: `guest | vip | admin`
 - **Validation**: Zod
 - **Formatting**: Prettier
 - **Linting**: ESLint v9
@@ -43,6 +45,7 @@ This is Kalyn Beach's core tech stack for web development (used for `kalynbeach-
 Follow these rules and use these terminal commands when necessary.
 
 General rules:
+
 - Use `bun` instead of `npm` or `pnpm`
 - Use `bunx` instead of `npx`
 
@@ -55,9 +58,7 @@ General rules:
 
 - Add shadcn/ui components: `bunx --bun shadcn@canary add [components]`
 
-
 ## Tests
 
 - Run tests: `bun run test run`
 - Run tests in watch mode: `bun run test`
-
