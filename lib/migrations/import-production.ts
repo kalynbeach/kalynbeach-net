@@ -25,10 +25,15 @@ import {
   verifyRepositorySeedFile,
 } from "@/lib/migrations/production";
 
+export type ConvexProcessResult = {
+  stdout: string;
+  stderr: string;
+};
+
 export type ConvexRunner = (
   args: readonly string[],
   captureOutput?: boolean
-) => Promise<string>;
+) => Promise<ConvexProcessResult>;
 
 type ValidatedArtifacts = {
   data: MigrationData;
@@ -173,19 +178,43 @@ export const runConvexProcess: ConvexRunner = async (
   args,
   captureOutput = false
 ) => {
-  const process = Bun.spawn(["bunx", "convex", ...args], {
-    stdin: "inherit",
-    stdout: captureOutput ? "pipe" : "inherit",
-    stderr: "inherit",
-  });
-  const output = captureOutput ? await new Response(process.stdout).text() : "";
-  const exitCode = await process.exited;
+  if (!captureOutput) {
+    const process = Bun.spawn(["bunx", "convex", ...args], {
+      stdin: "inherit",
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    const exitCode = await process.exited;
 
-  if (exitCode !== 0) {
-    throw new Error(`convex ${args[0]} failed with exit code ${exitCode}`);
+    if (exitCode !== 0) {
+      throw new Error(`convex ${args[0]} failed with exit code ${exitCode}`);
+    }
+
+    return { stdout: "", stderr: "" };
   }
 
-  return output;
+  const process = Bun.spawn(["bunx", "convex", ...args], {
+    stdin: "inherit",
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(process.stdout).text(),
+    new Response(process.stderr).text(),
+    process.exited,
+  ]);
+
+  if (exitCode !== 0) {
+    const diagnostics = [stdout.trim(), stderr.trim()]
+      .filter((value) => value.length > 0)
+      .join("\n");
+
+    throw new Error(
+      `convex ${args[0]} failed with exit code ${exitCode}${diagnostics.length > 0 ? `:\n${diagnostics}` : ""}`
+    );
+  }
+
+  return { stdout, stderr };
 };
 
 function sortRows(table: Table, rows: readonly unknown[]): unknown[] {
@@ -242,13 +271,25 @@ async function readProductionTable(options: {
     ],
     true
   );
-  const trimmed = output.trim();
+  const stdout = output.stdout.trim();
 
-  if (trimmed === "There are no documents in this table.") {
+  if (stdout.length > 0) {
+    return z.array(z.unknown()).parse(JSON.parse(stdout));
+  }
+
+  const emptyTableSentinel = "There are no documents in this table.";
+  const stderrLines = output.stderr
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (stderrLines.includes(emptyTableSentinel)) {
     return [];
   }
 
-  return z.array(z.unknown()).parse(JSON.parse(trimmed));
+  throw new Error(
+    `${options.table} data read returned empty stdout without the exact empty-table sentinel on stderr${output.stderr.trim().length > 0 ? `:\n${output.stderr.trim()}` : ""}`
+  );
 }
 
 export async function runProductionImport(options: {

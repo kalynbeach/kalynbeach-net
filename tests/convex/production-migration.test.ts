@@ -10,7 +10,10 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { repositorySeedData } from "@/convex/lib/migration";
-import { runProductionImport } from "@/lib/migrations/import-production";
+import {
+  runProductionImport,
+  type ConvexProcessResult,
+} from "@/lib/migrations/import-production";
 import {
   ARTIFACT_PATHS,
   IMPORT_CONFIRMATION,
@@ -41,6 +44,10 @@ const importEnvironment = {
   MIGRATION_CONFIRM: IMPORT_CONFIRMATION,
 };
 const temporaryDirectories: string[] = [];
+
+function convexResult(stdout = "", stderr = ""): ConvexProcessResult {
+  return { stdout, stderr };
+}
 
 async function makeTemporaryDirectory(): Promise<string> {
   const directory = await mkdtemp(
@@ -215,7 +222,7 @@ describe("repository-seed production import guards", () => {
   ])(
     "rejects import guard failure before a Convex process",
     async (environment, mode, message) => {
-      const runConvex = vi.fn(async () => "[]");
+      const runConvex = vi.fn(async () => convexResult("[]"));
 
       await expect(
         runProductionImport({
@@ -232,7 +239,7 @@ describe("repository-seed production import guards", () => {
   it("rejects the retired Supabase production manifest before a Convex process", async () => {
     const parent = await makeTemporaryDirectory();
     const inputDirectory = join(parent, "candidate");
-    const runConvex = vi.fn(async () => "[]");
+    const runConvex = vi.fn(async () => convexResult("[]"));
     await mkdir(inputDirectory);
     await writeFile(
       resolve(inputDirectory, "manifest.json"),
@@ -280,7 +287,7 @@ describe("repository-seed production import guards", () => {
       const manifest = JSON.parse(
         await readFile(manifestPath, "utf8")
       ) as Record<string, unknown>;
-      const runConvex = vi.fn(async () => "[]");
+      const runConvex = vi.fn(async () => convexResult("[]"));
       manifest[field] = value;
       await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
@@ -301,7 +308,7 @@ describe("repository-seed production import guards", () => {
     const parent = await makeTemporaryDirectory();
     const inputDirectory = await prepareArtifacts(parent);
     const tracksPath = resolve(inputDirectory, ARTIFACT_PATHS.tracks);
-    const runConvex = vi.fn(async () => "[]");
+    const runConvex = vi.fn(async () => convexResult("[]"));
     await writeFile(tracksPath, `${await readFile(tracksPath, "utf8")}\n`);
 
     await expect(
@@ -328,7 +335,7 @@ describe("repository-seed production import guards", () => {
       .trim()
       .split("\n")
       .map((line) => JSON.parse(line) as Record<string, unknown>);
-    const runConvex = vi.fn(async () => "[]");
+    const runConvex = vi.fn(async () => convexResult("[]"));
     tracks[0].title = "tampered";
     const tamperedContent = `${tracks
       .map((track) => JSON.stringify(track))
@@ -353,7 +360,7 @@ describe("repository-seed production import guards", () => {
     const parent = await makeTemporaryDirectory();
     const inputDirectory = await prepareArtifacts(parent);
     const sourceFilePath = join(parent, "seed.sql");
-    const runConvex = vi.fn(async () => "[]");
+    const runConvex = vi.fn(async () => convexResult("[]"));
     await writeFile(sourceFilePath, "tampered seed\n");
 
     await expect(
@@ -375,9 +382,15 @@ describe("repository-seed production import guards", () => {
     const runConvex = vi.fn(async (args: readonly string[]) => {
       if (args[0] === "data") {
         const table = args[1] as (typeof TABLES)[number];
-        return JSON.stringify(
-          importedTables.has(table) ? repositorySeedData[table] : []
-        );
+        return importedTables.has(table)
+          ? convexResult(
+              JSON.stringify(repositorySeedData[table]),
+              "ExperimentalWarning: harmless warning\n"
+            )
+          : convexResult(
+              "",
+              "ExperimentalWarning: harmless warning\nThere are no documents in this table.\n"
+            );
       }
 
       const table = args[4] as (typeof TABLES)[number];
@@ -394,7 +407,7 @@ describe("repository-seed production import guards", () => {
       expect(args).not.toContain("--prod");
       expect(args).not.toContain("--replace");
       importedTables.add(table);
-      return "";
+      return convexResult();
     });
 
     await runProductionImport({
@@ -422,8 +435,9 @@ describe("repository-seed production import guards", () => {
       if (args[0] === "import") {
         throw new Error("resume must not import an already matching table");
       }
-      return JSON.stringify(
-        repositorySeedData[args[1] as (typeof TABLES)[number]]
+      return convexResult(
+        JSON.stringify(repositorySeedData[args[1] as (typeof TABLES)[number]]),
+        "ExperimentalWarning: harmless warning\n"
       );
     });
     await runProductionImport({
@@ -436,6 +450,55 @@ describe("repository-seed production import guards", () => {
     expect(resumeRunner).toHaveBeenCalledTimes(3);
   });
 
+  it("uses nonempty JSON stdout even when stderr contains warnings", async () => {
+    const parent = await makeTemporaryDirectory();
+    const inputDirectory = await prepareArtifacts(parent);
+    const runConvex = vi.fn(async (args: readonly string[]) => {
+      if (args[0] === "import") {
+        throw new Error("matching JSON stdout must not trigger an import");
+      }
+
+      return convexResult(
+        JSON.stringify(repositorySeedData[args[1] as (typeof TABLES)[number]]),
+        "ExperimentalWarning: harmless warning\n"
+      );
+    });
+
+    await runProductionImport({
+      inputDirectory,
+      mode: "append",
+      environment: importEnvironment,
+      runConvex,
+      sourceFilePath: repositorySeedFile,
+    });
+
+    expect(runConvex).toHaveBeenCalledTimes(3);
+  });
+
+  it("fails closed on empty stdout without the exact empty sentinel", async () => {
+    const parent = await makeTemporaryDirectory();
+    const inputDirectory = await prepareArtifacts(parent);
+    const runConvex = vi.fn(async () =>
+      convexResult("", "ExperimentalWarning: harmless warning\n")
+    );
+
+    await expect(
+      runProductionImport({
+        inputDirectory,
+        mode: "append",
+        environment: importEnvironment,
+        runConvex,
+        sourceFilePath: repositorySeedFile,
+      })
+    ).rejects.toThrow(
+      "tracks data read returned empty stdout without the exact empty-table sentinel on stderr"
+    );
+    expect(runConvex).toHaveBeenCalledTimes(1);
+    await expect(
+      access(resolve(inputDirectory, STATE_FILE))
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
   it("rejects a resume state tied to another artifact set before a Convex process", async () => {
     const parent = await makeTemporaryDirectory();
     const inputDirectory = await prepareArtifacts(parent);
@@ -444,7 +507,7 @@ describe("repository-seed production import guards", () => {
         await readFile(resolve(inputDirectory, "manifest.json"), "utf8")
       )
     );
-    const runConvex = vi.fn(async () => "[]");
+    const runConvex = vi.fn(async () => convexResult("[]"));
     await writeFile(
       resolve(inputDirectory, STATE_FILE),
       `${JSON.stringify({
@@ -479,9 +542,11 @@ describe("repository-seed production import guards", () => {
       if (args[0] === "import") {
         throw new Error("must not import into an unmatched table");
       }
-      return JSON.stringify([
-        { ...repositorySeedData.tracks[0], title: "unexpected" },
-      ]);
+      return convexResult(
+        JSON.stringify([
+          { ...repositorySeedData.tracks[0], title: "unexpected" },
+        ])
+      );
     });
 
     await expect(
