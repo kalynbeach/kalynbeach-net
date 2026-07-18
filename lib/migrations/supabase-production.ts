@@ -90,7 +90,9 @@ function normalizeImage(track: SupabaseTrack) {
     return { src: "/icon.svg", alt: track.title };
   }
 
-  return imageSchema.parse(track.image);
+  const image = imageSchema.parse(track.image);
+
+  return { src: image.src, alt: image.alt };
 }
 
 export function transformSupabaseProductionData(

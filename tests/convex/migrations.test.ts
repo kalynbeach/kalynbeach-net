@@ -52,6 +52,28 @@ describe("Convex migration data", () => {
     expect(transformed.playlists[0]).not.toHaveProperty("description");
   });
 
+  it("strips extra Supabase image keys from the exported track", () => {
+    const transformed = transformSupabaseProductionData({
+      ...source,
+      tracks: [
+        {
+          ...source.tracks[0],
+          image: {
+            src: "/images/initializer.png",
+            alt: "Initializer waveform",
+            width: 1_024,
+          },
+        },
+      ],
+    });
+
+    expect(transformed.tracks[0].image).toEqual({
+      src: "/images/initializer.png",
+      alt: "Initializer waveform",
+    });
+    expect(transformed.tracks[0].image).not.toHaveProperty("width");
+  });
+
   it("rejects duplicate public IDs before import", () => {
     expect(() =>
       transformSupabaseProductionData({
