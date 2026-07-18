@@ -1,91 +1,111 @@
 # Convex production cutover
 
-This runbook intentionally separates preview setup from the production data
-migration. Do not run production commands from a Vercel preview or with a
-preview deploy key.
+This runbook intentionally separates preview deployment, artifact preparation,
+production import, and final Supabase removal. Do not infer a production target
+from a development deployment or run production commands with a Preview key.
 
-## Preview deployment
+## Completed deployment prerequisites
 
-The Vercel project currently has neither required deploy key. Do not apply the
-shared build-command override until both environment-scoped keys are installed:
+- Vercel Preview and Production have separately scoped `CONVEX_DEPLOY_KEY`
+  values and matching Clerk variables.
+- Convex preview defaults and Production deployment `beloved-butterfly-26`
+  have their environment-specific Clerk issuer and configured admin values.
+- The Vercel Build Command is:
 
-1. In the Convex project defaults for new preview deployments, set
-   `CLERK_JWT_ISSUER_DOMAIN`. Also set `INITIAL_ADMIN_CLERK_USER_ID` there when
-   preview verification must cover dashboard and lab admin access. Values set
-   only on development deployment `hardy-pheasant-300` are not inherited by
-   fresh previews.
-2. On production deployment `beloved-butterfly-26`, set
-   `CLERK_JWT_ISSUER_DOMAIN` and `INITIAL_ADMIN_CLERK_USER_ID` before deploying
-   functions or testing authenticated routes.
-3. Add the Clerk publishable and secret keys to each Vercel environment that
-   will run the app. Preview currently has the publishable key but is missing
-   `CLERK_SECRET_KEY`; Production Clerk/Vercel values are not yet configured for
-   runtime verification. Keep development, Preview, and Production values
-   scoped to their intended environments.
-4. Generate a Convex Preview Deploy Key and add it to Vercel as
-   `CONVEX_DEPLOY_KEY`, scoped only to Preview.
-5. From the Convex production deployment, generate a Production Deploy Key
-   with `deployment:deploy` permission and add it to Vercel as
-   `CONVEX_DEPLOY_KEY`, scoped only to Production.
-6. After both keys and the auth environment values exist, use this Vercel Build
-   Command:
+  ```sh
+  bunx convex deploy --cmd 'bun run build' --preview-run 'migrations:seedPreview'
+  ```
 
-   ```sh
-   bunx convex deploy --cmd 'bun run build' --preview-run 'migrations:seedPreview'
-   ```
+- `migrations:seedPreview` is an internal mutation. It validates and upserts the
+  canonical repository seed by stable public IDs without deleting unrelated
+  rows. Convex ignores `--preview-run` for Production deployments.
+- The reviewed Convex schema and functions are deployed to exact Production
+  deployment `beloved-butterfly-26`. Its `users`, `tracks`, `playlists`, and
+  `playlistTracks` tables remain empty.
 
-`migrations:seedPreview` is an internal mutation. It validates and upserts the
-two deterministic S3-backed tracks and their playlist by stable public IDs. It
-does not delete unrelated rows, and Convex ignores `--preview-run` for
-production deployments.
+## Production data decision
 
-## Production migration
+The paused hosted Supabase project is not the Production migration source. Two
+guarded REST export attempts failed before artifact creation because its host is
+no longer available. Kalyn downloaded its database backup but explicitly
+declined the Docker/local restore audit, so the backup remains unaudited and is
+not represented in the candidate data.
 
-The exact production target is `beloved-butterfly-26`, not the development
-deployment `hardy-pheasant-300`. The export command refuses to make a Supabase
-request or write local files unless both guard values are exact, and it refuses
-to reuse an existing output directory:
+Kalyn explicitly chose: "Use the repository seed and discard unaudited legacy
+Supabase data."
+
+The only candidate Production dataset is therefore the canonical normalized
+repository seed shared with preview seeding: 2 tracks, 1 playlist, and 2
+playlist-track relations. Its provenance is pinned to:
+
+- path: `supabase/seed.sql`
+- SHA-256:
+  `b8b7900047785a132dad452a7a4d6e108bf30623e2d00b62e7a97700f12c1f9c`
+- source revision: `7d2544a688a4d3907262adf43dc6bc0bf0eaffea`
+
+The downloaded backup must remain untouched unless Kalyn separately authorizes
+a new recovery plan.
+
+## Prepare the candidate artifacts
+
+Artifact preparation is offline: it makes no Supabase, Convex, or other network
+request. It refuses a wrong target or confirmation, a changed source-file hash,
+or an existing output directory before writing any artifact.
+
+Use a new path that does not exist:
 
 ```sh
 MIGRATION_TARGET=beloved-butterfly-26 \
-MIGRATION_CONFIRM=EXPORT_SUPABASE_PRODUCTION_TO_CONVEX \
-bun --env-file=/absolute/path/to/production-migration.env \
-  run migration:export:production -- \
+MIGRATION_CONFIRM=PREPARE_REPOSITORY_SEED_FOR_CONVEX_PRODUCTION \
+bun run migration:prepare:production -- \
   --output /private/tmp/kalynbeach-net-convex-production
 ```
 
-The secure environment file must provide `SUPABASE_URL` and
-`SUPABASE_SERVICE_ROLE_KEY`. The exporter fetches only `tracks`, `playlists`,
-and `playlist_tracks`; normalizes nullable fields; validates IDs, HTTPS track
-URLs, references, and positions; then writes JSONL plus a count manifest.
+The preparer writes deterministic `tracks.jsonl`, `playlists.jsonl`,
+`playlistTracks.jsonl`, and manifest schema version 2. The manifest records the
+exact repository-seed path, hash, revision, legacy-data disposition and decision,
+target, 2/1/2 counts, and a SHA-256 digest for each JSONL file.
 
-Before any import, deploy the reviewed Convex schema/functions to production
-and inspect the manifest and production tables. The guarded runner requires the
-exact deployment name, a separate typed confirmation, the validated manifest
-and JSONL files, and an explicit `append` mode:
+Artifact generation requires a separate supervisor release. After generation,
+audit all manifest fields, file digests, counts, public IDs, timestamps, image
+objects, relation positions, and the two existing HTTPS S3 audio URLs. Production
+must still be empty before requesting import authorization.
+
+## Import the reviewed artifacts
+
+Production import is not authorized merely because artifacts exist. Obtain a
+separate explicit supervisor release after the artifact audit, then run only:
 
 ```sh
 MIGRATION_TARGET=beloved-butterfly-26 \
-MIGRATION_CONFIRM=IMPORT_VALIDATED_DATA_TO_CONVEX_PRODUCTION \
+MIGRATION_CONFIRM=IMPORT_REPOSITORY_SEED_TO_CONVEX_PRODUCTION \
 bun run migration:import:production -- \
   --input /private/tmp/kalynbeach-net-convex-production \
   --mode append
 ```
 
-The runner invokes Convex with `--deployment beloved-butterfly-26`; it does not
-infer production from a development deployment. Before each table append, it
-reads the target table. An empty table can be imported; an exact match is
-treated as already complete; any other non-empty state stops the run. After
-each append it reads the table again, requires an exact match, and atomically
-updates `production-import-state.json` in the input directory.
+The importer accepts only manifest schema version 2 with the exact reviewed
+repository-seed provenance and legacy-data decision. Before spawning Convex it
+re-hashes the checked-in source and all JSONL files, validates the exact counts
+and migration relationships, and rejects the retired `supabase-production`
+manifest.
 
-This makes a safe resume possible after a process interruption: rerun the same
-guarded command, and verified tables are skipped. If a table contains a partial
-or unmatched import, do not rerun or use `--replace`; reconcile or restore that
-table manually, verify it against the JSONL file, then resume. `--replace`
-requires a separately approved destructive migration and is not supported by
-the runner.
+Every Convex read/import uses `--deployment beloved-butterfly-26`. The importer
+supports only `--append`; it never infers `--prod` and never uses `--replace`.
+Each table must be empty or already match the complete validated file. Any
+unmatched or partial state stops the run. After an append, the importer rereads
+the table and atomically updates `production-import-state.json` only after an
+exact match.
 
-After import, verify production counts, public track/playlist projections, S3
-URLs, and Wave Player behavior before removing any Supabase code, dependencies,
-configuration, or deployment variables.
+The resume journal is tied to the manifest SHA-256 and its per-file digests. A
+journal from another or modified artifact set cannot resume. If Production does
+not match a table marked complete, stop for manual review; do not rerun, replace,
+or reconcile data without a new approval.
+
+## Final verification and Supabase removal
+
+After an authorized import, verify Production counts, public track and playlist
+projections, existing S3 URLs, authenticated admin routes, and Wave Player
+runtime behavior. Only after those checks pass may the final commit remove
+Supabase code, packages, generated types, configuration, documentation, and
+deployment variables.

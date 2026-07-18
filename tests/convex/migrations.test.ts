@@ -1,120 +1,95 @@
 import { describe, expect, it } from "vitest";
-import { previewSeedData, validateMigrationData } from "@/convex/lib/migration";
-import { transformSupabaseProductionData } from "@/lib/migrations/supabase-production";
-
-const source = {
-  tracks: [
-    {
-      id: 1,
-      title: "0_initializer",
-      artist: "Kalyn Beach",
-      record: null,
-      src: "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/0_initializer.wav",
-      image: null,
-      isLoop: true,
-      created_at: 1_742_955_735_839,
-    },
-  ],
-  playlists: [
-    {
-      id: 1,
-      title: "loops",
-      description: null,
-      created_at: 1_743_041_682_462,
-    },
-  ],
-  playlistTracks: [
-    {
-      id: 1,
-      playlist_id: 1,
-      track_id: 1,
-      position: 1,
-      created_at: 1_743_041_907_088,
-    },
-  ],
-};
+import {
+  repositorySeedData,
+  validateMigrationData,
+} from "@/convex/lib/migration";
 
 describe("Convex migration data", () => {
-  it("keeps the deterministic preview seed valid and S3-backed", () => {
-    expect(() => validateMigrationData(previewSeedData)).not.toThrow();
-    expect(previewSeedData.tracks[0].src).toBe(
-      "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/0_initializer.wav"
-    );
-  });
-
-  it("normalizes nullable production fields before import", () => {
-    const transformed = transformSupabaseProductionData(source);
-
-    expect(transformed.tracks[0]).toMatchObject({
-      record: "",
-      image: { src: "/icon.svg", alt: "0_initializer" },
-    });
-    expect(transformed.playlists[0]).not.toHaveProperty("description");
-  });
-
-  it("strips extra Supabase image keys from the exported track", () => {
-    const transformed = transformSupabaseProductionData({
-      ...source,
+  it("keeps the canonical repository seed exact, valid, and S3-backed", () => {
+    expect(() => validateMigrationData(repositorySeedData)).not.toThrow();
+    expect(repositorySeedData).toEqual({
       tracks: [
         {
-          ...source.tracks[0],
-          image: {
-            src: "/images/initializer.png",
-            alt: "Initializer waveform",
-            width: 1_024,
-          },
+          publicId: 1,
+          title: "0_initializer",
+          artist: "Kalyn Beach",
+          record: "loops",
+          src: "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/0_initializer.wav",
+          image: { src: "/icon.svg", alt: "0_initializer" },
+          isLoop: true,
+          createdAt: 1_742_955_735_839,
+          updatedAt: 1_742_955_735_839,
+        },
+        {
+          publicId: 2,
+          title: "1_workflows",
+          artist: "Kalyn Beach",
+          record: "loops",
+          src: "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/1_workflows.wav",
+          image: { src: "/globe.svg", alt: "1_workflows" },
+          isLoop: true,
+          createdAt: 1_742_955_802_391,
+          updatedAt: 1_742_955_802_391,
+        },
+      ],
+      playlists: [
+        {
+          publicId: 1,
+          title: "loops",
+          description: "initial sounds",
+          createdAt: 1_743_041_682_462,
+          updatedAt: 1_743_041_682_462,
+        },
+      ],
+      playlistTracks: [
+        {
+          playlistId: 1,
+          trackId: 1,
+          position: 1,
+          createdAt: 1_743_041_907_088,
+        },
+        {
+          playlistId: 1,
+          trackId: 2,
+          position: 2,
+          createdAt: 1_743_041_924_327,
         },
       ],
     });
-
-    expect(transformed.tracks[0].image).toEqual({
-      src: "/images/initializer.png",
-      alt: "Initializer waveform",
-    });
-    expect(transformed.tracks[0].image).not.toHaveProperty("width");
   });
 
-  it("rejects duplicate public IDs before import", () => {
+  it("rejects duplicate public IDs", () => {
     expect(() =>
-      transformSupabaseProductionData({
-        ...source,
-        tracks: [...source.tracks, source.tracks[0]],
+      validateMigrationData({
+        ...repositorySeedData,
+        tracks: [...repositorySeedData.tracks, repositorySeedData.tracks[0]],
       })
     ).toThrow("tracks contains duplicate public IDs");
   });
 
-  it("rejects invalid playlist references before import", () => {
+  it("rejects invalid playlist references", () => {
     expect(() =>
-      transformSupabaseProductionData({
-        ...source,
+      validateMigrationData({
+        ...repositorySeedData,
         playlistTracks: [
           {
-            ...source.playlistTracks[0],
-            track_id: 2,
+            ...repositorySeedData.playlistTracks[0],
+            trackId: 3,
           },
         ],
       })
-    ).toThrow("playlist track references missing track 2");
+    ).toThrow("playlist track references missing track 3");
   });
 
-  it("rejects duplicate playlist positions before import", () => {
+  it("rejects duplicate playlist positions", () => {
     expect(() =>
-      transformSupabaseProductionData({
-        tracks: [
-          ...source.tracks,
-          {
-            ...source.tracks[0],
-            id: 2,
-            title: "1_workflows",
-          },
-        ],
-        playlists: source.playlists,
+      validateMigrationData({
+        ...repositorySeedData,
         playlistTracks: [
-          source.playlistTracks[0],
+          repositorySeedData.playlistTracks[0],
           {
-            ...source.playlistTracks[0],
-            id: 2,
-            track_id: 2,
+            ...repositorySeedData.playlistTracks[1],
+            position: 1,
           },
         ],
       })

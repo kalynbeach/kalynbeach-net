@@ -11,7 +11,7 @@
     "test": "vitest",
     "format": "bunx prettier . --write",
     "format:check": "bunx prettier . --check",
-    "migration:export:production": "bun scripts/migrations/export-supabase-production.ts",
+    "migration:prepare:production": "bun scripts/migrations/prepare-repository-seed-production.ts",
     "migration:import:production": "bun scripts/migrations/import-convex-production.ts",
     "db:status": "supabase status",
     "db:start": "supabase start",

@@ -148,7 +148,7 @@ export function validateMigrationData(data: MigrationData): void {
   }
 }
 
-export const previewSeedData = {
+export const repositorySeedData = {
   tracks: [
     {
       publicId: 1,

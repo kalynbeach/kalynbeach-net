@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation } from "./_generated/server";
-import { previewSeedData, validateMigrationData } from "./lib/migration";
+import { repositorySeedData, validateMigrationData } from "./lib/migration";
 
 const migrationResultValidator = v.object({
   tracks: v.number(),
@@ -10,7 +10,7 @@ const migrationResultValidator = v.object({
 });
 
 async function assertNoPositionConflicts(ctx: MutationCtx): Promise<void> {
-  for (const relation of previewSeedData.playlistTracks) {
+  for (const relation of repositorySeedData.playlistTracks) {
     const existingRelations = await ctx.db
       .query("playlistTracks")
       .withIndex("by_playlist_id_and_position", (query) =>
@@ -35,10 +35,10 @@ export const seedPreview = internalMutation({
   args: {},
   returns: migrationResultValidator,
   handler: async (ctx) => {
-    validateMigrationData(previewSeedData);
+    validateMigrationData(repositorySeedData);
     await assertNoPositionConflicts(ctx);
 
-    for (const track of previewSeedData.tracks) {
+    for (const track of repositorySeedData.tracks) {
       const existing = await ctx.db
         .query("tracks")
         .withIndex("by_public_id", (query) =>
@@ -53,7 +53,7 @@ export const seedPreview = internalMutation({
       }
     }
 
-    for (const playlist of previewSeedData.playlists) {
+    for (const playlist of repositorySeedData.playlists) {
       const existing = await ctx.db
         .query("playlists")
         .withIndex("by_public_id", (query) =>
@@ -68,7 +68,7 @@ export const seedPreview = internalMutation({
       }
     }
 
-    for (const playlistTrack of previewSeedData.playlistTracks) {
+    for (const playlistTrack of repositorySeedData.playlistTracks) {
       const existing = await ctx.db
         .query("playlistTracks")
         .withIndex("by_playlist_id_and_track_id", (query) =>
@@ -86,9 +86,9 @@ export const seedPreview = internalMutation({
     }
 
     return {
-      tracks: previewSeedData.tracks.length,
-      playlists: previewSeedData.playlists.length,
-      playlistTracks: previewSeedData.playlistTracks.length,
+      tracks: repositorySeedData.tracks.length,
+      playlists: repositorySeedData.playlists.length,
+      playlistTracks: repositorySeedData.playlistTracks.length,
     };
   },
 });
