@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteAuth from "@/components/site/site-auth";
 import SitePage from "@/components/site/site-page";
 
 export const metadata: Metadata = {
@@ -9,17 +10,15 @@ export const metadata: Metadata = {
 export default function Unauthorized() {
   return (
     <SitePage>
-      <main className="size-full flex flex-col gap-4">
-        <p className="text-sm font-mono font-medium">
-          you do not have permission to access this page {" -> "}
-          <Link
-            href="/login"
-            className="font-medium underline"
-          >
-            login
-          </Link>
+      <main className="flex size-full flex-col gap-4">
+        <p className="font-mono text-sm font-medium">
+          you do not have permission to access this page.
         </p>
+        <SiteAuth />
+        <Link href="/" className="font-mono text-sm font-medium underline">
+          return home
+        </Link>
       </main>
     </SitePage>
   );
-} 
+}

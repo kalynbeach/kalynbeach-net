@@ -1,12 +1,10 @@
-import { githubLogin } from "@/app/login/actions";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function SiteSignIn() {
   return (
-    <form action={githubLogin}>
-      <Button type="submit" variant="outline" size="sm" className="font-mono">
-        login
-      </Button>
-    </form>
+    <Button asChild variant="outline" size="sm" className="font-mono">
+      <Link href="/login">login</Link>
+    </Button>
   );
 }
