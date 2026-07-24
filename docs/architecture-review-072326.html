@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Architecture review — kalynbeach-net</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+  </script>
+  <style>
+    :root {
+      --paper: #f4efe5;
+      --paper-deep: #ebe2d3;
+      --ink: #18231f;
+      --muted: #68736d;
+      --line: rgba(24, 35, 31, .16);
+      --surface: rgba(255, 253, 247, .82);
+      --deep: #173b32;
+      --deep-2: #245a49;
+      --sage: #71876f;
+      --sage-soft: #dce5d8;
+      --terra: #b65332;
+      --terra-soft: #f2d7cc;
+      --amber: #b7791f;
+      --amber-soft: #f4e7c7;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "DM Sans", ui-sans-serif, sans-serif;
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(rgba(24,35,31,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24,35,31,.035) 1px, transparent 1px),
+        radial-gradient(circle at 84% 8%, rgba(113,135,111,.16), transparent 32%);
+      background-size: 28px 28px, 28px 28px, 100% 100%;
+    }
+    h1, h2, h3 { font-family: "Instrument Serif", Georgia, serif; }
+    code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+    .review-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: 0 16px 50px rgba(40, 34, 24, .06);
+      backdrop-filter: blur(10px);
+    }
+    .diagram {
+      min-height: 305px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.48);
+      position: relative;
+      overflow: hidden;
+    }
+    .diagram::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: .45;
+      pointer-events: none;
+      background-image: radial-gradient(rgba(24,35,31,.13) .75px, transparent .75px);
+      background-size: 13px 13px;
+    }
+    .diagram-inner { position: relative; z-index: 1; }
+    .module-box { border: 1px solid rgba(24,35,31,.28); background: rgba(255,253,247,.94); }
+    .deep-box { border: 3px solid var(--deep); background: linear-gradient(145deg, var(--deep), var(--deep-2)); color: white; }
+    .leak-box { border: 1px solid rgba(182,83,50,.55); background: var(--terra-soft); }
+    .internal { border: 1px dashed rgba(255,255,255,.38); background: rgba(255,255,255,.08); }
+    .seam-line { border-top: 2px dashed var(--sage); }
+    .arrow { color: var(--terra); font-family: "JetBrains Mono", monospace; font-weight: 700; }
+    .flow-line { width: 2px; min-height: 12px; background: var(--terra); margin: 0 auto; }
+    .mass-interface { background: var(--terra-soft); border: 1px solid rgba(182,83,50,.5); }
+    .mass-implementation { background: var(--sage-soft); border: 1px solid rgba(36,90,73,.35); }
+    .badge { border: 1px solid currentColor; }
+    .win-list li { position: relative; padding-left: 1.15rem; }
+    .win-list li::before { content: "—"; position: absolute; left: 0; color: var(--sage); }
+    .eyebrow { letter-spacing: .16em; text-transform: uppercase; font-family: "JetBrains Mono", monospace; }
+    .file-list { overflow-wrap: anywhere; }
+    .candidate-num { font-family: "Instrument Serif", Georgia, serif; color: var(--paper-deep); -webkit-text-stroke: 1px rgba(24,35,31,.18); }
+    @media (prefers-reduced-motion: no-preference) {
+      article { animation: rise .55s ease both; }
+      article:nth-child(2) { animation-delay: .08s; }
+      article:nth-child(3) { animation-delay: .16s; }
+      article:nth-child(4) { animation-delay: .24s; }
+      @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #151b18; --paper-deep: #202a25; --ink: #ece8dc; --muted: #a5aea8;
+        --line: rgba(236,232,220,.14); --surface: rgba(28,37,33,.88); --sage-soft: #293b31;
+        --terra-soft: #472b22; --amber-soft: #443720;
+      }
+      .diagram { background: rgba(16,22,19,.55); }
+      .module-box { background: rgba(37,47,42,.96); }
+      .candidate-num { color: #202a25; -webkit-text-stroke-color: rgba(236,232,220,.16); }
+    }
+  </style>
+</head>
+<body>
+  <main class="mx-auto max-w-6xl space-y-14 px-5 py-10 md:px-8 md:py-16">
+    <header class="grid gap-8 border-b pb-10 md:grid-cols-[1.4fr_.6fr]" style="border-color:var(--line)">
+      <div>
+        <p class="eyebrow mb-4 text-xs" style="color:var(--sage)">Architecture review · 23 July 2026</p>
+        <h1 class="max-w-3xl text-5xl leading-[.95] md:text-7xl">Deepening the audio architecture</h1>
+      </div>
+      <div class="self-end text-sm" style="color:var(--muted)">
+        <p class="mb-3 mono text-xs">kalynbeach-net</p>
+        <div class="grid grid-cols-2 gap-x-5 gap-y-2 text-xs">
+          <span><b class="mr-2 inline-block h-3 w-3 border" style="border-color:var(--line)"></b>module</span>
+          <span><b class="mr-2 inline-block h-0 w-4 border-t-2 border-dashed" style="border-color:var(--sage)"></b>seam</span>
+          <span><b class="mr-2" style="color:var(--terra)">→</b>leakage</span>
+          <span><b class="mr-2 inline-block h-3 w-3 border-[3px]" style="border-color:var(--deep)"></b>deep module</span>
+        </div>
+      </div>
+    </header>
+
+    <section id="candidates" class="space-y-14">
+      <article id="wave-player" class="review-card relative overflow-hidden rounded-[28px] p-6 md:p-9">
+        <div class="candidate-num pointer-events-none absolute right-5 top-0 text-[9rem] leading-none">1</div>
+        <div class="relative">
+          <div class="mb-5 flex flex-wrap items-center gap-2">
+            <span class="badge rounded-full px-3 py-1 text-xs font-semibold" style="color:#287555;background:#dcefe4">Strong</span>
+            <span class="rounded-full px-3 py-1 text-xs mono" style="background:var(--paper-deep)">in-process</span>
+          </div>
+          <h2 class="max-w-3xl text-4xl md:text-5xl">Deepen the Wave Player orchestration module</h2>
+          <p class="file-list mt-4 max-w-4xl mono text-xs leading-6" style="color:var(--muted)">contexts/wave-player-context.tsx · lib/types/wave-player.d.ts · hooks/wave-player/use-wave-player.ts · tests/wave-player.test.tsx</p>
+
+          <div class="mt-8 grid gap-4 lg:grid-cols-2">
+            <figure>
+              <figcaption class="eyebrow mb-3 text-[10px]" style="color:var(--terra)">Before · broad interface, mixed implementation</figcaption>
+              <div class="diagram rounded-2xl p-5">
+                <div class="diagram-inner flex h-full flex-col gap-2">
+                  <div class="mass-interface rounded-lg p-3 text-center mono text-[10px] font-semibold">INTERFACE: state + controls + AudioContext + AudioBuffer + visualization</div>
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="module-box rounded-lg p-3 text-center text-xs">React<br/>state</div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">Web Audio<br/>graph</div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">transport<br/>timing</div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">track<br/>loading</div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">visibility<br/>policy</div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">frame<br/>sampling</div>
+                  </div>
+                  <div class="seam-line mt-1 pt-2 text-center mono text-[9px]" style="color:var(--sage)">REACT SEAM</div>
+                  <div class="leak-box rounded-lg px-3 py-2 text-center text-[11px]">Tests recreate browser globals, timers, fetch, Web Audio, and mutable state <span class="arrow">→</span></div>
+                </div>
+              </div>
+            </figure>
+            <figure>
+              <figcaption class="eyebrow mb-3 text-[10px]" style="color:var(--sage)">After · narrow seam, deep implementation</figcaption>
+              <div class="diagram rounded-2xl p-5">
+                <div class="diagram-inner flex h-full flex-col">
+                  <div class="module-box mx-auto w-3/5 rounded-lg p-3 text-center mono text-[10px] font-semibold">PLAYER BEHAVIOUR</div>
+                  <div class="flow-line"></div>
+                  <div class="deep-box flex-1 rounded-2xl p-4">
+                    <p class="eyebrow text-center text-[10px] text-white/65">Wave Player module</p>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                      <div class="internal rounded-lg p-3 text-center text-[11px]">transport + timing</div>
+                      <div class="internal rounded-lg p-3 text-center text-[11px]">graph lifecycle</div>
+                      <div class="internal rounded-lg p-3 text-center text-[11px]">loading policy</div>
+                      <div class="internal rounded-lg p-3 text-center text-[11px]">visibility policy</div>
+                    </div>
+                    <p class="mt-4 text-center text-xs text-white/75">Callers do not learn browser resources.</p>
+                  </div>
+                </div>
+              </div>
+            </figure>
+          </div>
+
+          <div class="mt-7 grid gap-6 md:grid-cols-2">
+            <div class="space-y-4 text-sm leading-6">
+              <p><b>Problem.</b> The 852-line module owns nearly every playback concern while its interface leaks <code>AudioContext</code>, <code>AudioBuffer</code>, scheduling, and visualization state.</p>
+              <p><b>Solution.</b> Concentrate playback behaviour behind one narrow seam; keep transport, graph lifecycle, loading policy, and browser scheduling internal to the Wave Player module.</p>
+              <p class="text-xs" style="color:var(--muted)"><b>Deletion test.</b> Deleting the provider removes the feature; deleting <code>useWavePlayer</code> moves only two effects. The depth is in the wrong place.</p>
+            </div>
+            <ul class="win-list grid content-start gap-2 text-sm">
+              <li><b>locality:</b> playback bugs concentrate</li>
+              <li><b>leverage:</b> callers learn less</li>
+              <li>tests cross one seam</li>
+              <li>browser resources stop leaking</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article id="track-loading" class="review-card relative overflow-hidden rounded-[28px] p-6 md:p-9">
+        <div class="candidate-num pointer-events-none absolute right-5 top-0 text-[9rem] leading-none">2</div>
+        <div class="relative">
+          <div class="mb-5 flex flex-wrap items-center gap-2">
+            <span class="badge rounded-full px-3 py-1 text-xs font-semibold" style="color:#287555;background:#dcefe4">Strong</span>
+            <span class="rounded-full px-3 py-1 text-xs mono" style="background:var(--paper-deep)">local-substitutable</span>
+          </div>
+          <h2 class="max-w-3xl text-4xl md:text-5xl">Make track loading honest and deep</h2>
+          <p class="file-list mt-4 max-w-4xl mono text-xs leading-6" style="color:var(--muted)">lib/wave-player/buffer-pool.ts · contexts/wave-player-context.tsx · tests/wave-player.test.tsx · docs/wave-player/wave-player.md</p>
+
+          <div class="mt-8 grid gap-4 lg:grid-cols-2">
+            <figure>
+              <figcaption class="eyebrow mb-3 text-[10px]" style="color:var(--terra)">Before · interface promises a pool</figcaption>
+              <div class="diagram rounded-2xl p-5">
+                <div class="diagram-inner grid h-full grid-rows-[auto_1fr_auto] gap-3">
+                  <div class="mass-interface rounded-lg p-3 text-center mono text-[10px]">load chunked · abort · promote · set next · cleanup · getters</div>
+                  <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <div class="module-box rounded-xl p-4 text-center text-xs">HEAD + N ranges<br/><span style="color:var(--muted)">whole file retained</span></div>
+                    <div class="arrow">→</div>
+                    <div class="module-box rounded-xl p-4 text-center text-xs">combine + decode<br/><span style="color:var(--muted)">whole file decoded</span></div>
+                  </div>
+                  <div class="leak-box rounded-lg p-3 text-center text-xs"><code>chunks</code> map stays empty · memory count omits channels</div>
+                </div>
+              </div>
+            </figure>
+            <figure>
+              <figcaption class="eyebrow mb-3 text-[10px]" style="color:var(--sage)">After · implementation matches its claim</figcaption>
+              <div class="diagram rounded-2xl p-5">
+                <div class="diagram-inner flex h-full flex-col">
+                  <div class="module-box mx-auto w-2/3 rounded-lg p-3 text-center mono text-[10px]">LOAD TRACK</div>
+                  <div class="flow-line"></div>
+                  <div class="deep-box flex-1 rounded-2xl p-5 text-center">
+                    <p class="eyebrow text-[10px] text-white/65">Track loading module</p>
+                    <p class="mx-auto mt-6 max-w-xs text-sm">One coherent implementation owns network work, decode, progress, cancellation, and the amount of buffering it actually guarantees.</p>
+                    <div class="mt-5 seam-line border-white/35 pt-3 text-[10px] text-white/70 mono">TEST SURFACE = CALLER SURFACE</div>
+                  </div>
+                </div>
+              </div>
+            </figure>
+          </div>
+
+          <div class="mt-7 grid gap-6 md:grid-cols-2">
+            <div class="space-y-4 text-sm leading-6">
+              <p><b>Problem.</b> The pool interface is wider than its effective implementation: every chunk is retained and recombined, the chunk map is never populated, and preload builds a second pool.</p>
+              <p><b>Solution.</b> Collapse accidental pool surface into a track-loading module whose depth comes from real network, decode, progress, cancellation, and buffering behaviour.</p>
+              <p class="text-xs" style="color:var(--muted)"><b>Deletion test.</b> Delete the chunk map and its cleanup calls: observable behaviour stays the same. The current module is shallow.</p>
+            </div>
+            <ul class="win-list grid content-start gap-2 text-sm">
+              <li><b>locality:</b> loading policy concentrates</li>
+              <li><b>leverage:</b> one load behaviour</li>
+              <li>tests exercise real implementation</li>
+              <li>docs match actual depth</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article id="audio-runtime" class="review-card relative overflow-hidden rounded-[28px] p-6 md:p-9">
+        <div class="candidate-num pointer-events-none absolute right-5 top-0 text-[9rem] leading-none">3</div>
+        <div class="relative">
+          <div class="mb-5 flex flex-wrap items-center gap-2">
+            <span class="badge rounded-full px-3 py-1 text-xs font-semibold" style="color:var(--amber);background:var(--amber-soft)">Worth exploring</span>
+            <span class="rounded-full px-3 py-1 text-xs mono" style="background:var(--paper-deep)">ports &amp; adapters</span>
+          </div>
+          <h2 class="max-w-3xl text-4xl md:text-5xl">Concentrate audio runtime ownership</h2>
+          <p class="file-list mt-4 max-w-4xl mono text-xs leading-6" style="color:var(--muted)">contexts/wave-player-context.tsx · contexts/sound-context.tsx · hooks/sound/use-sound.ts · lib/sound.ts · tests/contexts/sound-context.test.tsx</p>
+
+          <div class="mt-8 grid gap-4 lg:grid-cols-2">
+            <figure>
+              <figcaption class="eyebrow mb-3 text-[10px]" style="color:var(--terra)">Before · three owners, three policies</figcaption>
+              <div class="diagram rounded-2xl p-5">
+                <div class="diagram-inner space-y-3">
+                  <div class="module-box rounded-xl p-4">
+                    <p class="eyebrow text-[9px]">Wave Player</p><p class="mt-1 text-xs">global context · resume · suspend</p>
+                  </div>
+                  <div class="module-box rounded-xl p-4">
+                    <p class="eyebrow text-[9px]">legacy Sound</p><p class="mt-1 text-xs">separate global context · suspend</p>
+                  </div>
+                  <div class="module-box rounded-xl p-4">
+                    <p class="eyebrow text-[9px]">refactored Sound</p><p class="mt-1 text-xs">per-hook context · suspend · close</p>
+                  </div>
+                  <div class="leak-box rounded-lg p-2 text-center text-[11px]">lifecycle semantics leak across feature seams</div>
+                </div>
+              </div>
+            </figure>
+            <figure>
+              <figcaption class="eyebrow mb-3 text-[10px]" style="color:var(--sage)">After · runtime policy has locality</figcaption>
+              <div class="diagram rounded-2xl p-5">
+                <div class="diagram-inner grid h-full grid-rows-[auto_auto_1fr] gap-3">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="module-box rounded-lg p-3 text-center text-xs">Wave Player<br/><span style="color:var(--muted)">playback policy</span></div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">Sound<br/><span style="color:var(--muted)">capture policy</span></div>
+                  </div>
+                  <div class="seam-line pt-2 text-center mono text-[9px]" style="color:var(--sage)">AUDIO RUNTIME SEAM</div>
+                  <div class="deep-box rounded-2xl p-5 text-center">
+                    <p class="eyebrow text-[10px] text-white/65">Audio runtime module</p>
+                    <p class="mt-5 text-sm">Acquisition, ownership, resume, suspend, close, and multi-consumer rules stay together.</p>
+                    <p class="mt-4 text-xs text-white/65">Browser adapter · deterministic test adapter</p>
+                  </div>
+                </div>
+              </div>
+            </figure>
+          </div>
+
+          <div class="mt-7 grid gap-6 md:grid-cols-2">
+            <div class="space-y-4 text-sm leading-6">
+              <p><b>Problem.</b> Playback, legacy capture, and refactored capture independently create and retire <code>AudioContext</code> resources with incompatible ownership rules.</p>
+              <p><b>Solution.</b> Put acquisition and lifecycle policy in one audio runtime module while keeping playback and capture policy local to their own modules.</p>
+              <p class="text-xs" style="color:var(--muted)"><b>Deletion test.</b> Deleting <code>lib/sound.ts</code> moves only two browser calls; deleting any owner leaves duplicate policy elsewhere.</p>
+            </div>
+            <ul class="win-list grid content-start gap-2 text-sm">
+              <li><b>locality:</b> ownership rules concentrate</li>
+              <li><b>leverage:</b> two active consumers</li>
+              <li>two adapters justify seam</li>
+              <li>shared test adapter reduces fakes</li>
+            </ul>
+          </div>
+          <div class="mt-6 rounded-xl border p-4 text-xs leading-5" style="border-color:rgba(183,121,31,.45);background:var(--amber-soft)">
+            Constraint: browser autoplay and microphone permission timing may require distinct acquisition paths. Deepen shared ownership only after those rules are explicit.
+          </div>
+        </div>
+      </article>
+
+      <article id="authorization" class="review-card relative overflow-hidden rounded-[28px] p-6 md:p-9">
+        <div class="candidate-num pointer-events-none absolute right-5 top-0 text-[9rem] leading-none">4</div>
+        <div class="relative">
+          <div class="mb-5 flex flex-wrap items-center gap-2">
+            <span class="badge rounded-full px-3 py-1 text-xs font-semibold" style="color:var(--amber);background:var(--amber-soft)">Worth exploring</span>
+            <span class="rounded-full px-3 py-1 text-xs mono" style="background:var(--paper-deep)">in-process</span>
+          </div>
+          <h2 class="max-w-3xl text-4xl md:text-5xl">Separate admin intake from public reads</h2>
+          <p class="file-list mt-4 max-w-4xl mono text-xs leading-6" style="color:var(--muted)">lib/convex/server.ts · lib/convex/clerk-token.ts · convex/users.ts · convex/lib/auth.ts · app/(admin)/layout.tsx · tests/convex/clerk-token.test.ts</p>
+
+          <div class="mt-8 grid gap-4 lg:grid-cols-2">
+            <figure>
+              <figcaption class="eyebrow mb-3 text-[10px]" style="color:var(--terra)">Before · unrelated behaviour shares one module</figcaption>
+              <div class="diagram rounded-2xl p-5">
+                <div class="diagram-inner grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3">
+                  <div class="space-y-2">
+                    <div class="module-box rounded-lg p-3 text-center text-xs">Clerk identity</div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">token policy</div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">provision user</div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">claim admin</div>
+                    <div class="module-box rounded-lg p-3 text-center text-xs">redirect + verify</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="leak-box rounded-xl p-4 text-center text-xs"><code>server.ts</code><br/><br/>also public<br/>Wave Player reads</div>
+                </div>
+              </div>
+            </figure>
+            <figure>
+              <figcaption class="eyebrow mb-3 text-[10px]" style="color:var(--sage)">After · two concepts, two modules</figcaption>
+              <div class="diagram rounded-2xl p-5">
+                <div class="diagram-inner grid h-full grid-cols-2 gap-3">
+                  <div class="deep-box rounded-2xl p-4">
+                    <p class="eyebrow text-center text-[9px] text-white/65">Admin intake module</p>
+                    <div class="mt-4 space-y-2">
+                      <div class="internal rounded-lg p-2 text-center text-[11px]">identity + token</div>
+                      <div class="internal rounded-lg p-2 text-center text-[11px]">provision + claim</div>
+                      <div class="internal rounded-lg p-2 text-center text-[11px]">redirect + verify</div>
+                    </div>
+                  </div>
+                  <div class="deep-box rounded-2xl p-4">
+                    <p class="eyebrow text-center text-[9px] text-white/65">Public read module</p>
+                    <div class="mt-4 space-y-2">
+                      <div class="internal rounded-lg p-2 text-center text-[11px]">Convex reads</div>
+                      <div class="internal rounded-lg p-2 text-center text-[11px]">player-safe projection</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </figure>
+          </div>
+
+          <div class="mt-7 grid gap-6 md:grid-cols-2">
+            <div class="space-y-4 text-sm leading-6">
+              <p><b>Problem.</b> One server module mixes Clerk token acquisition, provisioning, configured-admin claim, redirect policy, final Convex authorization, and unrelated public reads.</p>
+              <p><b>Solution.</b> Concentrate the admin intake workflow in its own module and keep public Wave Player read adaptation at its existing data seam.</p>
+              <p class="text-xs" style="color:var(--muted)"><b>Deletion test.</b> The admin function has leverage; deleting the containing module also removes unrelated reads, exposing a shallow module seam.</p>
+            </div>
+            <ul class="win-list grid content-start gap-2 text-sm">
+              <li><b>locality:</b> bootstrap policy concentrates</li>
+              <li><b>leverage:</b> one admin workflow</li>
+              <li>tests verify call ordering</li>
+              <li>public reads lose auth knowledge</li>
+            </ul>
+          </div>
+          <div class="mt-6 rounded-xl border p-4 text-xs leading-5" style="border-color:rgba(183,121,31,.45);background:var(--amber-soft)">
+            Preserve the recorded decision: Clerk establishes identity, while sensitive Convex functions enforce roles internally. Do not replace the Convex authorization seam with route-only checks.
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section id="top-recommendation" class="deep-box rounded-[32px] p-8 md:p-12">
+      <p class="eyebrow text-xs text-white/60">Top recommendation</p>
+      <div class="mt-4 grid items-end gap-8 md:grid-cols-[1fr_auto]">
+        <div>
+          <h2 class="text-4xl md:text-6xl">Deepen the Wave Player orchestration module first.</h2>
+          <p class="mt-4 max-w-3xl text-sm leading-6 text-white/75">It is the highest-change, highest-friction junction: nearly every playback bug, browser dependency, and test setup crosses its broad interface.</p>
+        </div>
+        <a href="#wave-player" class="rounded-full border border-white/40 px-5 py-3 text-sm transition hover:bg-white hover:text-[var(--deep)]">Return to candidate 1</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
