@@ -23,7 +23,6 @@ export function ThreeSceneBlock({ className }: { className?: string }) {
       <ThreeSceneClient
         className={className}
         fallback={<ThreeSceneSkeleton />}
-        showPerformanceMonitor={false && process.env.NODE_ENV === "development"}
       >
         <Suspense fallback={null}>
           <DefaultScene />

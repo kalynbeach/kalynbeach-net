@@ -98,7 +98,6 @@ Next.js 16 personal website featuring three parallel audio systems, 3D graphics,
 
 - React Three Fiber with custom scene components
 - SVG export functionality for 3D meshes
-- Performance monitoring with r3f-perf
 
 **Authentication**:
 

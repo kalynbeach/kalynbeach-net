@@ -11,17 +11,11 @@ import React, {
 import { Canvas } from "@react-three/fiber";
 import type { GLProps } from "@react-three/fiber";
 import { Html, Preload } from "@react-three/drei";
-import dynamic from "next/dynamic";
 import { Loader } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useThreeSetup } from "@/hooks/three/use-three-setup";
 import { checkWebGLAvailability } from "@/lib/webgl";
 import TorusMesh from "@/components/r3f/meshes/torus-mesh";
-
-// Dynamic import to avoid Turbopack UTF-8 build error with r3f-perf's embedded WOFF font
-const Perf = dynamic(() => import("r3f-perf").then((mod) => mod.Perf), {
-  ssr: false,
-});
 
 /**
  * Home page scene
@@ -70,7 +64,6 @@ export function ThreeScene({
   className = "three-scene relative size-96",
   glProps = {},
   captureProps,
-  showPerformanceMonitor = false,
   fallback = <WebGLFallback />,
 }: {
   children?: React.ReactNode;
@@ -80,7 +73,6 @@ export function ThreeScene({
     onCapture?: (svg: string) => void;
     registerCapture?: (captureMethod: () => void) => void;
   };
-  showPerformanceMonitor?: boolean;
   fallback?: React.ReactNode;
 }) {
   const [isWebGLAvailable, setIsWebGLAvailable] = useState<boolean | null>(
@@ -123,7 +115,6 @@ export function ThreeScene({
         performance={{ min: 0.5 }}
       >
         {childrenWithProps || <Scene />}
-        {showPerformanceMonitor && <Perf position="top-right" />}
       </Canvas>
     </div>
   );
