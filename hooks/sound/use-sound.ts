@@ -3,18 +3,70 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { getAudioContext, getMediaStream } from "@/lib/sound";
 
+type AudioResources = {
+  audioContext: AudioContext | null;
+  stream: MediaStream | null;
+  sourceNode: MediaStreamAudioSourceNode | null;
+  gainNode: GainNode | null;
+  analyserNode: AnalyserNode | null;
+};
+
+const emptyAudioResources: AudioResources = {
+  audioContext: null,
+  stream: null,
+  sourceNode: null,
+  gainNode: null,
+  analyserNode: null,
+};
+
 export function useSound() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [isDeviceSwitching, setIsDeviceSwitching] = useState(false);
   const [outputEnabled, setOutputEnabled] = useState(false);
+  const [resources, setResources] =
+    useState<AudioResources>(emptyAudioResources);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
+
+  // Cleanup audio resources (suspend AudioContext, keep it alive)
+  const cleanupAudio = useCallback(() => {
+    if (sourceNodeRef.current) {
+      sourceNodeRef.current.disconnect();
+    }
+
+    if (gainNodeRef.current) {
+      gainNodeRef.current.disconnect();
+    }
+
+    if (analyserNodeRef.current) {
+      analyserNodeRef.current.disconnect();
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+
+    if (
+      audioContextRef.current &&
+      audioContextRef.current.state === "running"
+    ) {
+      audioContextRef.current.suspend();
+    }
+
+    streamRef.current = null;
+    sourceNodeRef.current = null;
+    gainNodeRef.current = null;
+    analyserNodeRef.current = null;
+
+    setResources(emptyAudioResources);
+    setIsInitialized(false);
+  }, []);
 
   // Initialize web audio resources
   const initializeAudio = useCallback(
@@ -24,7 +76,10 @@ export function useSound() {
         setIsDeviceSwitching(true);
 
         // Create AudioContext if it doesn't exist or if it's closed
-        if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+        if (
+          !audioContextRef.current ||
+          audioContextRef.current.state === "closed"
+        ) {
           audioContextRef.current = getAudioContext();
         }
 
@@ -45,7 +100,10 @@ export function useSound() {
 
         // Request microphone access with specific device if provided
         const constraints: MediaStreamConstraints = {
-          audio: deviceId && deviceId !== "" ? { deviceId: { exact: deviceId } } : true,
+          audio:
+            deviceId && deviceId !== ""
+              ? { deviceId: { exact: deviceId } }
+              : true,
         };
 
         streamRef.current = await getMediaStream(constraints);
@@ -72,6 +130,13 @@ export function useSound() {
           await audioContextRef.current.resume();
         }
 
+        setResources({
+          audioContext: audioContextRef.current,
+          stream: streamRef.current,
+          sourceNode: sourceNodeRef.current,
+          gainNode: gainNodeRef.current,
+          analyserNode: analyserNodeRef.current,
+        });
         setIsInitialized(true);
         setIsDeviceSwitching(false);
 
@@ -90,43 +155,13 @@ export function useSound() {
         cleanupAudio();
       }
     },
-    [outputEnabled]
+    [cleanupAudio, outputEnabled]
   );
-
-  // Cleanup audio resources (suspend AudioContext, keep it alive)
-  const cleanupAudio = useCallback(() => {
-    if (sourceNodeRef.current) {
-      sourceNodeRef.current.disconnect();
-    }
-
-    if (gainNodeRef.current) {
-      gainNodeRef.current.disconnect();
-    }
-
-    if (analyserNodeRef.current) {
-      analyserNodeRef.current.disconnect();
-    }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-    }
-
-    if (audioContextRef.current && audioContextRef.current.state === "running") {
-      audioContextRef.current.suspend();
-    }
-
-    streamRef.current = null;
-    sourceNodeRef.current = null;
-    gainNodeRef.current = null;
-    analyserNodeRef.current = null;
-
-    setIsInitialized(false);
-  }, []);
 
   // Final cleanup for unmount (actually close AudioContext)
   const finalCleanup = useCallback(() => {
     cleanupAudio();
-    
+
     if (audioContextRef.current && audioContextRef.current.state !== "closed") {
       audioContextRef.current.close();
     }
@@ -183,11 +218,7 @@ export function useSound() {
   return {
     isInitialized,
     errorMessage,
-    audioContextRef,
-    streamRef,
-    sourceNode: sourceNodeRef.current,
-    gainNode: gainNodeRef.current,
-    analyserNode: analyserNodeRef.current,
+    ...resources,
     start,
     stop,
     changeDevice,

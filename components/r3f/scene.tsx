@@ -1,21 +1,26 @@
 "use client";
 
-import * as THREE from "three";
-import React, {
-  Suspense,
-  memo,
-  useDeferredValue,
-  useState,
-  useEffect,
-} from "react";
+import { Suspense, memo, useDeferredValue, useSyncExternalStore } from "react";
+import type { ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { GLProps } from "@react-three/fiber";
 import { Html, Preload } from "@react-three/drei";
 import { Loader } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useThreeSetup } from "@/hooks/three/use-three-setup";
 import { checkWebGLAvailability } from "@/lib/webgl";
 import TorusMesh from "@/components/r3f/meshes/torus-mesh";
+
+const subscribeToBrowserEnvironment = () => () => {};
+const getServerWebGLAvailability = () => null;
+let cachedWebGLAvailability: boolean | null | undefined;
+
+function getWebGLAvailabilitySnapshot() {
+  if (cachedWebGLAvailability === undefined) {
+    cachedWebGLAvailability = checkWebGLAvailability();
+  }
+
+  return cachedWebGLAvailability;
+}
 
 /**
  * Home page scene
@@ -26,12 +31,7 @@ export const Scene = memo(function Scene() {
   const deferredTheme = useDeferredValue(resolvedTheme);
   const isDarkTheme = deferredTheme === "dark";
 
-  useThreeSetup({
-    backgroundColor: isDarkTheme ? "#030303" : "#FFFFFF",
-    enableShadows: true,
-    toneMapping: THREE.ACESFilmicToneMapping,
-    outputColorSpace: THREE.SRGBColorSpace,
-  });
+  const backgroundColor = isDarkTheme ? "#030303" : "#FFFFFF";
 
   return (
     <Suspense
@@ -41,6 +41,7 @@ export const Scene = memo(function Scene() {
         </Html>
       }
     >
+      <color attach="background" args={[backgroundColor]} />
       <ambientLight intensity={2.4} />
       <TorusMesh
         color={isDarkTheme ? "#FFFFFF" : "#030303"}
@@ -63,25 +64,18 @@ export function ThreeScene({
   children,
   className = "three-scene relative size-96",
   glProps = {},
-  captureProps,
   fallback = <WebGLFallback />,
 }: {
-  children?: React.ReactNode;
+  children?: ReactNode;
   className?: string;
   glProps?: GLProps;
-  captureProps?: {
-    onCapture?: (svg: string) => void;
-    registerCapture?: (captureMethod: () => void) => void;
-  };
-  fallback?: React.ReactNode;
+  fallback?: ReactNode;
 }) {
-  const [isWebGLAvailable, setIsWebGLAvailable] = useState<boolean | null>(
-    null
+  const isWebGLAvailable = useSyncExternalStore(
+    subscribeToBrowserEnvironment,
+    getWebGLAvailabilitySnapshot,
+    getServerWebGLAvailability
   );
-
-  useEffect(() => {
-    setIsWebGLAvailable(checkWebGLAvailability());
-  }, []);
 
   if (isWebGLAvailable === null) return <ThreeSceneSkeleton />;
   if (!isWebGLAvailable) return <div className={className}>{fallback}</div>;
@@ -94,18 +88,6 @@ export function ThreeScene({
     ...glProps,
   };
 
-  const childrenWithProps = captureProps
-    ? React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          console.log("Passing capture props to child component");
-          return React.cloneElement(child, {
-            ...(captureProps as any),
-          });
-        }
-        return child;
-      })
-    : children;
-
   return (
     <div className={className}>
       <Canvas
@@ -113,8 +95,9 @@ export function ThreeScene({
         dpr={window.devicePixelRatio > 2 ? 2 : window.devicePixelRatio}
         gl={defaultGlProps}
         performance={{ min: 0.5 }}
+        shadows
       >
-        {childrenWithProps || <Scene />}
+        {children || <Scene />}
       </Canvas>
     </div>
   );
@@ -130,7 +113,7 @@ export function ThreeSceneSkeleton() {
 
 function WebGLFallback() {
   return (
-    <div className="flex h-full w-full items-center justify-center bg-background p-4">
+    <div className="bg-background flex h-full w-full items-center justify-center p-4">
       <div className="text-center">
         <h3 className="mb-2 text-lg font-medium text-gray-900">
           WebGL Not Available

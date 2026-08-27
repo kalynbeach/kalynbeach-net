@@ -33,62 +33,60 @@ export function SoundDeviceSelect({
 
   // Enumerate available audio input devices
   const enumerateDevices = async () => {
-    try {
-      setIsLoading(true);
+    // Request permission first to get labeled devices
+    await navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        // Stop all tracks immediately - we just needed permission
+        stream.getTracks().forEach((track) => track.stop());
+      })
+      .catch((err) => {
+        console.warn(
+          "Could not get initial permission for device labels:",
+          err
+        );
+      });
 
-      // Request permission first to get labeled devices
-      await navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-          // Stop all tracks immediately - we just needed permission
-          stream.getTracks().forEach((track) => track.stop());
-        })
-        .catch((err) => {
-          console.warn(
-            "Could not get initial permission for device labels:",
-            err
-          );
-        });
+    const deviceList = await navigator.mediaDevices.enumerateDevices();
 
-      const deviceList = await navigator.mediaDevices.enumerateDevices();
+    return deviceList
+      .filter((device) => device.kind === "audioinput")
+      .map((device) => ({
+        deviceId: device.deviceId,
+        label: device.label || `Microphone (${device.deviceId.slice(0, 5)}...)`,
+        isDefault: device.deviceId === "default" || device.deviceId === "",
+      }));
+  };
 
-      // Filter for audio input devices only and format them
-      const inputDevices = deviceList
-        .filter((device) => device.kind === "audioinput")
-        .map((device) => ({
-          deviceId: device.deviceId,
-          label:
-            device.label || `Microphone (${device.deviceId.slice(0, 5)}...)`,
-          isDefault: device.deviceId === "default" || device.deviceId === "",
-        }));
+  const updateDevices = () => {
+    void enumerateDevices()
+      .then((inputDevices) => {
+        setDevices(inputDevices);
 
-      setDevices(inputDevices);
-
-      // If no device is selected yet, select the default one
-      if (!selectedDeviceId || selectedDeviceId === "") {
-        if (inputDevices.length > 0) {
-          // Find the default device or use the first one
+        // If no device is selected yet, select the default one
+        if ((!selectedDeviceId || selectedDeviceId === "") && inputDevices[0]) {
           const defaultDevice =
-            inputDevices.find((d) => d.isDefault) || inputDevices[0];
+            inputDevices.find((device) => device.isDefault) || inputDevices[0];
           onDeviceChange(defaultDevice.deviceId);
         }
-      }
-
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error enumerating audio devices:", error);
-      setIsLoading(false);
-    }
+      })
+      .catch((error) => {
+        console.error("Error enumerating audio devices:", error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   // Listen for device changes
   useEffect(() => {
     // Initial enumeration
-    enumerateDevices();
+    updateDevices();
 
     // Set up device change listener
     const handleDeviceChange = () => {
-      enumerateDevices();
+      setIsLoading(true);
+      updateDevices();
     };
 
     navigator.mediaDevices.addEventListener("devicechange", handleDeviceChange);

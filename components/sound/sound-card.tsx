@@ -14,8 +14,8 @@ export function SoundCard() {
   const {
     isInitialized,
     errorMessage,
-    audioContextRef,
-    streamRef,
+    audioContext,
+    stream,
     sourceNode,
     gainNode,
     analyserNode,
@@ -31,7 +31,7 @@ export function SoundCard() {
   const { canvasRef } = useSoundVisualizer(analyserNode);
 
   return (
-    <Card className="sound-card rounded-sm border py-0 shadow-xs border-accent-foreground/10">
+    <Card className="sound-card border-accent-foreground/10 rounded-sm border py-0 shadow-xs">
       <CardContent className="bg-card flex flex-col gap-3 rounded-sm p-3">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div className="flex w-full flex-row items-center justify-between">
@@ -118,9 +118,7 @@ export function SoundCard() {
               audioContext.state:
             </p>
             <p className="text-muted-foreground font-mono text-sm">
-              {isInitialized && audioContextRef.current
-                ? audioContextRef.current.state
-                : "-"}
+              {isInitialized && audioContext ? audioContext.state : "-"}
             </p>
           </div>
           <div className="flex w-full flex-row items-center justify-between">
@@ -128,9 +126,7 @@ export function SoundCard() {
               stream.id:
             </p>
             <p className="text-muted-foreground font-mono text-sm">
-              {isInitialized && streamRef.current && streamRef.current.id
-                ? streamRef.current.id
-                : "-"}
+              {isInitialized && stream?.id ? stream.id : "-"}
             </p>
           </div>
           <div className="flex w-full flex-row items-center justify-between">

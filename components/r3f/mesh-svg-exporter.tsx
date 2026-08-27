@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useRef, useState, useEffect, Suspense } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { useThree } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { generateSVGString, downloadSVG } from "@/lib/svg-tools/mesh-svg";
@@ -10,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { ThreeScene, ThreeSceneSkeleton } from "@/components/r3f/scene";
+
+type MeshType = "sphere" | "torus" | "box";
 
 /**
  * Component that renders a 3D mesh and captures it as SVG
@@ -20,38 +22,24 @@ function MeshCapture({
   onCapture,
   registerCapture,
 }: {
-  meshType: "sphere" | "torus" | "box";
+  meshType: MeshType;
   wireframe: boolean;
   onCapture: (svg: string) => void;
   registerCapture: (captureMethod: () => void) => void;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
-  const [isReady, setIsReady] = useState(false);
-  const isManualCapture = useRef(false);
 
-  useEffect(() => {
-    setIsReady(true);
-  }, []);
-
-  function capture() {
+  const capture = useCallback(() => {
     if (!meshRef.current || !camera) {
       console.error("Missing required refs for SVG capture", {
         hasMesh: !!meshRef.current,
         hasCamera: !!camera,
-        isReady,
-        isManual: isManualCapture.current,
       });
       return;
     }
 
-    if (!isReady && !isManualCapture.current) {
-      return;
-    }
-
     try {
-      isManualCapture.current = false;
-
       const svg = generateSVGString(meshRef.current, camera, 400, 400, {
         stroke: "#ffffff",
         strokeWidth: 1,
@@ -66,26 +54,16 @@ function MeshCapture({
     } catch (error) {
       console.error("Error during SVG capture:", error);
     }
-  }
-
-  function manualCapture() {
-    isManualCapture.current = true;
-    capture();
-  }
+  }, [camera, onCapture]);
 
   useEffect(() => {
-    registerCapture(manualCapture);
-  }, [registerCapture]); // eslint-disable-line react-hooks/exhaustive-deps
+    registerCapture(capture);
+  }, [capture, registerCapture]);
 
   useEffect(() => {
-    if (isReady && meshRef.current) {
-      const timer = setTimeout(() => {
-        capture();
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isReady, meshType]); // eslint-disable-line react-hooks/exhaustive-deps
+    const timer = setTimeout(capture, 1000);
+    return () => clearTimeout(timer);
+  }, [capture, meshType]);
 
   return (
     <mesh ref={meshRef} rotation={[0, Math.PI / 4, 0]}>
@@ -105,7 +83,7 @@ function CaptureableScene({
   onCapture,
   registerCapture,
 }: {
-  meshType: "sphere" | "torus" | "box";
+  meshType: MeshType;
   onCapture: (svg: string) => void;
   registerCapture: (captureMethod: () => void) => void;
 }) {
@@ -139,16 +117,14 @@ function CaptureableScene({
  */
 export default function MeshSVGExporter() {
   const [svgData, setSvgData] = useState<string | null>(null);
-  const [meshType, setMeshType] = useState<"sphere" | "torus" | "box">(
-    "sphere"
-  );
+  const [meshType, setMeshType] = useState<MeshType>("sphere");
   const [isLoading, setIsLoading] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  function handleCapture(svg: string) {
+  const handleCapture = useCallback((svg: string) => {
     setSvgData(svg);
     setIsLoading(false);
-  }
+  }, []);
 
   function handleDownload() {
     if (svgData) {
@@ -158,9 +134,9 @@ export default function MeshSVGExporter() {
 
   const captureMethodRef = useRef<(() => void) | null>(null);
 
-  function registerCaptureMethod(captureMethod: () => void) {
+  const registerCaptureMethod = useCallback((captureMethod: () => void) => {
     captureMethodRef.current = captureMethod;
-  }
+  }, []);
 
   function triggerCapture() {
     setIsLoading(true);
@@ -186,16 +162,17 @@ export default function MeshSVGExporter() {
     }
   }
 
-  useEffect(() => {
+  function handleMeshTypeChange(value: string) {
     setIsLoading(true);
-  }, [meshType]);
+    setMeshType(value as MeshType);
+  }
 
   return (
-    <div className="w-full flex flex-col gap-2 border border-primary p-2 md:flex-row">
+    <div className="border-primary flex w-full flex-col gap-2 border p-2 md:flex-row">
       {/* Canvas Container */}
       <div
         ref={canvasRef}
-        className="w-full overflow-hidden rounded-lg border border-primary/60 bg-black md:w-2/3"
+        className="border-primary/60 w-full overflow-hidden rounded-lg border bg-black md:w-2/3"
         style={{ aspectRatio: "1/1" }}
       >
         <Suspense fallback={<ThreeSceneSkeleton />}>
@@ -203,10 +180,6 @@ export default function MeshSVGExporter() {
             className="h-full w-full"
             glProps={{
               preserveDrawingBuffer: true,
-            }}
-            captureProps={{
-              onCapture: handleCapture,
-              registerCapture: registerCaptureMethod,
             }}
           >
             <CaptureableScene
@@ -221,13 +194,11 @@ export default function MeshSVGExporter() {
       {/* Controls and Preview */}
       <div className="flex w-full flex-col justify-between gap-2 md:h-full md:w-1/3">
         {/* Mesh Settings Panel */}
-        <div className="space-y-2 border border-primary/30 p-2 md:h-full flex flex-col justify-between">
+        <div className="border-primary/30 flex flex-col justify-between space-y-2 border p-2 md:h-full">
           <h3 className="font-mono text-lg font-medium">Mesh Settings</h3>
           <RadioGroup
             value={meshType}
-            onValueChange={(value) =>
-              setMeshType(value as "sphere" | "torus" | "box")
-            }
+            onValueChange={handleMeshTypeChange}
             className="space-y-2 pb-2 font-mono"
           >
             <div className="flex items-center space-x-2">
@@ -270,7 +241,7 @@ export default function MeshSVGExporter() {
           </div>
         </div>
         {/* SVG Preview Section */}
-        <div className="space-y-2 border border-primary/30 p-2">
+        <div className="border-primary/30 space-y-2 border p-2">
           <h3 className="font-mono text-lg font-medium">SVG Preview</h3>
           <div
             className="flex w-full items-center justify-center overflow-hidden bg-black"
