@@ -58,26 +58,55 @@ The following differences from the previous ESLint configuration are intentional
 | `react/no-deprecated`                                | Retired. Oxlint's general deprecation rule requires a separate type-aware engine, which this setup does not enable.                |
 | `@next/next/no-location-assign-relative-destination` | Retired pending native support. Internal navigation continues to use Next's navigation APIs.                                       |
 | `react/require-render-return`                        | Enabled explicitly despite its current nursery status; Oxlint is pinned.                                                           |
-| Convex recommended rules                             | Replaced by the local syntax checks described below.                                                                               |
+| Convex recommended rules                             | Official plugin 4.0.0 runs through Oxlint's JS-plugin API, using its non-type-aware checks.                                        |
 
 See the [Oxlint migration guide](https://oxc.rs/docs/guide/usage/linter/migrate-from-eslint)
 and [React Compiler rule coverage](https://oxc.rs/blog/2026-08-18-react-compiler-support).
-There is no ESLint runtime or fallback. Convex's CLI still depends on Prettier
+Linting runs only Oxlint, with no ESLint CLI step or fallback. The official Convex
+plugin brings ESLint in transitively through `@typescript-eslint/utils`; it is
+installed, but not used as the lint runner. Convex's CLI still depends on Prettier
 transitively, and Oxfmt bundles it for some languages; project formatting runs only Oxfmt.
 
-### Local Convex checks
+### Official Convex checks
 
-[`tools/oxlint/convex.ts`](tools/oxlint/convex.ts) requires object syntax and an
-explicit `args` property for directly imported Convex registrar calls, including
-renamed imports. It requires table arguments for `db` and `ctx.db`
-`get`, `delete`, `patch`, and `replace` calls, and warns on inline database query
-filters. Array filtering after query execution remains allowed.
+[`@convex-dev/eslint-plugin`](https://docs.convex.dev/eslint) is pinned to 4.0.0
+and loaded directly through Oxlint's JS-plugin API. The Convex override explicitly
+mirrors its recommended rules and severities: object-style function registration,
+argument validators, explicit table IDs, inline query-filter warnings, top-of-hour
+cron warnings, and schema import-cycle detection. Runtime-import restrictions and
+`no-collect-in-query` remain opt-in and are not enabled.
 
-These checks use syntax, not TypeScript receiver types. They do not follow
-arbitrary database aliases, stored query variables, registrar wrappers, or imported
-configuration objects. The previous untyped setup also lacked query-variable
-analysis and silently skipped its explicit-table rule. `bun run typecheck` checks
-the table-first calls against Convex's generated types. No table names are autofixed.
+Version 3 added non-type-aware table-ID detection, replacing the need for our local
+Convex rules. Under Oxlint, the official plugin uses syntax rather than TypeScript
+receiver types. Registrar checks recognize literal names such as `query` and
+`mutation`, not renamed imports. Table-ID checks recognize
+`ctx.db.get/patch/replace/delete`, not bare `db`, arbitrary aliases, or
+string-computed methods. Query filtering is checked
+on inline query chains, not stored query variables; array filtering after collection
+remains allowed. Schema-cycle detection follows relative imports, not path aliases.
+No table names are autofixed without type information. `bun run typecheck` still
+checks table-first calls against Convex's generated types.
+
+Oxlint's native type-aware mode does not expose type information to JavaScript
+plugins. The integration test in `tests/tools/lint-config.test.ts` verifies all six
+configured Convex rules against the actual Oxlint CLI, including filesystem-based
+schema-cycle detection. Run `bun run test run tests/tools` when upgrading the plugin.
+
+### Focused native checks
+
+The built-in `vitest` plugin is scoped to `*.test.*` and `*.spec.*` JS/TS files.
+It rejects focused tests, malformed expectations, and unawaited/unreturned async
+expectations. `valid-expect` permits Vitest's optional second message argument.
+
+Four additional `jsx-a11y` warnings cover click handlers without keyboard handlers,
+interactive roles without focus support, static elements with interaction handlers,
+and positive tab indices. Prefer native buttons and links over adding roles to divs.
+Existing Wave Lab React exceptions do not disable these checks.
+
+See [Oxlint's built-in plugins](https://oxc.rs/docs/guide/usage/linter/plugins).
+Type-aware async rules (`no-floating-promises`, `no-misused-promises`) remain a
+separate follow-up; this migration does not enable a broad style preset or
+allocation-focused React performance rules.
 
 ### Selected anti-slop rules
 

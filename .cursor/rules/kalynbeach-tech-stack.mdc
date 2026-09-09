@@ -33,8 +33,8 @@ This is Kalyn Beach's core tech stack for web development (used for `kalynbeach-
 - **Validation**: Zod
 - **Formatting**: Oxfmt
 - **Linting**: Oxlint
-  - Native Next.js, React, and TypeScript rules
-  - Local Convex checks and selected vendored anti-slop rules
+  - Native Next.js, React, TypeScript, accessibility, and Vitest rules
+  - Official Convex plugin and selected vendored anti-slop rules
 - **Hosting**: Vercel
 - **AI**: AI SDK
 
