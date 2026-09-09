@@ -11,7 +11,12 @@ type TorusMeshProps = {
   segments: number;
 };
 
-export default function TorusMesh({ color, radius, tube, segments }: TorusMeshProps) {
+export default function TorusMesh({
+  color,
+  radius,
+  tube,
+  segments,
+}: TorusMeshProps) {
   const meshRef = useRef<Mesh>(null);
 
   useFrame((state, delta) => {

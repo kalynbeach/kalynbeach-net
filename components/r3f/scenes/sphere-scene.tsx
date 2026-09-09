@@ -9,11 +9,7 @@ type SphereSceneProps = {
 export default function SphereScene({ primaryColor }: SphereSceneProps) {
   return (
     <>
-      <SphereMesh
-        radius={1}
-        segments={32}
-        color={primaryColor}
-      />
+      <SphereMesh radius={1} segments={32} color={primaryColor} />
     </>
   );
 }

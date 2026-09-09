@@ -7,8 +7,9 @@ export const metadata: Metadata = {
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="w-fit text-xl leading-none font-mono font-semibold dark:font-medium py-1">
-      {`» `}{children}
+    <h2 className="w-fit py-1 font-mono text-xl leading-none font-semibold dark:font-medium">
+      {`» `}
+      {children}
     </h2>
   );
 }
@@ -16,7 +17,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 export default function Tech() {
   return (
     <SitePage>
-      <main className="size-full flex flex-col gap-10">
+      <main className="flex size-full flex-col gap-10">
         {/* OVERVIEW SECTION */}
         {/* <section className="flex flex-col gap-3">
           <p className="text-sm font-mono">technology!</p>
@@ -27,7 +28,7 @@ export default function Tech() {
           <a
             href="https://github.com/kalynbeach"
             target="_blank"
-            className="w-fit text-sm font-mono text-secondary-foreground underline underline-offset-2 decoration-accent dark:decoration-muted-foreground transition duration-150 hover:text-kb-blue hover:decoration-kb-blue/50 dark:hover:text-kb-green dark:hover:decoration-kb-green/50"
+            className="text-secondary-foreground decoration-accent dark:decoration-muted-foreground hover:text-kb-blue hover:decoration-kb-blue/50 dark:hover:text-kb-green dark:hover:decoration-kb-green/50 w-fit font-mono text-sm underline underline-offset-2 transition duration-150"
           >
             github.com/kalynbeach
           </a>

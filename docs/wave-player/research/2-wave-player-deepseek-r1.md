@@ -36,8 +36,10 @@ Each of these steps addresses a part of the user's requirements, ensuring high p
 ## Core Audio Architecture Design
 
 ### Audio Streaming vs Buffer Management
+
 **Decision:** Hybrid approach with progressive buffer loading  
-**Rationale:** 
+**Rationale:**
+
 - Enables real-time analysis while maintaining seek precision
 - Balances memory usage with audio quality requirements
 - Allows partial file loading for large tracks
@@ -48,35 +50,43 @@ const loadAudio = async (url: string) => {
   // Initial metadata fetch
   const head = await fetch(url, { method: "HEAD" });
   const contentLength = parseInt(head.headers.get("Content-Length") || "0");
-  
+
   // Progressive loading
   const chunkSize = 1024 * 1024 * 5; // 5MB chunks
   const buffer = await loadAudioChunks(url, contentLength, chunkSize);
-  
+
   return buffer;
 };
 
-const loadAudioChunks = async (url: string, totalSize: number, chunkSize: number) => {
+const loadAudioChunks = async (
+  url: string,
+  totalSize: number,
+  chunkSize: number
+) => {
   const audioContext = new AudioContext();
-  const buffer = audioContext.createBuffer(2, totalSize, audioContext.sampleRate);
-  
+  const buffer = audioContext.createBuffer(
+    2,
+    totalSize,
+    audioContext.sampleRate
+  );
+
   for (let offset = 0; offset < totalSize; offset += chunkSize) {
     const response = await fetch(url, {
-      headers: { Range: `bytes=${offset}-${offset + chunkSize - 1}` }
+      headers: { Range: `bytes=${offset}-${offset + chunkSize - 1}` },
     });
-    
+
     const arrayBuffer = await response.arrayBuffer();
     const partialBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    
+
     // Copy to main buffer
     partialBuffer.getChannelData(0).forEach((sample, index) => {
       buffer.getChannelData(0)[offset + index] = sample;
     });
-    
+
     // Update loading progress
     dispatch({ type: "BUFFER_PROGRESS", progress: offset / totalSize });
   }
-  
+
   return buffer;
 };
 ```
@@ -84,11 +94,12 @@ const loadAudioChunks = async (url: string, totalSize: number, chunkSize: number
 ### Core Audio Pipeline Implementation
 
 1. **Audio Context Management**
+
 ```typescript:contexts/wave-player-context.tsx
 // Updated AudioContext creation with safety wrappers
 const createAudioContext = () => {
   if (typeof window === "undefined") return null;
-  
+
   return new (window.AudioContext || window.webkitAudioContext)({
     latencyHint: "interactive",
     sampleRate: 48000
@@ -98,7 +109,7 @@ const createAudioContext = () => {
 // User gesture handler component
 export function AudioContextStarter() {
   const { audioContext } = useWavePlayerContext();
-  
+
   const handleStart = async () => {
     try {
       if (audioContext?.state === "suspended") {
@@ -120,6 +131,7 @@ export function AudioContextStarter() {
 ```
 
 2. **State Management**
+
 ```typescript:lib/types.ts
 // Enhanced state type
 export type WavePlayerState = {
@@ -152,6 +164,7 @@ const playerReducer = (state: WavePlayerState, action: PlayerAction): WavePlayer
 ```
 
 3. **Audio Processing Pipeline**
+
 ```typescript:contexts/wave-player-context.tsx
 // Initialize processing nodes
 const initializeProcessingPipeline = () => {
@@ -161,16 +174,16 @@ const initializeProcessingPipeline = () => {
   const analyser = audioContext.createAnalyser();
   analyser.fftSize = 2048;
   analyser.smoothingTimeConstant = 0.8;
-  
+
   // Create gain node with safe volume ramping
   const gainNode = audioContext.createGain();
   gainNode.gain.setValueAtTime(state.volume, audioContext.currentTime);
-  
+
   // Connect nodes: Source → Analyser → Gain → Destination
   sourceNode?.connect(analyser);
   analyser.connect(gainNode);
   gainNode.connect(audioContext.destination);
-  
+
   // Start visualization loop
   startVisualizationLoop(analyser);
 };
@@ -178,55 +191,56 @@ const initializeProcessingPipeline = () => {
 // Visualization frame loop
 const startVisualizationLoop = (analyser: AnalyserNode) => {
   const dataArray = new Uint8Array(analyser.frequencyBinCount);
-  
+
   const update = () => {
     if (!analyser) return;
-    
+
     // Get time-domain data for waveform
     analyser.getByteTimeDomainData(dataArray);
     dispatch({ type: "VISUALIZATION_UPDATE", data: { waveform: dataArray } });
-    
+
     // Get frequency data for future visualizations
     analyser.getByteFrequencyData(dataArray);
     dispatch({ type: "VISUALIZATION_UPDATE", data: { frequencies: dataArray } });
-    
+
     requestAnimationFrame(update);
   };
-  
+
   update();
 };
 ```
 
 4. **Playback Controls Implementation**
+
 ```typescript:contexts/wave-player-context.tsx
 const controls: WavePlayerControls = {
   play: async () => {
     if (!audioContext || !state.buffer) return;
-    
+
     // Create new source node for clean playback
     const source = audioContext.createBufferSource();
     source.buffer = state.buffer;
-    
+
     // Connect to processing pipeline
     source.connect(analyserNode);
     source.start(0, state.playbackPosition);
-    
+
     // Update state
     dispatch({ type: "PLAY", source });
   },
-  
+
   seek: (time: number) => {
     if (!audioContext || !state.buffer) return;
-    
+
     // Stop current playback
     sourceNode?.stop();
-    
+
     // Create new source for seeking
     const newSource = audioContext.createBufferSource();
     newSource.buffer = state.buffer;
     newSource.connect(analyserNode);
     newSource.start(0, time);
-    
+
     dispatch({ type: "SEEK", time, source: newSource });
   }
 };
@@ -235,11 +249,13 @@ const controls: WavePlayerControls = {
 ## Key Implementation Considerations
 
 1. **Memory Management**
+
 - Implement buffer pooling for track transitions
 - Use `AudioBuffer.copyToChannel` for efficient chunk merging
 - Add manual garbage collection triggers
 
 2. **Visualization Performance**
+
 ```typescript:components/wave-player/waveform-canvas.tsx
 // Optimized canvas renderer
 const WaveformCanvas = ({ data }: { data: Uint8Array }) => {
@@ -253,7 +269,7 @@ const WaveformCanvas = ({ data }: { data: Uint8Array }) => {
     // Throttle to 60fps
     const now = performance.now();
     if (now - lastDraw.current < 16) return;
-    
+
     // Canvas drawing operations...
     lastDraw.current = now;
   }, [data]);
@@ -263,17 +279,18 @@ const WaveformCanvas = ({ data }: { data: Uint8Array }) => {
 ```
 
 3. **Error Handling**
+
 ```typescript:contexts/wave-player-context.tsx
 // Unified error handler
 const handleAudioError = (error: unknown) => {
   const audioError = error instanceof Error ? error : new Error("Audio operation failed");
-  
-  dispatch({ 
+
+  dispatch({
     type: "ERROR",
     error: audioError,
     status: "error"
   });
-  
+
   // Implement recovery strategies
   if (error.name === "NotSupportedError") {
     // Fallback to HTML5 Audio
@@ -378,6 +395,7 @@ kalynbeach-net/
 ### Key File Responsibilities
 
 1. **Context System**
+
 ```typescript:context/wave-player/context.tsx
 // Core audio context management
 export const WavePlayerContext = createContext<WavePlayerContextValue | null>(null);
@@ -386,7 +404,7 @@ export const WavePlayerContext = createContext<WavePlayerContextValue | null>(nu
 export function WavePlayerProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(playerReducer, initialState);
   const audioContextRef = useRef<AudioContext | null>(null);
-  
+
   // Value memoization
   const contextValue = useMemo(() => ({
     state,
@@ -403,11 +421,12 @@ export function WavePlayerProvider({ children }: { children: React.ReactNode }) 
 ```
 
 2. **Hook Structure**
+
 ```typescript:hooks/wave-player/use-wave-player.ts
 // Main player hook
 export function useWavePlayer() {
   const { state, dispatch, audioContext } = useContext(WavePlayerContext);
-  
+
   // Memoized controls
   const controls = useMemo(() => ({
     play: async () => {
@@ -427,11 +446,12 @@ export function useWavePlayer() {
 ```
 
 3. **Component Architecture**
+
 ```tsx:components/wave-player/wave-player.tsx
 // Main player component
 export default function WavePlayer() {
   const { state, controls } = useWavePlayer();
-  
+
   return (
     <Card>
       <TrackInfo />
@@ -443,6 +463,7 @@ export default function WavePlayer() {
 ```
 
 4. **Worker Integration**
+
 ```typescript:lib/workers/audio-decoder.ts
 // Web Worker for audio processing
 self.onmessage = (e) => {
@@ -454,17 +475,18 @@ self.onmessage = (e) => {
 ```
 
 5. **Type Definitions**
+
 ```typescript:lib/types/wave-player.d.ts
 // Extended type declarations
 declare module WavePlayer {
   type VisualizationMode = "waveform" | "frequency";
-  
+
   interface AudioState {
     buffer: AudioBuffer | null;
     playbackPosition: number;
     status: PlayerStatus;
   }
-  
+
   interface VisualizationState {
     waveformData: Uint8Array | null;
     frequencyData: Uint8Array | null;
@@ -475,20 +497,23 @@ declare module WavePlayer {
 ### Implementation Strategy
 
 1. **Core First Approach**
+
 - Start with context system and basic hook
 - Implement minimal viable player component
 - Add visualization layer after core audio works
 
 2. **Progressive Enhancement**
+
 - Basic canvas visualization first
 - WebGL/WebAudio Worklet optimizations later
 - Loading states and error boundaries early
 
 3. **Testing Strategy**
+
 - Vitest for core audio logic, hooks, components, etc.
 
 4. **Performance Budget**
+
 - Audio decoding in worker threads
 - 60fps cap for visualizations
 - Memory monitoring for audio buffers
-

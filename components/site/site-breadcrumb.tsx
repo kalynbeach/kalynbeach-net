@@ -16,7 +16,7 @@ export default function SiteBreadcrumb() {
   const pathnameParts = pathname.split("/").filter(Boolean);
 
   return (
-    <div className="site-breadcrumb w-full h-full flex flex-row items-center justify-start font-mono">
+    <div className="site-breadcrumb flex h-full w-full flex-row items-center justify-start font-mono">
       <Breadcrumb>
         <BreadcrumbList>
           {pathnameParts.map((part, index) => (
@@ -25,13 +25,13 @@ export default function SiteBreadcrumb() {
               <BreadcrumbItem>
                 {index === pathnameParts.length - 1 ? (
                   <BreadcrumbPage>
-                    <span className="text-2xl font-mono font-semibold dark:font-medium">
+                    <span className="font-mono text-2xl font-semibold dark:font-medium">
                       {part}
                     </span>
                   </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink href={`/${part}`}>
-                    <span className="text-2xl font-mono font-semibold dark:font-medium">
+                    <span className="font-mono text-2xl font-semibold dark:font-medium">
                       {part}
                     </span>
                   </BreadcrumbLink>

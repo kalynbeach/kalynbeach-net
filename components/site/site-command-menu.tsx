@@ -46,7 +46,10 @@ export default function SiteCommandMenu({ pages }: SiteCommandMenuProps) {
         </kbd>
       </p> */}
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Type a command or search..." className="font-mono" />
+        <CommandInput
+          placeholder="Type a command or search..."
+          className="font-mono"
+        />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <PagesCommandGroup pages={pages} handler={navigateToPage} />
@@ -56,7 +59,13 @@ export default function SiteCommandMenu({ pages }: SiteCommandMenuProps) {
   );
 }
 
-function PagesCommandGroup({ pages, handler }: { pages: SitePage[], handler: (page: SitePage) => void}) {
+function PagesCommandGroup({
+  pages,
+  handler,
+}: {
+  pages: SitePage[];
+  handler: (page: SitePage) => void;
+}) {
   return (
     <CommandGroup heading="pages" className="p-2">
       {pages.map((page) => (
@@ -70,4 +79,4 @@ function PagesCommandGroup({ pages, handler }: { pages: SitePage[], handler: (pa
       ))}
     </CommandGroup>
   );
-};
+}

@@ -1,14 +1,17 @@
 "use client";
 
 import { formatTime } from "@/lib/utils";
-import type { WavePlayerState, WavePlayerControls } from "@/lib/types/wave-player";
+import type {
+  WavePlayerState,
+  WavePlayerControls,
+} from "@/lib/types/wave-player";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { 
-  Play, 
-  Pause, 
-  SkipBack, 
-  SkipForward, 
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
   Volume2,
   Repeat,
 } from "lucide-react";
@@ -21,19 +24,19 @@ type WavePlayerTrackControlsProps = {
   isLooping?: boolean;
 };
 
-export default function WavePlayerTrackControls({ 
-  status, 
-  currentTime, 
-  duration, 
+export default function WavePlayerTrackControls({
+  status,
+  currentTime,
+  duration,
   controls,
-  isLooping = false 
+  isLooping = false,
 }: WavePlayerTrackControlsProps) {
   const isLoading = status === "loading";
 
   return (
-    <div className="wave-player-track-controls w-full flex flex-col items-center justify-center gap-2 border border-muted/50 py-4 px-3 relative">
+    <div className="wave-player-track-controls border-muted/50 relative flex w-full flex-col items-center justify-center gap-2 border px-3 py-4">
       {/* Progress Slider */}
-      <div className="w-full space-y-2 flex flex-col items-center justify-center">
+      <div className="flex w-full flex-col items-center justify-center space-y-2">
         <Slider
           value={[currentTime]}
           max={duration}
@@ -41,14 +44,14 @@ export default function WavePlayerTrackControls({
           disabled={isLoading}
           className="w-full cursor-pointer"
         />
-        <div className="w-full flex flex-row justify-between font-mono text-sm">
+        <div className="flex w-full flex-row justify-between font-mono text-sm">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
       </div>
 
       {/* Main Controls */}
-      <div className="w-full flex items-center justify-center gap-4">
+      <div className="flex w-full items-center justify-center gap-4">
         <Button
           variant="ghost"
           size="icon"
@@ -62,7 +65,9 @@ export default function WavePlayerTrackControls({
         <Button
           variant="outline"
           size="icon"
-          onClick={() => status === "playing" ? controls.pause() : controls.play()}
+          onClick={() =>
+            status === "playing" ? controls.pause() : controls.play()
+          }
           disabled={isLoading}
           className="h-10 w-10 cursor-pointer"
         >

@@ -29,12 +29,12 @@ export default function SiteNavDrawer({ pages }: SiteNavDrawerProps) {
     <div className="site-nav-drawer flex flex-row items-center justify-center sm:hidden">
       <Drawer open={open} onOpenChange={setOpen} direction="right">
         <DrawerTrigger>
-          <Menu className="w-5 h-5" />
+          <Menu className="h-5 w-5" />
         </DrawerTrigger>
-        <DrawerContent className="border border-l-secondary">
+        <DrawerContent className="border-l-secondary border">
           <DrawerHeader>
             <DrawerTitle>
-              <Link href="/" className="text-lg font-mono font-medium">
+              <Link href="/" className="font-mono text-lg font-medium">
                 kalynbeach
               </Link>
             </DrawerTitle>

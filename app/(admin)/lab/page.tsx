@@ -9,14 +9,17 @@ export const metadata: Metadata = {
 
 function MeshSVGExporterSkeleton() {
   return (
-    <div className="w-full max-w-4xl mx-auto animate-pulse">
-      <div className="flex flex-col md:flex-row gap-6">
+    <div className="mx-auto w-full max-w-4xl animate-pulse">
+      <div className="flex flex-col gap-6 md:flex-row">
         {/* Canvas skeleton */}
-        <div className="w-full md:w-2/3 bg-muted rounded-lg" style={{ aspectRatio: "1/1" }} />
+        <div
+          className="bg-muted w-full rounded-lg md:w-2/3"
+          style={{ aspectRatio: "1/1" }}
+        />
         {/* Controls skeleton */}
-        <div className="w-full md:w-1/3 space-y-4">
-          <div className="h-64 bg-muted rounded-lg" />
-          <div className="h-64 bg-muted rounded-lg" />
+        <div className="w-full space-y-4 md:w-1/3">
+          <div className="bg-muted h-64 rounded-lg" />
+          <div className="bg-muted h-64 rounded-lg" />
         </div>
       </div>
     </div>
@@ -26,7 +29,7 @@ function MeshSVGExporterSkeleton() {
 export default function Lab() {
   return (
     <SitePage>
-      <main className="w-full h-full flex flex-col items-center justify-center">
+      <main className="flex h-full w-full flex-col items-center justify-center">
         <Suspense fallback={<MeshSVGExporterSkeleton />}>
           <MeshSVGExporter />
         </Suspense>

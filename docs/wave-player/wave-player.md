@@ -89,8 +89,8 @@ type WavePlayerAction =
   | { type: "INITIALIZE"; payload: { audioContext: AudioContext } }
   | { type: "SET_BUFFER"; payload: AudioBuffer | null }
   | { type: "SET_TRACK"; payload: WavePlayerTrack | null }
-  | { type: "SET_STATUS"; payload: WavePlayerState["status"] }
-  // ... additional actions
+  | { type: "SET_STATUS"; payload: WavePlayerState["status"] };
+// ... additional actions
 ```
 
 ## Current Issues & TODOs

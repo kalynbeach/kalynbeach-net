@@ -8,7 +8,11 @@ type SiteNavLinkProps = {
   onClick?: () => void;
 };
 
-export default function SiteNavLink({ page, isActive, onClick }: SiteNavLinkProps) {
+export default function SiteNavLink({
+  page,
+  isActive,
+  onClick,
+}: SiteNavLinkProps) {
   return (
     <Link
       key={page.route}

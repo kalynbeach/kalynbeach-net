@@ -20,10 +20,7 @@ const DefaultScene = dynamic(() => import("./scene").then((mod) => mod.Scene), {
 export function ThreeSceneBlock({ className }: { className?: string }) {
   return (
     <div className={cn("bg-background relative size-96", className)}>
-      <ThreeSceneClient
-        className={className}
-        fallback={<ThreeSceneSkeleton />}
-      >
+      <ThreeSceneClient className={className} fallback={<ThreeSceneSkeleton />}>
         <Suspense fallback={null}>
           <DefaultScene />
         </Suspense>

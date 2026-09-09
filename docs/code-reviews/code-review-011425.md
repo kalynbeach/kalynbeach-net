@@ -70,7 +70,7 @@ The codebase represents a well-structured Next.js 15 application with a particul
        const devices = await navigator.mediaDevices.enumerateDevices();
        const audioDevices = devices.filter(device => device.kind === "audioinput");
        setDevices(audioDevices);
-       
+
        if (audioDevices.length > 0 && !selectedDevice) {
          setSelectedDevice(audioDevices[0].deviceId);
        }

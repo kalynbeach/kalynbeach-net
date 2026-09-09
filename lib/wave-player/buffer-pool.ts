@@ -1,4 +1,8 @@
-import { WavePlayerTrack, WavePlayerBufferPoolState, WavePlayerBufferPoolOptions } from "@/lib/types/wave-player";
+import {
+  WavePlayerTrack,
+  WavePlayerBufferPoolState,
+  WavePlayerBufferPoolOptions,
+} from "@/lib/types/wave-player";
 
 /**
  * Core audio buffer management system for `WavePlayer`.
@@ -30,15 +34,15 @@ export class WavePlayerBufferPool {
       if (!this.pool.next) {
         this.cleanup();
       }
-      
+
       this.abortController = new AbortController();
-      
+
       // Get file size for chunk calculation
-      const head = await fetch(track.src, { 
+      const head = await fetch(track.src, {
         method: "HEAD",
-        signal: this.abortController.signal 
+        signal: this.abortController.signal,
       });
-      
+
       const contentLength = parseInt(head.headers.get("Content-Length") || "0");
       if (!contentLength) throw new Error("Content length not available");
 
@@ -68,47 +72,55 @@ export class WavePlayerBufferPool {
 
       // Combine all chunks into a single buffer
       const completeBuffer = await this.combineArrayBuffers(chunks);
-      
+
       try {
         // Decode the complete audio file
         const audioBuffer = await audioContext.decodeAudioData(completeBuffer);
-        
+
         // Store in appropriate pool slot
         if (this.pool.next === null) {
           this.pool.current = audioBuffer;
         } else {
           this.pool.next = audioBuffer;
         }
-        
-        this.totalBufferSize = (this.pool.current?.length || 0) * 4 + 
-                              (this.pool.next?.length || 0) * 4; // 32-bit float samples
-        
+
+        this.totalBufferSize =
+          (this.pool.current?.length || 0) * 4 +
+          (this.pool.next?.length || 0) * 4; // 32-bit float samples
+
         // Manage pool size if needed
         this.managePoolSize();
-        
+
         return audioBuffer;
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "unknown error";
+        const message =
+          error instanceof Error ? error.message : "unknown error";
         throw new Error("Unable to decode audio data: " + message);
       }
     } catch (error) {
-      const finalError = error instanceof Error ? error : new Error("Track loading failed");
+      const finalError =
+        error instanceof Error ? error : new Error("Track loading failed");
       this.pool.onError?.(finalError);
       throw finalError;
     }
   }
 
-  private async combineArrayBuffers(chunks: ArrayBuffer[]): Promise<ArrayBuffer> {
-    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+  private async combineArrayBuffers(
+    chunks: ArrayBuffer[]
+  ): Promise<ArrayBuffer> {
+    const totalLength = chunks.reduce(
+      (acc, chunk) => acc + chunk.byteLength,
+      0
+    );
     const combined = new ArrayBuffer(totalLength);
     const view = new Uint8Array(combined);
-    
+
     let offset = 0;
     for (const chunk of chunks) {
       view.set(new Uint8Array(chunk), offset);
       offset += chunk.byteLength;
     }
-    
+
     return combined;
   }
 
@@ -117,16 +129,18 @@ export class WavePlayerBufferPool {
       // Clear old chunks and next buffer to free memory
       this.pool.chunks.clear();
       this.pool.next = null;
-      
+
       // Keep track of current buffer size only
-      this.totalBufferSize = this.pool.current ? this.pool.current.length * 4 : 0;
+      this.totalBufferSize = this.pool.current
+        ? this.pool.current.length * 4
+        : 0;
     }
   }
 
   public setNextBuffer(buffer: AudioBuffer | null): void {
     this.pool.next = buffer;
-    this.totalBufferSize = (this.pool.current?.length || 0) * 4 + 
-                          (this.pool.next?.length || 0) * 4;
+    this.totalBufferSize =
+      (this.pool.current?.length || 0) * 4 + (this.pool.next?.length || 0) * 4;
     this.managePoolSize();
   }
 

@@ -6,7 +6,7 @@ import { SoundCardSkeleton } from "@/components/sound/sound-card-skeleton";
 export default function SoundBlockPage() {
   return (
     <SitePage>
-      <main className="size-full flex flex-col items-center justify-center gap-4">
+      <main className="flex size-full flex-col items-center justify-center gap-4">
         <Suspense fallback={<SoundCardSkeleton />}>
           <Sound />
         </Suspense>

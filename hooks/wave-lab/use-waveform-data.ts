@@ -2,12 +2,19 @@
 
 import { useEffect, useRef } from "react";
 
-export function useWaveformData(analyser: AnalyserNode | null, isInitialized: boolean) {
-  const dataArray = useRef<Uint8Array<ArrayBuffer>>(new Uint8Array(new ArrayBuffer(0)));
+export function useWaveformData(
+  analyser: AnalyserNode | null,
+  isInitialized: boolean
+) {
+  const dataArray = useRef<Uint8Array<ArrayBuffer>>(
+    new Uint8Array(new ArrayBuffer(0))
+  );
 
   useEffect(() => {
     if (analyser) {
-      dataArray.current = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
+      dataArray.current = new Uint8Array(
+        new ArrayBuffer(analyser.frequencyBinCount)
+      );
     }
   }, [analyser]);
 

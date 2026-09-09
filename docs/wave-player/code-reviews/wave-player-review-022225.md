@@ -120,8 +120,8 @@ export type WavePlayerState = {
 export type WavePlayerAction =
   | { type: "INITIALIZE"; payload: { audioContext: AudioContext } }
   | { type: "SET_BUFFER"; payload: AudioBuffer | null }
-  | { type: "SET_TRACK"; payload: WavePlayerTrack | null }
-  // ... additional actions
+  | { type: "SET_TRACK"; payload: WavePlayerTrack | null };
+// ... additional actions
 ```
 
 ### 3. Component Architecture

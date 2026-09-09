@@ -10,17 +10,8 @@ type KBSceneProps = {
 export default function KBScene({ primaryColor }: KBSceneProps) {
   return (
     <>
-      <TorusMesh
-        radius={1}
-        tube={1}
-        segments={32}
-        color={primaryColor}
-      />
-      <SphereMesh
-        radius={0.5}
-        segments={16}
-        color={primaryColor}
-      />
+      <TorusMesh radius={1} tube={1} segments={32} color={primaryColor} />
+      <SphereMesh radius={0.5} segments={16} color={primaryColor} />
     </>
   );
 }

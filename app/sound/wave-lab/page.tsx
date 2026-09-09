@@ -14,8 +14,10 @@ export const metadata: Metadata = {
 export default function WaveLabPage() {
   return (
     <SitePage>
-      <main className="size-full flex flex-col items-center justify-center gap-4">
-        <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
+      <main className="flex size-full flex-col items-center justify-center gap-4">
+        <Suspense
+          fallback={<div className="font-mono text-sm">loading...</div>}
+        >
           <SoundContextProvider>
             <SoundBlock />
           </SoundContextProvider>

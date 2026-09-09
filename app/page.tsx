@@ -6,7 +6,7 @@ import SiteLogo from "@/components/site/site-logo";
 export default function Home() {
   return (
     <SitePage includeHeader={false}>
-      <main className="size-full flex items-center justify-center">
+      <main className="flex size-full items-center justify-center">
         {/* TODO: Update site-logo transition animation to scale SVG down and back up (like it's warping to the footer) */}
         <ViewTransition name="site-logo" default="quick-out">
           <SiteLogo />

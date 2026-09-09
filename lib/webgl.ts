@@ -15,4 +15,4 @@ export const checkWebGLAvailability = cache(() => {
   } catch (e) {
     return false;
   }
-}); 
+});

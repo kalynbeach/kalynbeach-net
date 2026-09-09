@@ -37,6 +37,7 @@ In the review, I should highlight these points, provide code examples for sugges
 #### ✅ Strengths
 
 1. **Modern Architecture**
+
 ```typescript:contexts/wave-player/context.tsx
 export function WavePlayerProvider({ children }) {
   const [state, dispatch] = useReducer(playerReducer, initialState);
@@ -47,10 +48,12 @@ export function WavePlayerProvider({ children }) {
   };
 }
 ```
+
 - Proper use of React 19 hooks and context API
 - Clean separation of audio processing from UI components
 
 2. **Type Safety**
+
 ```typescript:lib/types/wave-player.d.ts
 export interface WavePlayerState {
   audioContext: AudioContext | null;
@@ -60,12 +63,14 @@ export interface WavePlayerState {
   // ...20+ well-typed properties
 }
 ```
+
 - Comprehensive type definitions covering all player states
 - Clear interface contracts for controls and context
 
 #### 🚨 Critical Issues
 
 1. **Audio Context Management**
+
 ```typescript:contexts/wave-player/context.tsx
 const initializeAudioContext = useCallback(async () => {
   try {
@@ -77,25 +82,29 @@ const initializeAudioContext = useCallback(async () => {
   }
 }, []);
 ```
+
 - No user gesture handling for audio activation
 - Multiple context creation risk in concurrent mode
 
 2. **Playback Implementation**
+
 ```typescript:contexts/wave-player/context.tsx
 const seek = useCallback((time: number) => {
   if (!state.audioContext || !state.buffer) return;
-  
+
   // Creates new source node on every seek
   sourceNodeRef.current = state.audioContext.createBufferSource();
   sourceNodeRef.current.start(0, time);
 }, [state.audioContext, state.buffer]);
 ```
+
 - Source node recreation on seek causes audio glitches
 - No buffer pooling/reuse strategy
 
 #### 💡 High-Priority Recommendations
 
 1. **Audio Worklet Integration**
+
 ```typescript:public/audio-worklets/waveform-processor.js
 class WaveformProcessor extends AudioWorkletProcessor {
   process(inputs) {
@@ -108,17 +117,18 @@ registerProcessor('waveform-processor', WaveformProcessor);
 ```
 
 2. **Chunked Buffer Loading**
+
 ```typescript:contexts/wave-player/context.tsx
 const loadTrack = async (track: WavePlayerTrack) => {
   const response = await fetch(track.src);
   const reader = response.body.getReader();
   let totalBytes = 0;
-  
+
   while(true) {
     const { done, value } = await reader.read();
     if(done) break;
     totalBytes += value.byteLength;
-    dispatch({ type: "SET_PROGRESS", 
+    dispatch({ type: "SET_PROGRESS",
       payload: (totalBytes / response.headers.get('Content-Length')) * 100
     });
   }
@@ -127,16 +137,17 @@ const loadTrack = async (track: WavePlayerTrack) => {
 
 ### Performance Metrics
 
-| Aspect               | Current | Target  |
-|----------------------|---------|---------|
-| Context Init Time     | 120ms   | 50ms    |
-| Buffer Load (3min)    | 1.8s    | 0.9s    |
-| Visualization FPS    | 45-55   | 60      |
-| Memory Usage         | 85MB    | 50MB    |
+| Aspect             | Current | Target |
+| ------------------ | ------- | ------ |
+| Context Init Time  | 120ms   | 50ms   |
+| Buffer Load (3min) | 1.8s    | 0.9s   |
+| Visualization FPS  | 45-55   | 60     |
+| Memory Usage       | 85MB    | 50MB   |
 
 ### Implementation Roadmap
 
 1. **Phase 1: Core Optimization (2 Weeks)**
+
 ```typescript
 // Example state optimization
 const playerReducer = (state: WavePlayerState, action: PlayerAction) => {
@@ -146,17 +157,18 @@ const playerReducer = (state: WavePlayerState, action: PlayerAction) => {
 ```
 
 2. **Phase 2: Visualization (1 Week)**
+
 ```typescript:components/wave-player/webgl-waveform.tsx
 const WebGLWaveform = () => {
   const { waveform } = useWavePlayerContext();
   const ref = useRef<THREE.BufferGeometry>();
-  
+
   useFrame(() => {
-    ref.current?.setAttribute('position', 
+    ref.current?.setAttribute('position',
       new THREE.BufferAttribute(waveform, 3)
     );
   });
-  
+
   return <lineSegments geometry={ref.current} />;
 }
 ```

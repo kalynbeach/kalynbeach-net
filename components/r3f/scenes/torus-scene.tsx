@@ -9,12 +9,7 @@ type TorusSceneProps = {
 export default function TorusScene({ primaryColor }: TorusSceneProps) {
   return (
     <>
-      <TorusMesh
-        radius={1}
-        tube={1}
-        segments={32}
-        color={primaryColor}
-      />
+      <TorusMesh radius={1} tube={1} segments={32} color={primaryColor} />
     </>
   );
 }

@@ -8,12 +8,18 @@ export const metadata: Metadata = {
 };
 
 function Divider() {
-  return <div className="w-full h-px bg-primary" />;
+  return <div className="bg-primary h-px w-full" />;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="w-full flex flex-col items-start justify-start gap-4">
+    <section className="flex w-full flex-col items-start justify-start gap-4">
       <SectionHeader>{title}</SectionHeader>
       {children}
     </section>
@@ -22,7 +28,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="w-fit text-xl font-mono text-center bg-background border border-primary px-6 py-3 mb-4">
+    <h2 className="bg-background border-primary mb-4 w-fit border px-6 py-3 text-center font-mono text-xl">
       {children}
     </h2>
   );
@@ -31,8 +37,8 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 export default function Style() {
   return (
     <SitePage>
-      <main className="w-full flex flex-col items-start justify-start gap-8">
-        <p className="text-sm font-mono">*this page is under construction*</p>
+      <main className="flex w-full flex-col items-start justify-start gap-8">
+        <p className="font-mono text-sm">*this page is under construction*</p>
         {/* TODO: build colors section */}
         {/* <section className="flex flex-col items-start justify-start gap-4">
           <h2 className="font-mono text-xl font-bold">Colors</h2>
@@ -41,7 +47,7 @@ export default function Style() {
         <Divider />
         {/* TODO: continue building components section */}
         <Section title="COMPONENTS">
-          <h3 className="font-mono text-lg mb-2">Button</h3>
+          <h3 className="mb-2 font-mono text-lg">Button</h3>
           <div className="flex flex-row flex-wrap gap-4">
             <Button>default</Button>
             <Button variant="secondary">secondary</Button>
@@ -56,7 +62,7 @@ export default function Style() {
             <Button size="lg">lg</Button>
             <Button size="icon">icon</Button>
           </div>
-          <h3 className="font-mono text-lg mb-2">Input</h3>
+          <h3 className="mb-2 font-mono text-lg">Input</h3>
           <div className="flex flex-row flex-wrap gap-4">
             <Input placeholder="placeholder" />
           </div>
@@ -86,8 +92,8 @@ export default function Style() {
               : he would tax the jokes in the kingdom.
             </p>
             <blockquote className="mt-6 border-l-2 pl-6 italic">
-              &quot;After all,&quot; he said, &quot;everyone enjoys a good
-              joke, so it&apos;s only fair that they should pay for the
+              &quot;After all,&quot; he said, &quot;everyone enjoys a good joke,
+              so it&apos;s only fair that they should pay for the
               privilege.&quot;
             </blockquote>
             <h3 className="mt-8 scroll-m-20 text-2xl font-semibold tracking-tight">
@@ -105,21 +111,23 @@ export default function Style() {
             <p className="leading-7 [&:not(:first-child)]:mt-6">
               As a result, people stopped telling jokes, and the kingdom fell
               into a gloom. But there was one person who refused to let the
-              king&apos;s foolishness get him down: a court jester named Jokester.
+              king&apos;s foolishness get him down: a court jester named
+              Jokester.
             </p>
             <h3 className="mt-8 scroll-m-20 text-2xl font-semibold tracking-tight">
               Jokester&apos;s Revolt
             </h3>
             <p className="leading-7 [&:not(:first-child)]:mt-6">
               Jokester began sneaking into the castle in the middle of the night
-              and leaving jokes all over the place: under the king&apos;s pillow,
-              in his soup, even in the royal toilet. The king was furious, but
-              he couldn&apos;t seem to stop Jokester.
+              and leaving jokes all over the place: under the king&apos;s
+              pillow, in his soup, even in the royal toilet. The king was
+              furious, but he couldn&apos;t seem to stop Jokester.
             </p>
             <p className="leading-7 [&:not(:first-child)]:mt-6">
               And then, one day, the people of the kingdom discovered that the
               jokes left by Jokester were so funny that they couldn&apos;t help
-              but laugh. And once they started laughing, they couldn&apos;t stop.
+              but laugh. And once they started laughing, they couldn&apos;t
+              stop.
             </p>
             <h3 className="mt-8 scroll-m-20 text-2xl font-semibold tracking-tight">
               The People&apos;s Rebellion

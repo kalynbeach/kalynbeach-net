@@ -5,10 +5,7 @@ import { Suspense } from "react";
 import { SoundCardSkeleton } from "@/components/sound/sound-card-skeleton";
 
 const SoundCard = dynamic(
-  () =>
-    import("@/components/sound/sound-card").then(
-      (mod) => mod.SoundCard
-    ),
+  () => import("@/components/sound/sound-card").then((mod) => mod.SoundCard),
   {
     ssr: false,
     loading: () => <SoundCardSkeleton />,
