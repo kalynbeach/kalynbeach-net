@@ -58,7 +58,9 @@
     "typescript/no-wrapper-object-types": "error",
     "typescript/prefer-as-const": "error",
     "typescript/prefer-namespace-keyword": "error",
-    "typescript/triple-slash-reference": "error"
+    "typescript/triple-slash-reference": "error",
+    "anti-slop/no-chained-type-assertions": "warn",
+    "anti-slop/no-widen-then-assert": "warn"
   },
   "overrides": [
     {
@@ -164,5 +166,6 @@
       },
       "plugins": ["react"]
     }
-  ]
+  ],
+  "jsPlugins": ["./tools/oxlint/anti-slop.ts"]
 }
