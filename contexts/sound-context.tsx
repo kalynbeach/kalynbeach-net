@@ -1,7 +1,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import type { SoundContextValue, SoundStatus, SoundError } from "@/lib/types/sound";
+import type {
+  SoundContextValue,
+  SoundStatus,
+  SoundError,
+} from "@/lib/types/sound";
 
 export const FFT_SIZE = 2048;
 export const SMOOTHING_TIME_CONSTANT = 0.8;
@@ -103,7 +107,7 @@ export function SoundContextProvider({
         suspend();
       }
     };
-  }, [audioContext]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [audioContext]); // oxlint-disable-line react/exhaustive-deps
 
   // Handle AudioContext state changes
   useEffect(() => {

@@ -24,14 +24,14 @@ function ChromaComponent({ data }: ChromaProps) {
   const normalizedData = useMemo(() => {
     if (!data || data.length === 0) return [];
     const maxValue = Math.max(...data);
-    return maxValue > 0 ? data.map(value => value / maxValue) : data;
+    return maxValue > 0 ? data.map((value) => value / maxValue) : data;
   }, [data]);
 
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="chroma w-full h-16 border border-secondary">
-      <div className="chroma-container w-full h-full flex flex-row items-center justify-evenly bg-background">
+    <div className="chroma border-secondary h-16 w-full border">
+      <div className="chroma-container bg-background flex h-full w-full flex-row items-center justify-evenly">
         {PITCH_CLASSES.map((pitchClass, i) => (
           <ChromaBar
             key={pitchClass}
@@ -45,40 +45,44 @@ function ChromaComponent({ data }: ChromaProps) {
 }
 
 type ChromaBarProps = {
-  pitchClass: typeof PITCH_CLASSES[number];
+  pitchClass: (typeof PITCH_CLASSES)[number];
   intensity: number;
 };
 
-const ChromaBar = memo(function ChromaBar({ pitchClass, intensity }: ChromaBarProps) {
-  return (
-    <div
-      className={cn(
-        "chroma-bar w-full h-full flex flex-col justify-center",
-        "transition-colors duration-100",
-        intensity >= 0.9 && "bg-primary",
-        intensity >= 0.6 && intensity < 0.9 && "bg-primary-foreground/50",
-        intensity >= 0.3 && intensity < 0.6 && "bg-primary-foreground/30",
-        intensity < 0.3 && "bg-primary-foreground/10",
-      )}
-    >
-      <div className="chroma-label text-sm font-mono font-semibold text-center text-secondary">
-        {pitchClass}
+const ChromaBar = memo(
+  function ChromaBar({ pitchClass, intensity }: ChromaBarProps) {
+    return (
+      <div
+        className={cn(
+          "chroma-bar w-full h-full flex flex-col justify-center",
+          "transition-colors duration-100",
+          intensity >= 0.9 && "bg-primary",
+          intensity >= 0.6 && intensity < 0.9 && "bg-primary-foreground/50",
+          intensity >= 0.3 && intensity < 0.6 && "bg-primary-foreground/30",
+          intensity < 0.3 && "bg-primary-foreground/10"
+        )}
+      >
+        <div className="chroma-label text-secondary text-center font-mono text-sm font-semibold">
+          {pitchClass}
+        </div>
       </div>
-    </div>
-  );
-}, (prevProps, nextProps) => {
-  // only re-render if intensity changed by more than 0.1
-  return Math.abs(prevProps.intensity - nextProps.intensity) < 0.1;
-});
+    );
+  },
+  (prevProps, nextProps) => {
+    // only re-render if intensity changed by more than 0.1
+    return Math.abs(prevProps.intensity - nextProps.intensity) < 0.1;
+  }
+);
 
 // custom equality check for the main component
 function areEqual(prevProps: ChromaProps, nextProps: ChromaProps) {
-  if (!prevProps.data || !nextProps.data) return prevProps.data === nextProps.data;
+  if (!prevProps.data || !nextProps.data)
+    return prevProps.data === nextProps.data;
   if (prevProps.data.length !== nextProps.data.length) return false;
-  
+
   // only re-render if any value changes by more than 10%
-  return prevProps.data.every((value, i) => 
-    Math.abs(value - nextProps.data[i]) < 0.1
+  return prevProps.data.every(
+    (value, i) => Math.abs(value - nextProps.data[i]) < 0.1
   );
 }
 

@@ -111,7 +111,10 @@ export const update = mutation({
       throw new Error(`Track ${args.id} not found`);
     }
 
-    await ctx.db.patch(track._id, { ...args.track, updatedAt: Date.now() });
+    await ctx.db.patch("tracks", track._id, {
+      ...args.track,
+      updatedAt: Date.now(),
+    });
 
     return null;
   },
@@ -142,7 +145,7 @@ export const remove = mutation({
       throw new Error(`Track ${args.id} is still used by a playlist`);
     }
 
-    await ctx.db.delete(track._id);
+    await ctx.db.delete("tracks", track._id);
 
     return null;
   },

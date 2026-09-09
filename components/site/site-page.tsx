@@ -13,7 +13,12 @@ export default function SitePage({
   includeHeader = true,
 }: SitePageProps) {
   return (
-    <div className={cn("site-page size-full flex flex-col items-start justify-start gap-6", className)}>
+    <div
+      className={cn(
+        "site-page size-full flex flex-col items-start justify-start gap-6",
+        className
+      )}
+    >
       {includeHeader && <SitePageHeader />}
       {children}
     </div>

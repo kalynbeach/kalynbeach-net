@@ -68,9 +68,12 @@ export const claimConfiguredAdmin = mutation({
         createdAt: now,
         updatedAt: now,
       });
-      await ctx.db.patch(userId, { role: "admin", updatedAt: now });
+      await ctx.db.patch("users", userId, { role: "admin", updatedAt: now });
     } else if (existingUser.role !== "admin") {
-      await ctx.db.patch(existingUser._id, { role: "admin", updatedAt: now });
+      await ctx.db.patch("users", existingUser._id, {
+        role: "admin",
+        updatedAt: now,
+      });
     }
 
     return { role: "admin" as const };

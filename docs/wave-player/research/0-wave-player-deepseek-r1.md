@@ -96,7 +96,7 @@ const ensureAudioContext = async () => {
 🔧 Proposed Architecture:
 
 ```
-S3 Audio Stream → MediaElementSource → Worklet Processor 
+S3 Audio Stream → MediaElementSource → Worklet Processor
   → Analyser → Gain → Destination
 ```
 
@@ -138,10 +138,10 @@ type WavePlayerState = {
 // Visualization loop example
 const updateVisualization = useCallback(() => {
   if (!analyserRef.current) return;
-  
+
   const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
   analyserRef.current.getByteTimeDomainData(dataArray);
-  
+
   // Update visualization state
   requestAnimationFrame(updateVisualization);
 }, []);
@@ -162,7 +162,7 @@ const controls: WavePlayerControls = {
   seek: (time) => {
     // Implement with buffer source's start()/stop()
     // Consider track transitions
-  }
+  },
 };
 ```
 
@@ -180,7 +180,7 @@ const safeAudioOperation = async <T>(operation: () => Promise<T>) => {
   try {
     return await operation();
   } catch (error) {
-    setState(prev => ({ ...prev, status: "error" }));
+    setState((prev) => ({ ...prev, status: "error" }));
     throw new WavePlayerError("Operation failed", error);
   }
 };

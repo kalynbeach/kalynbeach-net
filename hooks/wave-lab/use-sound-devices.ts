@@ -12,9 +12,11 @@ export function useSoundDevices(): SoundDevicesData {
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const audioDevices = devices.filter(device => device.kind === "audioinput");
+        const audioDevices = devices.filter(
+          (device) => device.kind === "audioinput"
+        );
         setDevices(audioDevices);
-        
+
         if (audioDevices.length > 0 && !selectedDevice) {
           setSelectedDevice(audioDevices[0].deviceId);
         }
@@ -25,7 +27,7 @@ export function useSoundDevices(): SoundDevicesData {
 
     getDevices();
     navigator.mediaDevices.addEventListener("devicechange", getDevices);
-    
+
     return () => {
       navigator.mediaDevices.removeEventListener("devicechange", getDevices);
     };

@@ -23,19 +23,23 @@ The codebase implements a 3D scene system using React Three Fiber (R3F) within a
 ## Strengths
 
 1. **Performance Optimizations**
+
    ```typescript
-   const Scene = dynamic(() => import('@/components/rtf/scene'), { ssr: false });
+   const Scene = dynamic(() => import("@/components/rtf/scene"), {
+     ssr: false,
+   });
    ```
    - Correct use of dynamic imports for client components
    - Proper SSR handling with `ssr: false`
 
 2. **Type Safety**
+
    ```typescript
-   type SceneType = "sphere" | "torus"
-   
+   type SceneType = "sphere" | "torus";
+
    interface SceneContextType {
-     currentScene: SceneType
-     setCurrentScene: (scene: SceneType) => void
+     currentScene: SceneType;
+     setCurrentScene: (scene: SceneType) => void;
    }
    ```
    - Strong TypeScript implementation
@@ -63,32 +67,36 @@ The codebase implements a 3D scene system using React Three Fiber (R3F) within a
 1. **Performance Optimizations**
 
    a. **Mesh Animations**
+
    ```typescript
    useFrame((_, delta) => {
      if (meshRef.current) {
        meshRef.current.rotation.y -= 0.000114;
      }
-   })
+   });
    ```
+
    Should be optimized to:
+
    ```typescript
    useFrame((_, delta) => {
      if (meshRef.current) {
        meshRef.current.rotation.y -= delta * 0.1; // Use delta for frame-rate independent rotation
      }
-   }, []) // Add dependency array to optimize frame callback
+   }, []); // Add dependency array to optimize frame callback
    ```
 
    b. **Scene Context Optimization**
+
    ```typescript
    export function SceneProvider({ children }: { children: ReactNode }) {
      const [currentScene, setCurrentScene] = useState<SceneType>("sphere")
-     
+
      const contextValue = useMemo(() => ({
        currentScene,
        setCurrentScene
      }), [currentScene])
-   
+
      return (
        <SceneContext.Provider value={contextValue}>
          {children}
@@ -100,31 +108,33 @@ The codebase implements a 3D scene system using React Three Fiber (R3F) within a
 2. **Memory Management**
 
    Add cleanup for mesh geometries:
+
    ```typescript
    export default function SphereMesh() {
-     const meshRef = useRef<Mesh>(null)
-     
+     const meshRef = useRef<Mesh>(null);
+
      useEffect(() => {
        return () => {
          if (meshRef.current) {
-           meshRef.current.geometry.dispose()
-           meshRef.current.material.dispose()
+           meshRef.current.geometry.dispose();
+           meshRef.current.material.dispose();
          }
-       }
-     }, [])
-     
+       };
+     }, []);
+
      // ... rest of component
    }
    ```
 
 3. **Canvas Configuration**
+
    ```typescript
-   <Canvas 
+   <Canvas
      camera={{ position: [0, 0, 5], fov: 75 }}
-     gl={{ 
+     gl={{
        powerPreference: "high-performance",
        antialias: true,
-       alpha: false 
+       alpha: false
      }}
      performance={{ min: 0.5 }}
    >
@@ -208,7 +218,7 @@ The codebase shows good potential for scaling and can be further optimized with 
    ```typescript:components/rtf/meshes/sphere-mesh.tsx
    export default function SphereMesh() {
      const meshRef = useRef<Mesh>(null)
-     
+
      // Use delta time for smooth, consistent animations
      useFrame((_, delta) => {
        if (meshRef.current) {
@@ -217,7 +227,7 @@ The codebase shows good potential for scaling and can be further optimized with 
          meshRef.current.rotation.x += delta * 0.05
        }
      }, []) // Empty dependency array for optimal performance
-     
+
      return (
        <mesh ref={meshRef} rotation={[1.5708, 1.5708, 0]}>
          <sphereGeometry args={[2, 32, 32]} />
@@ -230,14 +240,14 @@ The codebase shows good potential for scaling and can be further optimized with 
    ```typescript:components/rtf/meshes/torus-mesh.tsx
    export default function TorusMesh() {
      const meshRef = useRef<Mesh>(null)
-     
+
      useFrame((_, delta) => {
        if (meshRef.current) {
          meshRef.current.rotation.y += delta * 0.3
          meshRef.current.rotation.z += delta * 0.15
        }
      }, [])
-     
+
      return (
        <mesh ref={meshRef}>
          <torusGeometry args={[1, 1, 32, 32]} />
@@ -256,7 +266,7 @@ The codebase shows good potential for scaling and can be further optimized with 
      const meshRef = useRef<Mesh>(null)
      const geometryRef = useRef<SphereGeometry>(null)
      const materialRef = useRef<MeshStandardMaterial>(null)
-     
+
      useEffect(() => {
        return () => {
          // Cleanup geometry
@@ -269,9 +279,9 @@ The codebase shows good potential for scaling and can be further optimized with 
          }
        }
      }, [])
-     
+
      // ... existing useFrame code ...
-     
+
      return (
        <mesh ref={meshRef} rotation={[1.5708, 1.5708, 0]}>
          <sphereGeometry ref={geometryRef} args={[2, 32, 32]} />
@@ -287,26 +297,26 @@ The codebase shows good potential for scaling and can be further optimized with 
 
    ```typescript:contexts/scene-context.tsx
    "use client"
-   
+
    import { createContext, useState, useMemo, useCallback, ReactNode, useContext } from "react"
-   
+
    type SceneType = "sphere" | "torus"
-   
+
    interface SceneContextType {
      currentScene: SceneType
      setCurrentScene: (scene: SceneType) => void
    }
-   
+
    const SceneContext = createContext<SceneContextType | undefined>(undefined)
-   
+
    export function SceneProvider({ children }: { children: ReactNode }) {
      const [currentScene, setCurrentScene] = useState<SceneType>("sphere")
-     
+
      // Memoize the setCurrentScene callback
      const handleSceneChange = useCallback((scene: SceneType) => {
        setCurrentScene(scene)
      }, [])
-     
+
      // Memoize the context value
      const contextValue = useMemo(
        () => ({
@@ -315,14 +325,14 @@ The codebase shows good potential for scaling and can be further optimized with 
        }),
        [currentScene, handleSceneChange]
      )
-     
+
      return (
        <SceneContext.Provider value={contextValue}>
          {children}
        </SceneContext.Provider>
      )
    }
-   
+
    export function useSceneContext() {
      const context = useContext(SceneContext)
      if (context === undefined) {
@@ -333,13 +343,14 @@ The codebase shows good potential for scaling and can be further optimized with 
    ```
 
 These optimizations will:
+
 - Ensure smooth animations across different devices and frame rates
 - Prevent memory leaks by properly disposing of Three.js resources
 - Minimize unnecessary rerenders through proper context optimization
 
 Note: When implementing these changes, make sure to:
+
 1. Import all necessary types from Three.js
 2. Test the animations on different devices to ensure consistent speed
 3. Monitor memory usage to verify proper cleanup
 4. Use React DevTools to confirm reduced rerenders
-

@@ -5,7 +5,10 @@ import Meyda, { type MeydaFeaturesObject, MeydaAudioFeature } from "meyda";
 
 type MeydaAnalyzer = ReturnType<typeof Meyda.createMeydaAnalyzer>;
 
-export function useMeyda(context: AudioContext | null, stream: MediaStream | null) {
+export function useMeyda(
+  context: AudioContext | null,
+  stream: MediaStream | null
+) {
   const [features, setFeatures] = useState<MeydaFeaturesObject | null>(null);
   const [meydaInitializing, setMeydaInitializing] = useState(false);
   const [meydaError, setMeydaError] = useState<Error | null>(null);
@@ -50,15 +53,22 @@ export function useMeyda(context: AudioContext | null, stream: MediaStream | nul
           ],
           callback: (data: MeydaFeaturesObject) => {
             setFeatures(data);
-          }
+          },
         });
 
         // console.log("[useMeyda initAnalyzer] starting analyzer...");
         analyzerRef.current.start();
       } catch (err) {
-        console.error("[useMeyda initAnalyzer] Error initializing Meyda analyzer:", err);
-        setMeydaError(err instanceof Error ? err : new Error("Failed to initialize audio analyzer"));
-        
+        console.error(
+          "[useMeyda initAnalyzer] Error initializing Meyda analyzer:",
+          err
+        );
+        setMeydaError(
+          err instanceof Error
+            ? err
+            : new Error("Failed to initialize audio analyzer")
+        );
+
         if (sourceRef.current) {
           sourceRef.current.disconnect();
           sourceRef.current = null;

@@ -10,7 +10,7 @@ interface SoundVisualizerProps {
 
 export function SoundVisualizer({ canvasRef }: SoundVisualizerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const { resolvedTheme } = useTheme();
 
   useEffect(() => {
@@ -34,8 +34,10 @@ export function SoundVisualizer({ canvasRef }: SoundVisualizerProps) {
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return;
-      const backgroundColor = resolvedTheme === "dark" ? "oklch(0.145 0 0)" : "oklch(0.9851 0 0)";
-      const strokeColor = resolvedTheme === "dark" ? "oklch(0.9851 0 0)" : "oklch(0.145 0 0)";
+      const backgroundColor =
+        resolvedTheme === "dark" ? "oklch(0.145 0 0)" : "oklch(0.9851 0 0)";
+      const strokeColor =
+        resolvedTheme === "dark" ? "oklch(0.9851 0 0)" : "oklch(0.145 0 0)";
       ctx.fillStyle = backgroundColor;
       ctx.strokeStyle = strokeColor;
     }

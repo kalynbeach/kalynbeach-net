@@ -59,7 +59,7 @@ const cleanup = useCallback(() => {
     gainNodeRef.current.disconnect();
     gainNodeRef.current = null;
   }
-  
+
   // Clean up buffer pool
   if (bufferPoolRef.current) {
     bufferPoolRef.current.cleanup();
@@ -86,8 +86,10 @@ export class WavePlayerBufferPool {
     if (this.totalBufferSize > this.maxBufferSize) {
       // Remove oldest chunks until under limit
       const entries = Array.from(this.pool.chunks.entries());
-      entries.sort(([a], [b]) => parseInt(a.split('-')[1]) - parseInt(b.split('-')[1]));
-      
+      entries.sort(
+        ([a], [b]) => parseInt(a.split("-")[1]) - parseInt(b.split("-")[1])
+      );
+
       while (this.totalBufferSize > this.maxBufferSize && entries.length) {
         const [key, buffer] = entries.shift()!;
         this.totalBufferSize -= buffer.length * 4; // 32-bit float samples
@@ -99,11 +101,11 @@ export class WavePlayerBufferPool {
   async loadTrackChunked(track: WavePlayerTrack, audioContext: AudioContext) {
     try {
       // ... existing implementation ...
-      
+
       // Update total buffer size
       this.totalBufferSize += buffer.length * 4;
       this.manageMemory();
-      
+
       return buffer;
     } catch (error) {
       // ... error handling ...
@@ -147,32 +149,34 @@ function WavePlayerProvider({ children, playlist }: WavePlayerProviderProps) {
     let animationFrameId: number;
 
     const updateStateEfficiently = (timestamp: number) => {
-      if (timestamp - timeAndVisualizationRef.current.lastUpdate >= 
-          timeAndVisualizationRef.current.updateInterval) {
-        
+      if (
+        timestamp - timeAndVisualizationRef.current.lastUpdate >=
+        timeAndVisualizationRef.current.updateInterval
+      ) {
         // Update time
         if (state.audioContext && state.duration > 0) {
-          const rawCurrentTime = state.audioContext.currentTime - startTimeRef.current;
-          const currentTime = state.track?.isLoop 
-            ? rawCurrentTime % state.duration 
+          const rawCurrentTime =
+            state.audioContext.currentTime - startTimeRef.current;
+          const currentTime = state.track?.isLoop
+            ? rawCurrentTime % state.duration
             : rawCurrentTime;
-          
+
           dispatch({ type: "SET_CURRENT_TIME", payload: currentTime });
         }
 
         // Update visualization
         const analyser = analyserNodeRef.current!;
         const visualizationBuffer = new Uint8Array(analyser.frequencyBinCount);
-        
+
         analyser.getByteTimeDomainData(visualizationBuffer);
         const waveform = visualizationBuffer.slice();
-        
+
         analyser.getByteFrequencyData(visualizationBuffer);
         const frequencies = visualizationBuffer.slice();
 
         dispatch({
           type: "SET_VISUALIZATION",
-          payload: { waveform, frequencies }
+          payload: { waveform, frequencies },
         });
 
         timeAndVisualizationRef.current.lastUpdate = timestamp;
@@ -193,29 +197,31 @@ function WavePlayerProvider({ children, playlist }: WavePlayerProviderProps) {
 // workers/audio-processor.worker.ts
 self.onmessage = async (e: MessageEvent) => {
   const { chunks, sampleRate } = e.data;
-  
+
   // Combine chunks
   const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
   const combined = new Float32Array(totalLength);
-  
+
   let offset = 0;
   for (const chunk of chunks) {
     combined.set(new Float32Array(chunk), offset);
     offset += chunk.length;
   }
-  
+
   // Process audio data
   // ... implement audio processing logic ...
-  
+
   self.postMessage({ processed: combined.buffer }, [combined.buffer]);
 };
 
 // In buffer-pool.ts
 export class WavePlayerBufferPool {
   private worker: Worker;
-  
+
   constructor(options: WavePlayerBufferPoolOptions) {
-    this.worker = new Worker(new URL('../workers/audio-processor.worker.ts', import.meta.url));
+    this.worker = new Worker(
+      new URL("../workers/audio-processor.worker.ts", import.meta.url)
+    );
     // ... rest of constructor
   }
 
@@ -275,7 +281,7 @@ import { Suspense } from "react";
 // Server Component
 async function TrackList({ playlistId }: { playlistId: number }) {
   const playlist = await fetchPlaylist(playlistId); // Server-side data fetch
-  
+
   return (
     <ul>
       {playlist.tracks.map(track => (

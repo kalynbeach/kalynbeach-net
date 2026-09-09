@@ -10,7 +10,11 @@ type SphereMeshProps = {
   segments: number;
 };
 
-export default function SphereMesh({ color, radius, segments }: SphereMeshProps) {
+export default function SphereMesh({
+  color,
+  radius,
+  segments,
+}: SphereMeshProps) {
   const meshRef = useRef<Mesh>(null);
 
   useFrame((state, delta) => {

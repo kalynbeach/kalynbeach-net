@@ -9,13 +9,15 @@ export function SoundCardSkeleton() {
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           {/* 1a: Title & Status */}
           <div className="flex w-full flex-row items-center justify-between">
-            <Skeleton className="h-6 w-24 rounded-sm" /> {/* For "SoundCard" title */}
-            <Skeleton className="h-6 w-20 rounded-sm" /> {/* For status message "initialized" */}
+            <Skeleton className="h-6 w-24 rounded-sm" />{" "}
+            {/* For "SoundCard" title */}
+            <Skeleton className="h-6 w-20 rounded-sm" />{" "}
+            {/* For status message "initialized" */}
           </div>
           {/* 1b: Output Toggle & Mobile Buttons */}
           <div className="flex flex-row items-center justify-end gap-3">
             {/* Output Toggle Box (w-[100px] h-[30px]) */}
-            <div className="flex h-[30px] w-[100px] items-center space-x-2 rounded-sm border border-accent px-2 dark:bg-input/10 dark:border-input/80">
+            <div className="border-accent dark:bg-input/10 dark:border-input/80 flex h-[30px] w-[100px] items-center space-x-2 rounded-sm border px-2">
               {/* Combined placeholder for "output" label and Switch */}
               <Skeleton className="h-5 w-full rounded-sm" />
             </div>
@@ -30,7 +32,7 @@ export function SoundCardSkeleton() {
         {/* Section 2: Device Select & Desktop Buttons */}
         <div className="w-full items-end justify-between gap-3 md:flex md:flex-row">
           {/* SoundDeviceSelect placeholder */}
-          <Skeleton className="h-9 w-full rounded-sm md:flex-1 md:min-w-0" />
+          <Skeleton className="h-9 w-full rounded-sm md:min-w-0 md:flex-1" />
 
           {/* Desktop Buttons placeholder */}
           <div className="hidden flex-row items-center gap-3 md:flex">
@@ -43,7 +45,7 @@ export function SoundCardSkeleton() {
         <Skeleton className="h-64 w-full rounded-sm border" />
 
         {/* Section 4: Debug Info */}
-        <Skeleton className="h-48 w-full rounded-sm border p-3"/>
+        <Skeleton className="h-48 w-full rounded-sm border p-3" />
       </CardContent>
     </Card>
   );

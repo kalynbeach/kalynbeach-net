@@ -19,43 +19,47 @@ interface WavePlayerErrorProps {
  * Error display component for WavePlayer
  * Maintains consistent layout and styling with main player
  */
-export default function WavePlayerError({ error, track, onRetry }: WavePlayerErrorProps) {
+export default function WavePlayerError({
+  error,
+  track,
+  onRetry,
+}: WavePlayerErrorProps) {
   return (
-    <Card className="wave-player aspect-[5/7] w-[380px] flex flex-col border rounded-none">
+    <Card className="wave-player flex aspect-[5/7] w-[380px] flex-col rounded-none border">
       <CardHeader className="w-full p-2">
         {track ? (
           <WavePlayerTrackInfo track={track} />
         ) : (
-          <div className="wave-player-track-info w-full h-full flex flex-col gap-1 border border-muted/50 p-2">
+          <div className="wave-player-track-info border-muted/50 flex h-full w-full flex-col gap-1 border p-2">
             <p className="font-mono text-lg text-red-500/90">Error</p>
           </div>
         )}
       </CardHeader>
-      <CardContent className="w-full h-full flex flex-col items-center justify-center px-2 py-4 gap-6">
-        <div className="flex flex-col items-center justify-center gap-4 p-8 border border-red-500/30 rounded-md">
+      <CardContent className="flex h-full w-full flex-col items-center justify-center gap-6 px-2 py-4">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-md border border-red-500/30 p-8">
           <AlertTriangle className="h-12 w-12 text-red-500/80" />
-          <div className="text-center space-y-2">
+          <div className="space-y-2 text-center">
             <p className="font-medium text-red-500">Audio Playback Error</p>
-            <p className="text-sm text-muted-foreground font-mono break-all max-w-[300px]">
+            <p className="text-muted-foreground max-w-[300px] font-mono text-sm break-all">
               {error.message || "Failed to load audio"}
             </p>
           </div>
-          <Button 
-            onClick={onRetry} 
-            variant="outline" 
+          <Button
+            onClick={onRetry}
+            variant="outline"
             className="mt-2 border-red-500/50 hover:bg-red-500/10 hover:text-red-500"
           >
             Retry
           </Button>
         </div>
       </CardContent>
-      <CardFooter className="w-full flex flex-col items-center justify-center p-2">
-        <div className="wave-player-track-controls w-full flex flex-col items-center justify-center gap-2 border border-muted/50 p-4 relative">
-          <p className="text-xs text-muted-foreground">
+      <CardFooter className="flex w-full flex-col items-center justify-center p-2">
+        <div className="wave-player-track-controls border-muted/50 relative flex w-full flex-col items-center justify-center gap-2 border p-4">
+          <p className="text-muted-foreground text-xs">
             Try refreshing the page if the error persists
           </p>
         </div>
       </CardFooter>
     </Card>
   );
-} 
+}

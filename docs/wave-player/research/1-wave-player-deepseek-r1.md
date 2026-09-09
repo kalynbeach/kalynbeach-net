@@ -85,10 +85,10 @@ const memoizedValue = useMemo(() => ({ state, controls }), [state, controls]);
 const initializePlayback = async (buffer: AudioBuffer) => {
   const source = audioContext.createBufferSource();
   source.buffer = buffer;
-  
+
   const analyser = audioContext.createAnalyser();
   analyser.fftSize = 2048;
-  
+
   const gain = audioContext.createGain();
   gain.gain.value = state.volume;
 
@@ -100,13 +100,13 @@ const initializePlayback = async (buffer: AudioBuffer) => {
   const updateWaveform = () => {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteTimeDomainData(dataArray);
-    dispatch({ type: 'UPDATE_WAVEFORM', payload: dataArray });
+    dispatch({ type: "UPDATE_WAVEFORM", payload: dataArray });
     requestAnimationFrame(updateWaveform);
   };
 
   source.start(0, state.playbackPosition);
   updateWaveform();
-  
+
   return source;
 };
 ```
@@ -119,9 +119,9 @@ const WaveformCanvas = ({ data }: { data: Uint8Array }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const ctx = canvasRef.current?.getContext('2d');
+    const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
-    
+
     // Draw waveform using canvas API
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.beginPath();
@@ -205,7 +205,7 @@ class WaveformProcessor extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor('waveform-processor', WaveformProcessor);
+registerProcessor("waveform-processor", WaveformProcessor);
 ```
 
 2. **Precise Playback Control**
@@ -214,21 +214,21 @@ registerProcessor('waveform-processor', WaveformProcessor);
 const controls = {
   seek: (time: number) => {
     if (!state.sourceNode || !audioContext) return;
-    
+
     state.sourceNode.stop();
     const newSource = audioContext.createBufferSource();
     newSource.buffer = state.buffer;
     newSource.connect(analyserNode);
-    
+
     newSource.start(0, time);
     dispatch({
-      type: 'SEEK',
+      type: "SEEK",
       payload: {
         sourceNode: newSource,
-        playbackPosition: time
-      }
+        playbackPosition: time,
+      },
     });
-  }
+  },
 };
 ```
 
@@ -236,7 +236,7 @@ const controls = {
 
 ```typescript
 // Throttled visualization updates
-const visualizationWorker = new Worker('visualization.worker.js');
+const visualizationWorker = new Worker("visualization.worker.js");
 
 analyserNode.onaudioprocess = () => {
   const data = new Float32Array(analyserNode.fftSize);

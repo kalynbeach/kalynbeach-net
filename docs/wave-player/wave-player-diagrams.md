@@ -42,7 +42,7 @@ graph TB
     WPC --> BP
     BP --> Cache
     BP --> S3
-    
+
     %% Audio Node Chain
     SN --> ANN
     ANN --> GN
@@ -76,7 +76,7 @@ flowchart TB
         HEAD[HEAD Request]
         RANGE[Range Requests]
         AB[Array Buffers]
-        
+
         WAV --> HEAD
         HEAD --> RANGE
         RANGE --> AB
@@ -88,7 +88,7 @@ flowchart TB
             CB[Complete Buffer]
             DECODE[Audio Decoding]
         end
-        
+
         AB --> BP
         BP --> CB
         CB --> DECODE
@@ -101,7 +101,7 @@ flowchart TB
             GAIN[Gain Node]
             DEST[Destination Node]
         end
-        
+
         DECODE --> SRC
         SRC --> ANA
         ANA --> GAIN
@@ -111,7 +111,7 @@ flowchart TB
     subgraph Output["Output Layer"]
         VIS[Visualization Data]
         AUDIO[Audio Output]
-        
+
         ANA --> VIS
         DEST --> AUDIO
     end
@@ -143,7 +143,7 @@ graph TB
     subgraph Loading["Buffer Pool Loading"]
         Length --> CS["Chunk Size"]
         CS --> Chunks["Load Track"]
-        
+
         subgraph Process["Processing"]
             Chunks --> AB["Array Buffers"]
             AB --> Combine["Combine Buffers"]
@@ -153,19 +153,19 @@ graph TB
 
     subgraph Pool["Buffer Pool State"]
         Decode --> BP["Buffer Pool"]
-        
+
         subgraph State["Pool State"]
             Current["Current Buffer"]
             Size["Pool Size"]
         end
-        
+
         BP --> Current
         Current --> Size
 
         subgraph Memory["Memory Control"]
             Check["Check Size"]
             Clear["Clear Old Data"]
-            
+
             Size --> Check
             Check --> |"if > max size"| Clear
         end
@@ -175,7 +175,7 @@ graph TB
         Progress["Progress Event"]
         Error["Error Event"]
         Abort["Abort Control"]
-        
+
         Process --> Progress
         Process --> |"error"| Error
         Abort --> |"abort"| Process

@@ -23,10 +23,13 @@ const commandMenuPages: SitePage[] = [
 
 export default function SiteHeader() {
   return (
-    <header className="site-header w-full h-full flex flex-row items-center justify-between">
+    <header className="site-header flex h-full w-full flex-row items-center justify-between">
       <div className="flex flex-row items-center gap-3">
         {/* <SphereIcon className="size-9 rounded-full" /> */}
-        <Link href="/" className="text-xl font-mono font-medium underline underline-offset-3 decoration-secondary hover:decoration-secondary-foreground transition duration-150">
+        <Link
+          href="/"
+          className="decoration-secondary hover:decoration-secondary-foreground font-mono text-xl font-medium underline underline-offset-3 transition duration-150"
+        >
           kalynbeach
         </Link>
       </div>

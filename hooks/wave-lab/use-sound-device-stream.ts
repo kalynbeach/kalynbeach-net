@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { FFT_SIZE, SMOOTHING_TIME_CONSTANT, useSoundContext } from "@/contexts/sound-context";
+import {
+  FFT_SIZE,
+  SMOOTHING_TIME_CONSTANT,
+  useSoundContext,
+} from "@/contexts/sound-context";
 import type { SoundStreamData } from "@/lib/types/sound";
 
 export function useSoundDeviceStream(deviceId: string): SoundStreamData {
@@ -14,7 +18,7 @@ export function useSoundDeviceStream(deviceId: string): SoundStreamData {
 
   const cleanup = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     if (sourceRef.current) {
@@ -62,11 +66,11 @@ export function useSoundDeviceStream(deviceId: string): SoundStreamData {
             // sampleRate: 48000,
             // sampleSize: 16,
             // channelCount: 1
-          }
+          },
         });
 
         if (!mounted) {
-          stream.getTracks().forEach(track => track.stop());
+          stream.getTracks().forEach((track) => track.stop());
           return;
         }
 
@@ -85,7 +89,7 @@ export function useSoundDeviceStream(deviceId: string): SoundStreamData {
         analyserRef.current = analyser;
         sourceRef.current = source;
         streamRef.current = stream;
-        
+
         if (mounted) {
           setIsInitialized(true);
         }

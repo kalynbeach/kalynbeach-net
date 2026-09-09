@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 export default function Sound() {
   return (
     <SitePage>
-      <main className="size-full flex flex-col gap-4">
-        <ul className="list-disc list-inside">
+      <main className="flex size-full flex-col gap-4">
+        <ul className="list-inside list-disc">
           <li>
             <Link
               href="/sound/sound-card"
-              className="font-mono font-medium transition-colors duration-200 hover:text-kb-blue dark:hover:text-kb-green"
+              className="hover:text-kb-blue dark:hover:text-kb-green font-mono font-medium transition-colors duration-200"
             >
               SoundCard
             </Link>

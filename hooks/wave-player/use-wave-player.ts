@@ -4,18 +4,21 @@ import { useEffect, useState } from "react";
 import { useWavePlayerContext } from "@/contexts/wave-player-context";
 
 export function useWavePlayer() {
-  const { state, controls, initialize, loadTrack, retryLoad } = useWavePlayerContext();
+  const { state, controls, initialize, loadTrack, retryLoad } =
+    useWavePlayerContext();
   const [hasInitialized, setHasInitialized] = useState(false);
 
   // Initialize the audio context once
   useEffect(() => {
     if (!hasInitialized && state.status === "idle") {
       console.log("[useWavePlayer] initializing audio context");
-      initialize().then(() => {
-        setHasInitialized(true);
-      }).catch(error => {
-        console.error("[useWavePlayer] Error initializing:", error);
-      });
+      initialize()
+        .then(() => {
+          setHasInitialized(true);
+        })
+        .catch((error) => {
+          console.error("[useWavePlayer] Error initializing:", error);
+        });
     }
   }, [initialize, state.status, hasInitialized]);
 
@@ -29,7 +32,13 @@ export function useWavePlayer() {
       console.log("[useWavePlayer] Loading initial track");
       loadTrack(playlist.tracks[state.currentTrackIndex]);
     }
-  }, [state.playlist, state.currentTrackIndex, state.status, loadTrack, hasInitialized]);
+  }, [
+    state.playlist,
+    state.currentTrackIndex,
+    state.status,
+    loadTrack,
+    hasInitialized,
+  ]);
 
   return {
     state,
@@ -39,5 +48,3 @@ export function useWavePlayer() {
     retryLoad,
   };
 }
-
-

@@ -12,33 +12,33 @@ Your current implementation loads the entire audio file at once:
 
 ```typescript
 // 142:168:contexts/wave-player/context.tsx
-  const loadTrack = useCallback(
-    async (track: WavePlayerTrack) => {
-      if (!state.audioContext) return;
+const loadTrack = useCallback(
+  async (track: WavePlayerTrack) => {
+    if (!state.audioContext) return;
 
-      console.log("[WavePlayerProvider loadTrack] loading track...");
+    console.log("[WavePlayerProvider loadTrack] loading track...");
 
-      try {
-        dispatch({ type: "SET_STATUS", payload: "loading" });
-        dispatch({ type: "SET_TRACK", payload: track });
+    try {
+      dispatch({ type: "SET_STATUS", payload: "loading" });
+      dispatch({ type: "SET_TRACK", payload: track });
 
-        const response = await fetch(track.src);
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = await state.audioContext.decodeAudioData(arrayBuffer);
-        console.log("[WavePlayerProvider loadTrack] setting buffer:", buffer);
+      const response = await fetch(track.src);
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = await state.audioContext.decodeAudioData(arrayBuffer);
+      console.log("[WavePlayerProvider loadTrack] setting buffer:", buffer);
 
-        dispatch({ type: "SET_BUFFER", payload: buffer });
-        dispatch({ type: "SET_STATUS", payload: "ready" });
-      } catch (error) {
-        dispatch({
-          type: "SET_ERROR",
-          payload:
-            error instanceof Error ? error : new Error("Track loading failed"),
-        });
-      }
-    },
-    [state.audioContext]
-  );
+      dispatch({ type: "SET_BUFFER", payload: buffer });
+      dispatch({ type: "SET_STATUS", payload: "ready" });
+    } catch (error) {
+      dispatch({
+        type: "SET_ERROR",
+        payload:
+          error instanceof Error ? error : new Error("Track loading failed"),
+      });
+    }
+  },
+  [state.audioContext]
+);
 ```
 
 This approach has limitations:
@@ -91,13 +91,13 @@ export class WavePlayerBufferPool {
   async loadTrackChunked(track: WavePlayerTrack, audioContext: AudioContext) {
     try {
       this.abortController = new AbortController();
-      
+
       // Initial metadata fetch using Bun's fetch
-      const head = await fetch(track.src, { 
+      const head = await fetch(track.src, {
         method: "HEAD",
-        signal: this.abortController.signal 
+        signal: this.abortController.signal,
       });
-      
+
       const contentLength = parseInt(head.headers.get("Content-Length") || "0");
       if (!contentLength) throw new Error("Content length not available");
 
@@ -140,7 +140,7 @@ export class WavePlayerBufferPool {
 
       // Final processing
       const fullBuffer = await this.decodeChunks(chunks, audioContext);
-      
+
       // Update pool
       if (this.pool.current) {
         this.pool.next = this.pool.current;
@@ -149,7 +149,8 @@ export class WavePlayerBufferPool {
 
       return fullBuffer;
     } catch (error) {
-      const finalError = error instanceof Error ? error : new Error("Track loading failed");
+      const finalError =
+        error instanceof Error ? error : new Error("Track loading failed");
       this.pool.onError?.(finalError);
       throw finalError;
     }
@@ -167,32 +168,42 @@ export class WavePlayerBufferPool {
     }
   }
 
-  private async decodeChunks(chunks: ArrayBuffer[], context: AudioContext): Promise<AudioBuffer> {
+  private async decodeChunks(
+    chunks: ArrayBuffer[],
+    context: AudioContext
+  ): Promise<AudioBuffer> {
     const combined = await this.combineArrayBuffers(chunks);
     return await context.decodeAudioData(combined);
   }
 
-  private async combineArrayBuffers(chunks: ArrayBuffer[]): Promise<ArrayBuffer> {
-    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+  private async combineArrayBuffers(
+    chunks: ArrayBuffer[]
+  ): Promise<ArrayBuffer> {
+    const totalLength = chunks.reduce(
+      (acc, chunk) => acc + chunk.byteLength,
+      0
+    );
     const combined = new ArrayBuffer(totalLength);
     const view = new Uint8Array(combined);
-    
+
     let offset = 0;
     for (const chunk of chunks) {
       view.set(new Uint8Array(chunk), offset);
       offset += chunk.byteLength;
     }
-    
+
     return combined;
   }
 
   private managePoolSize(): void {
     let totalSize = 0;
     const entries = Array.from(this.pool.chunks.entries());
-    
+
     // Sort by age (assuming keys contain timestamps)
-    entries.sort(([a], [b]) => parseInt(b.split('-')[1]) - parseInt(a.split('-')[1]));
-    
+    entries.sort(
+      ([a], [b]) => parseInt(b.split("-")[1]) - parseInt(a.split("-")[1])
+    );
+
     for (const [key, buffer] of entries) {
       totalSize += buffer.length * 4; // Approximate size in bytes
       if (totalSize > this.pool.maxPoolSize) {
@@ -297,7 +308,8 @@ export class WavePlayerBufferPool {
 4. **Error Handling**
 
    ```typescript
-   const finalError = error instanceof Error ? error : new Error("Track loading failed");
+   const finalError =
+     error instanceof Error ? error : new Error("Track loading failed");
    this.pool.onError?.(finalError);
    ```
 
@@ -316,7 +328,7 @@ export class WavePlayerBufferPool {
      },
      onError: (error) => {
        // Handle loading errors
-     }
+     },
    });
    ```
 

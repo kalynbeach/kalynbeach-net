@@ -2,7 +2,10 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import type { WavePlayerTrack, WavePlayerVisualization } from "@/lib/types/wave-player";
+import type {
+  WavePlayerTrack,
+  WavePlayerVisualization,
+} from "@/lib/types/wave-player";
 
 // TODO: implement image and R3F scene visual options
 type WavePlayerTrackVisualOption = "image" | "waveform" | "scene";
@@ -12,7 +15,10 @@ type WavePlayerTrackVisualProps = {
   visualization: WavePlayerVisualization;
 };
 
-export default function WavePlayerTrackVisual({ image, visualization }: WavePlayerTrackVisualProps) {
+export default function WavePlayerTrackVisual({
+  image,
+  visualization,
+}: WavePlayerTrackVisualProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [visualizationMode] = useState<WavePlayerTrackVisualOption>("waveform");
   const lastDrawRef = useRef<number>(0);
@@ -22,7 +28,7 @@ export default function WavePlayerTrackVisual({ image, visualization }: WavePlay
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx || !visualization.waveform) return;
 
     // Set canvas size once
@@ -43,7 +49,7 @@ export default function WavePlayerTrackVisual({ image, visualization }: WavePlay
       // Clear with background color instead of using clearRect
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      
+
       const waveform = visualization.waveform;
       if (!waveform) return;
 
@@ -91,17 +97,12 @@ export default function WavePlayerTrackVisual({ image, visualization }: WavePlay
   return (
     <div className="wave-player-track-visual relative w-full">
       {visualizationMode === "image" && (
-        <Image
-          src={image.src}
-          alt={image.alt}
-          fill
-          className="object-cover"
-        />
+        <Image src={image.src} alt={image.alt} fill className="object-cover" />
       )}
       {visualizationMode === "waveform" && (
-        <canvas 
+        <canvas
           ref={canvasRef}
-          className="size-[362px] fill-background border border-muted bg-background"
+          className="fill-background border-muted bg-background size-[362px] border"
         />
       )}
     </div>

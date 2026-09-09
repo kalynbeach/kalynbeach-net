@@ -8,9 +8,11 @@ export const metadata: Metadata = {
 export default function About() {
   return (
     <SitePage>
-      <main className="size-full flex flex-col gap-4">
+      <main className="flex size-full flex-col gap-4">
         <section className="flex flex-col gap-2">
-          <p className="text-sm font-mono font-medium dark:font-normal">thinking...</p>
+          <p className="font-mono text-sm font-medium dark:font-normal">
+            thinking...
+          </p>
         </section>
       </main>
     </SitePage>
