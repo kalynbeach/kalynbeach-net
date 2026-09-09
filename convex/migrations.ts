@@ -47,7 +47,7 @@ export const seedPreview = internalMutation({
         .unique();
 
       if (existing) {
-        await ctx.db.patch(existing._id, track);
+        await ctx.db.patch("tracks", existing._id, track);
       } else {
         await ctx.db.insert("tracks", track);
       }
@@ -62,7 +62,7 @@ export const seedPreview = internalMutation({
         .unique();
 
       if (existing) {
-        await ctx.db.patch(existing._id, playlist);
+        await ctx.db.patch("playlists", existing._id, playlist);
       } else {
         await ctx.db.insert("playlists", playlist);
       }
@@ -79,7 +79,7 @@ export const seedPreview = internalMutation({
         .unique();
 
       if (existing) {
-        await ctx.db.patch(existing._id, playlistTrack);
+        await ctx.db.patch("playlistTracks", existing._id, playlistTrack);
       } else {
         await ctx.db.insert("playlistTracks", playlistTrack);
       }

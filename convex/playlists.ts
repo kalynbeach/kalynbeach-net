@@ -138,7 +138,11 @@ export const update = mutation({
       throw new Error(`Playlist ${args.id} not found`);
     }
 
-    await ctx.db.patch(playlist._id, buildPlaylistPatch(args, Date.now()));
+    await ctx.db.patch(
+      "playlists",
+      playlist._id,
+      buildPlaylistPatch(args, Date.now())
+    );
 
     return null;
   },
@@ -168,9 +172,9 @@ export const remove = mutation({
       .collect();
 
     for (const playlistTrack of playlistTracks) {
-      await ctx.db.delete(playlistTrack._id);
+      await ctx.db.delete("playlistTracks", playlistTrack._id);
     }
-    await ctx.db.delete(playlist._id);
+    await ctx.db.delete("playlists", playlist._id);
 
     return null;
   },
@@ -237,7 +241,7 @@ export const addTrack = mutation({
 
     for (const playlistTrack of playlistTracks) {
       if (playlistTrack.position >= position) {
-        await ctx.db.patch(playlistTrack._id, {
+        await ctx.db.patch("playlistTracks", playlistTrack._id, {
           position: playlistTrack.position + 1,
         });
       }
@@ -274,7 +278,7 @@ export const removeTrack = mutation({
       );
     }
 
-    await ctx.db.delete(playlistTrack._id);
+    await ctx.db.delete("playlistTracks", playlistTrack._id);
     const remainingTracks = await ctx.db
       .query("playlistTracks")
       .withIndex("by_playlist_id_and_position", (query) =>
@@ -286,7 +290,7 @@ export const removeTrack = mutation({
     for (const [index, remainingTrack] of remainingTracks.entries()) {
       const position = index + 1;
       if (remainingTrack.position !== position) {
-        await ctx.db.patch(remainingTrack._id, { position });
+        await ctx.db.patch("playlistTracks", remainingTrack._id, { position });
       }
     }
 
@@ -331,7 +335,7 @@ export const reorderTrack = mutation({
     for (const [index, reorderedTrack] of reorderedTracks.entries()) {
       const position = index + 1;
       if (reorderedTrack.position !== position) {
-        await ctx.db.patch(reorderedTrack._id, { position });
+        await ctx.db.patch("playlistTracks", reorderedTrack._id, { position });
       }
     }
 

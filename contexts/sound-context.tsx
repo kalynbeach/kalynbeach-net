@@ -107,7 +107,7 @@ export function SoundContextProvider({
         suspend();
       }
     };
-  }, [audioContext]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [audioContext]); // oxlint-disable-line react/exhaustive-deps
 
   // Handle AudioContext state changes
   useEffect(() => {
