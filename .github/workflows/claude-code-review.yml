@@ -90,7 +90,8 @@ jobs:
               }
             }' > "$context_dir/history-raw.json"
 
-          if ! jq -ce '
+          # Preserve line breaks so Read can paginate larger discussion histories.
+          if ! jq -e '
             .data.repository.pullRequest
             | select(. != null)
             | if (.reviewThreads.pageInfo.hasNextPage

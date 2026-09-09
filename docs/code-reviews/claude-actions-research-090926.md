@@ -105,4 +105,6 @@ The selected update migrates both workflows to action `v1.0.220` at the reviewed
 
 Local validation passed actionlint 1.7.12, Bash syntax checks, supported-input checks against the pinned action definition, and temporary Git/API fixtures covering full-PR scope across multiple commits, an advanced base branch, base-revision guidance, resolved feedback, incomplete connections, missing PR data, oversized inputs, and checkout mismatch. The exact history query also succeeded against existing site PR 20 through a read-only API call. No model run or comment publication was performed as part of these local checks.
 
+PR #21 follow-up: history JSON uses multiline formatting so Claude's Read tool can paginate larger discussions. The 512 KiB limit applies to the formatted output.
+
 The OAuth secret still needs a fresh CI token. End-to-end review and mention-assistant verification remain pending until authentication is repaired and the approved workflow is available on the default branch. Workflow syntax success or a validation skip is not evidence that Claude reviewed a PR.
