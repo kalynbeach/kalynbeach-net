@@ -12,7 +12,9 @@
 - **Check formatting:** `bun run format:check`
 - **Check types:** `bun run typecheck`
 - **Convex Dev:** `bunx convex dev`
-- **Convex Check:** `bunx convex dev --once --typecheck enable --tail-logs disable`
+- **Check Convex types (local only):** `bun run typecheck --project convex/tsconfig.json`
+
+`convex dev` pushes backend code; it is not a read-only typecheck.
 
 ## Tech Stack
 
@@ -21,6 +23,44 @@
 - **Identity:** Clerk.
 - **Data/Roles:** Convex (`guest | vip | admin`), Zod (Validation).
 - **UI:** `shadcn/ui` (Radix), `lucide-react`, `react-three-fiber` (R3F).
+
+## TypeScript
+
+TypeScript is pinned to **7.0.2**, the native compiler. `bun run typecheck`,
+Convex's CLI, and Next.js builds use the project compiler. Next.js 16.3.5 uses
+CLI typechecking by default; no `experimental.useTypeScriptCli` override or
+TypeScript 6 compatibility package is needed.
+
+TypeScript 7 no longer automatically includes every installed `@types` package.
+The Convex tsconfig explicitly includes Node types for `process.env`; the root
+project receives Node types through Next's declarations. Run both typecheck
+commands above because the root check does not use Convex's separate config.
+
+### Editors
+
+The project compiler and editor language server are separate choices. In Zed,
+the [TypeScript Language Server extension](https://github.com/zed-extensions/tsgo)
+provides `typescript-ls` for TypeScript and TSX and supports pinning its package
+version to `7.0.2`. Neovim likewise needs a native-TS-compatible language-server
+configuration to use TS 7 in the editor. Personal editor changes are optional
+and are not managed by this repository.
+
+The native language server does not load Next's legacy IDE plugin. This affects
+plugin-specific suggestions and diagnostics, not ordinary TS/React tooling or
+Next-generated types. Whether switching loses anything depends on the previous
+editor setup. See [Next's TypeScript documentation](https://nextjs.org/docs/app/api-reference/config/typescript).
+VS Code's legacy `typescript.tsdk` workspace override is removed because TS 7
+does not ship the old `tsserver` SDK; use a TS 7-compatible editor integration.
+
+### Tooling compatibility
+
+The Convex lint plugin's transitive `@typescript-eslint` packages still declare
+TypeScript `<6.1.0` support, and `tsconfck` declares an optional TypeScript 5 peer.
+Those ranges do not officially cover TS 7. The configured Oxlint integration
+uses non-type-aware Convex rules, and `vite-tsconfig-paths` does not enable
+`parseNative`. Lint and the existing integration tests pass without a legacy
+compiler. Do not infer that the underlying TypeScript compiler-API integrations
+are compatible; recheck this boundary when changing these tools or their modes.
 
 ## Key Architectures
 
