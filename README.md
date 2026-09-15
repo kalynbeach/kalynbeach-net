@@ -140,6 +140,10 @@ as usual. Five rules are enabled as warnings: `no-restyle`, `no-arbitrary-values
 `no-raw-colors`, `no-inline-styles`, and `require-static-classes`. The first two
 allow layout classes. Existing non-shadcn lint policies are unchanged.
 
+Component implementations in `components/ui/**` are exempt from `no-restyle`,
+`no-arbitrary-values`, and `require-static-classes` so they can define their own
+styling. `no-raw-colors` and `no-inline-styles` remain enabled there.
+
 Following the [adoption guide](https://github.com/shadcn-ui/lint/blob/main/docs/adoption.md),
 these warnings surface cleanup work without failing lint. Promote them to errors
 as the codebase is cleaned up. Project-specific design-system contracts remain a
