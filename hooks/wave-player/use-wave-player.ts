@@ -27,8 +27,8 @@ export function useWavePlayer() {
     const playlist = state.playlist;
     if (!playlist || playlist.tracks.length === 0 || !hasInitialized) return;
 
-    // Only load track if we're not already loading or playing
-    if (state.status === "idle" || state.status === "error") {
+    // Failed loads wait for the user to trigger retryLoad explicitly.
+    if (state.status === "idle") {
       console.log("[useWavePlayer] Loading initial track");
       loadTrack(playlist.tracks[state.currentTrackIndex]);
     }
