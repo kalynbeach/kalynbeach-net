@@ -54,8 +54,9 @@ does not ship the old `tsserver` SDK; use a TS 7-compatible editor integration.
 
 ### Tooling compatibility
 
-The Convex lint plugin's transitive `@typescript-eslint` packages still declare
-TypeScript `<6.1.0` support, and `tsconfck` declares an optional TypeScript 5 peer.
+The Convex and shadcn lint plugins' transitive `@typescript-eslint` packages still
+declare TypeScript `<6.1.0` support, and `tsconfck` declares an optional TypeScript 5
+peer.
 Those ranges do not officially cover TS 7. The configured Oxlint integration
 uses non-type-aware Convex rules, and `vite-tsconfig-paths` does not enable
 `parseNative`. Lint and the existing integration tests pass without a legacy
@@ -131,6 +132,29 @@ Oxlint's native type-aware mode does not expose type information to JavaScript
 plugins. The integration test in `tests/tools/lint-config.test.ts` verifies all six
 configured Convex rules against the actual Oxlint CLI, including filesystem-based
 schema-cycle detection. Run `bun run test run tests/tools` when upgrading the plugin.
+
+### shadcn design-system lint setup
+
+`@shadcn/lint` is registered through Oxlint's `jsPlugins`. Run `bun run lint`
+as usual. Five rules are enabled as warnings: `no-restyle`, `no-arbitrary-values`,
+`no-raw-colors`, `no-inline-styles`, and `require-static-classes`. The first two
+allow layout classes. Existing non-shadcn lint policies are unchanged.
+
+Component implementations in `components/ui/**` are exempt from `no-restyle`,
+`no-arbitrary-values`, and `require-static-classes` so they can define their own
+styling. `no-raw-colors` and `no-inline-styles` remain enabled there.
+
+Following the [adoption guide](https://github.com/shadcn-ui/lint/blob/main/docs/adoption.md),
+these warnings surface cleanup work without failing lint. Promote them to errors
+as the codebase is cleaned up. Project-specific design-system contracts remain a
+follow-up.
+
+Configure `shadcn/*` rules under `rules` in [`.oxlintrc.json`](.oxlintrc.json).
+See the [available rules](https://github.com/shadcn-ui/lint/blob/main/README.md#rules)
+and [design-system configuration examples](https://github.com/shadcn-ui/lint/blob/main/docs/design-systems.md).
+Component imports (`@/components/ui`) and the Tailwind v4 theme (`app/globals.css`)
+are discovered through `components.json` and the TypeScript path alias; no custom
+discovery settings are needed.
 
 ### Focused native checks
 

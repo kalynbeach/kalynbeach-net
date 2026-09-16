@@ -1,6 +1,5 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["nextjs", "typescript"],
   "categories": {
     "correctness": "off"
   },
@@ -16,6 +15,11 @@
     "next-env.d.ts",
     "convex/_generated/**",
     "tools/oxlint/vendor/**"
+  ],
+  "plugins": ["nextjs", "typescript"],
+  "jsPlugins": [
+    "./tools/oxlint/anti-slop.ts",
+    { "name": "shadcn", "specifier": "@shadcn/lint" }
   ],
   "rules": {
     "no-array-constructor": "error",
@@ -60,7 +64,22 @@
     "typescript/prefer-namespace-keyword": "error",
     "typescript/triple-slash-reference": "error",
     "anti-slop/no-chained-type-assertions": "warn",
-    "anti-slop/no-widen-then-assert": "warn"
+    "anti-slop/no-widen-then-assert": "warn",
+    "shadcn/no-restyle": [
+      "warn",
+      {
+        "allow": ["layout"]
+      }
+    ],
+    "shadcn/no-arbitrary-values": [
+      "warn",
+      {
+        "allow": ["layout"]
+      }
+    ],
+    "shadcn/no-raw-colors": "warn",
+    "shadcn/no-inline-styles": "warn",
+    "shadcn/require-static-classes": "warn"
   },
   "overrides": [
     {
@@ -182,7 +201,14 @@
         "react/refs": "off"
       },
       "plugins": ["react"]
+    },
+    {
+      "files": ["components/ui/**"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off",
+        "shadcn/require-static-classes": "off"
+      }
     }
-  ],
-  "jsPlugins": ["./tools/oxlint/anti-slop.ts"]
+  ]
 }
