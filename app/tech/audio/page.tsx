@@ -23,9 +23,9 @@ export default function TechAudio() {
           aria-labelledby="kkb-audio-title"
           className="flex max-w-2xl flex-col gap-3"
         >
-          <h2 id="kkb-audio-title" className="font-mono text-xl font-medium">
+          <h1 id="kkb-audio-title" className="font-mono text-xl font-medium">
             kkb-audio
-          </h2>
+          </h1>
           <p className="text-secondary-foreground text-base leading-7">
             A Rust foundation for my sound, audio, and music software. One
             real-time render engine runs in the browser through WebAssembly and
