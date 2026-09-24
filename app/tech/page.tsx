@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import SitePage from "@/components/site/site-page";
 
 export const metadata: Metadata = {
@@ -34,10 +35,15 @@ export default function Tech() {
           </a>
         </section>
         {/* PROJECTS SECTION */}
-        {/* <section className="flex flex-col gap-4">
+        <section className="flex flex-col gap-4">
           <SectionHeader>PROJECTS</SectionHeader>
-          <p className="text-sm font-mono">*under construction*</p>
-        </section> */}
+          <Link
+            href="/tech/audio"
+            className="text-secondary-foreground decoration-accent dark:decoration-muted-foreground hover:text-kb-blue hover:decoration-kb-blue/50 dark:hover:text-kb-green dark:hover:decoration-kb-green/50 w-fit font-mono text-sm underline underline-offset-2 transition duration-150"
+          >
+            kkb-audio
+          </Link>
+        </section>
       </main>
     </SitePage>
   );
