@@ -18,7 +18,7 @@
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router), React 19.2, Tailwind CSS v4.
+- **Framework:** Next.js 16 (App Router), React 19.3, Tailwind CSS v4.
 - **Runtime:** Bun (Strictly use `bun`/`bunx`).
 - **Identity:** Clerk.
 - **Data/Roles:** Convex (`guest | vip | admin`), Zod (Validation).
@@ -27,7 +27,7 @@
 ## TypeScript
 
 TypeScript is pinned to **7.0.2**, the native compiler. `bun run typecheck`,
-Convex's CLI, and Next.js builds use the project compiler. Next.js 16.3.5 uses
+Convex's CLI, and Next.js builds use the project compiler. Next.js 16.3.6 uses
 CLI typechecking by default; no `experimental.useTypeScriptCli` override or
 TypeScript 6 compatibility package is needed.
 
@@ -99,7 +99,7 @@ The following differences from the previous ESLint configuration are intentional
 | `react/no-deprecated`                                | Retired. Oxlint's general deprecation rule requires a separate type-aware engine, which this setup does not enable.                |
 | `@next/next/no-location-assign-relative-destination` | Retired pending native support. Internal navigation continues to use Next's navigation APIs.                                       |
 | `react/require-render-return`                        | Enabled explicitly despite its current nursery status; Oxlint is pinned.                                                           |
-| Convex recommended rules                             | Official plugin 4.0.0 runs through Oxlint's JS-plugin API, using its non-type-aware checks.                                        |
+| Convex recommended rules                             | Official plugin 5.0.0 runs through Oxlint's JS-plugin API, using its non-type-aware checks.                                        |
 
 See the [Oxlint migration guide](https://oxc.rs/docs/guide/usage/linter/migrate-from-eslint)
 and [React Compiler rule coverage](https://oxc.rs/blog/2026-08-18-react-compiler-support).
@@ -110,12 +110,14 @@ transitively, and Oxfmt bundles it for some languages; project formatting runs o
 
 ### Official Convex checks
 
-[`@convex-dev/eslint-plugin`](https://docs.convex.dev/eslint) is pinned to 4.0.0
-and loaded directly through Oxlint's JS-plugin API. The Convex override explicitly
-mirrors its recommended rules and severities: object-style function registration,
+[`@convex-dev/eslint-plugin`](https://docs.convex.dev/eslint) is pinned to 5.0.0
+and loaded directly through Oxlint's JS-plugin API. The Convex override preserves
+six explicitly selected rules and severities: object-style function registration,
 argument validators, explicit table IDs, inline query-filter warnings, top-of-hour
-cron warnings, and schema import-cycle detection. Runtime-import restrictions and
-`no-collect-in-query` remain opt-in and are not enabled.
+cron warnings, and schema import-cycle detection. Version 5's recommended preset
+also enables `no-duplicate-indexes` and `no-process-env`; this project does not yet
+enable them. Runtime-import restrictions, `require-access-control`, and
+`no-collect-in-query` also remain disabled.
 
 Version 3 added non-type-aware table-ID detection, replacing the need for our local
 Convex rules. Under Oxlint, the official plugin uses syntax rather than TypeScript
