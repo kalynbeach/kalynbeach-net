@@ -451,6 +451,28 @@ describe("WavePlayer System", () => {
       });
     });
 
+    it("should wait for an explicit retry after the initial track fails", async () => {
+      mockLoadTrackChunked.mockReset();
+      mockLoadTrackChunked
+        .mockRejectedValueOnce(new Error("Failed to load track"))
+        .mockImplementationOnce(() => new Promise(() => undefined));
+
+      const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <WavePlayerProvider playlist={mockPlaylist}>
+          {children}
+        </WavePlayerProvider>
+      );
+
+      const { result } = renderHook(() => useWavePlayer(), { wrapper });
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      });
+
+      expect(mockLoadTrackChunked).toHaveBeenCalledTimes(1);
+      expect(result.current.state.status).toBe("error");
+    });
+
     it("should handle retry loading", async () => {
       // Set up mock to fail and then succeed
       mockLoadTrackChunked.mockReset();
