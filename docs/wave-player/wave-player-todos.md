@@ -1,5 +1,7 @@
 # WavePlayer TODOs
 
+Historical checklist for the retired website player. Its [development archive](./legacy-player-archive.md) preserves the implementation; these items are not the current kkb-audio roadmap.
+
 ## Core Implementation
 
 ### Memory Management

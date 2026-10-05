@@ -38,7 +38,6 @@
   --radius-sm: calc(var(--radius) - 4px);
   --grid-template-rows-layout-root: 80px minmax(320px, 1fr) 80px;
   --grid-template-rows-layout-root-md: 96px minmax(512px, 1fr) 96px;
-  --grid-template-rows-wave-player: 128px 128px;
 }
 
 :root {
