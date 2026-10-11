@@ -1,5 +1,7 @@
 # WavePlayer
 
+This document describes the retired website player. See the [development archive](./legacy-player-archive.md) to inspect its implementation. The current audio case study describes the separate kkb-audio player.
+
 ## Overview
 
 The WavePlayer system is a modern, React-based audio player implementation built with Next.js 15 and React 19. It utilizes the Web Audio API for high-fidelity audio playback and processing, with a focus on efficient memory management and optimal performance.
