@@ -133,7 +133,7 @@ const WaveformCanvas = ({ data }: { data: Uint8Array }) => {
     ctx.stroke();
   }, [data]);
 
-  return <canvas ref={canvasRef} className="w-full h-32" />;
+  return <canvas ref={canvasRef} className="h-32 w-full" />;
 };
 ```
 
