@@ -8,6 +8,10 @@ i basically want to redesign and rebuild this entire personal site.
 
 currently, this site is super stale and it needs a lot of love. it has nearly zero information, content, or experiences of value; its design, UI, and UX is very far off from what i'm envisioning; and on the whole it just doesn't fully reflect who and where i am today as an engineer, as an artist, and as a human in general.
 
+this repo's current `README.md` is an absolute mess. it will need not only a complete rewrite, but also a totally different purpose and style of writing going forward. what i mainly mean here is this: i want `README.md` to be written for **human** readers, both in terms of the information it contains about the project and the style of its writing.
+
+the `docs/` directory's markdown documents (besides this `NOTES.md` doc) are pretty much completely out of date. just about all of them will need to be archived, which i'll probably just keep locally.
+
 ---
 
 ## Tech Stack
@@ -28,6 +32,7 @@ Frontend:
 - shadcn/ui
 - Base UI
 - Phosphor Icons
+- React Three Fiber v10
 - vercel-labs/json-render
 - vercel-labs/vgpu
 
@@ -48,9 +53,11 @@ Infrastructure:
 - Cloudflare?
 - celld?
 
-Agents:
+AI:
 
-- Pi Durable
+- Claude Code (via T3 Code)
+- Pi & Pi Durable
+- Codex
 
 ---
 
@@ -122,6 +129,14 @@ waves
   --color-9: oklch(0.98 0.001 240);
 }
 ```
+
+#### Stencil
+
+i really love Stencil's design system and overall aesthetic; the colors, typography, and style details, especially on the home page and in their blog posts' interactive diagrams and visuals.
+
+- [Stencil: New instruments for building software](https://stencil.so/)
+- [You only need the frontier model for one single edit · Stencil](https://stencil.so/blog/prewalk)
+- [Snapcompact: SoTA compaction — instant, local, free. Pick 3 · Stencil](https://stencil.so/blog/snapcompact#the-case-against-compaction)
 
 ### Design Skills & Resources
 
