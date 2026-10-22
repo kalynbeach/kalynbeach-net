@@ -65,10 +65,7 @@ are compatible; recheck this boundary when changing these tools or their modes.
 
 ## Key Architectures
 
-- **Audio:**
-  - **Refactored (Target):** `lib/sound.ts`, `components/sound/`.
-  - **Legacy WavePlayer:** retired from this site. See the [development archive](docs/wave-player/legacy-player-archive.md) for its tag and source. `/sound/wave-player` temporarily redirects to the current audio case study at `/tech/audio`.
-  - **Wave-Lab (Legacy):** `components/wave-lab/` (Do not modify unless requested).
+- **Audio:** The sound pages, SoundCard, and Wave-Lab are archived at tag `archive/sound-2026-10`. The legacy WavePlayer is archived at tag `archive/legacy-wave-player-2026-10-04`. `/sound/wave-player` temporarily redirects to `/tech/audio`.
 - **3D:** Located in `components/r3f/`.
 - **Auth:** Clerk establishes identity; sensitive Convex functions enforce app roles.
 - **Data:** Convex schema/functions live in `convex/`; server adapters live in `lib/convex/`.
