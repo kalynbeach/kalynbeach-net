@@ -84,8 +84,7 @@ The workspace selects it as the formatter without changing format-on-save prefer
 ### Rule coverage
 
 The configuration explicitly lists the migrated Next.js, React, accessibility,
-and TypeScript rules rather than enabling new categories by default. It preserves
-the Wave Lab exceptions for `react/immutability` and `react/refs`.
+and TypeScript rules rather than enabling new categories by default.
 
 The following differences from the previous ESLint configuration are intentional:
 
@@ -164,7 +163,6 @@ expectations. `valid-expect` permits Vitest's optional second message argument.
 Four additional `jsx-a11y` warnings cover click handlers without keyboard handlers,
 interactive roles without focus support, static elements with interaction handlers,
 and positive tab indices. Prefer native buttons and links over adding roles to divs.
-Existing Wave Lab React exceptions do not disable these checks.
 
 See [Oxlint's built-in plugins](https://oxc.rs/docs/guide/usage/linter/plugins).
 Type-aware async rules (`no-floating-promises`, `no-misused-promises`) remain a

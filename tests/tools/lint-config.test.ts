@@ -41,8 +41,6 @@ it("keeps native and custom rules active across overrides and excludes generated
     `;
     const fixtures = {
       "app/probe.tsx": component,
-      "components/wave-lab/probe.tsx": component,
-      "hooks/wave-lab/probe.tsx": "export const unsafe: any = 1;",
       "convex/probe.ts": `
         import { query } from "./_generated/server";
         export const list = query({ handler: (ctx) => ctx.db.get(id) });
@@ -130,21 +128,10 @@ it("keeps native and custom rules active across overrides and excludes generated
         .filter((item) => item.filename === filename)
         .map((item) => item.code);
     expect(codes("app/probe.tsx")).toContain("react(immutability)");
-    expect(codes("components/wave-lab/probe.tsx")).not.toContain(
-      "react(immutability)"
+    expect(codes("app/probe.tsx")).toContain("typescript(no-explicit-any)");
+    expect(codes("app/probe.tsx")).toEqual(
+      expect.arrayContaining([expect.stringMatching(/\(no-img-element\)$/)])
     );
-    for (const filename of [
-      "app/probe.tsx",
-      "components/wave-lab/probe.tsx",
-      "hooks/wave-lab/probe.tsx",
-    ]) {
-      expect(codes(filename)).toContain("typescript(no-explicit-any)");
-    }
-    for (const filename of ["app/probe.tsx", "components/wave-lab/probe.tsx"]) {
-      expect(codes(filename)).toEqual(
-        expect.arrayContaining([expect.stringMatching(/\(no-img-element\)$/)])
-      );
-    }
     expect(codes("convex/probe.ts")).toEqual(
       expect.arrayContaining([
         "@convex-dev(require-args-validator)",

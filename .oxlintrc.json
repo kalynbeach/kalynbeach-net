@@ -189,20 +189,6 @@
       }
     },
     {
-      "files": ["components/wave-lab/**/*.{ts,tsx}"],
-      "rules": {
-        "react/immutability": "off"
-      },
-      "plugins": ["react"]
-    },
-    {
-      "files": ["hooks/wave-lab/**/*.{ts,tsx}"],
-      "rules": {
-        "react/refs": "off"
-      },
-      "plugins": ["react"]
-    },
-    {
       "files": ["components/ui/**"],
       "rules": {
         "shadcn/no-restyle": "off",
