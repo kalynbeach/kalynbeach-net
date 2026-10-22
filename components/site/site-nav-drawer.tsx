@@ -5,7 +5,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import type { SitePage } from "@/lib/types/site";
 import SiteNavLink from "./site-nav-link";
-import { Menu } from "lucide-react";
+import { ListIcon } from "@phosphor-icons/react";
 import {
   Drawer,
   DrawerContent,
@@ -28,7 +28,7 @@ export default function SiteNavDrawer({ pages }: SiteNavDrawerProps) {
     <div className="site-nav-drawer flex flex-row items-center justify-center sm:hidden">
       <Drawer open={open} onOpenChange={setOpen} swipeDirection="right">
         <DrawerTrigger aria-label="Open navigation">
-          <Menu className="h-5 w-5" />
+          <ListIcon className="h-5 w-5" />
         </DrawerTrigger>
         <DrawerContent>
           <DrawerHeader>

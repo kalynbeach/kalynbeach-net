@@ -22,7 +22,7 @@
 - **Runtime:** Bun (Strictly use `bun`/`bunx`).
 - **Identity:** Clerk.
 - **Data/Roles:** Convex (`guest | vip | admin`), Zod (Validation).
-- **UI:** `shadcn/ui` (Radix), `lucide-react`, `react-three-fiber` (R3F).
+- **UI:** Kevelle components from the kkb shadcn registry on Base UI, Phosphor icons, `react-three-fiber` (R3F).
 
 ## TypeScript
 
