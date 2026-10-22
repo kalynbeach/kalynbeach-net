@@ -13,7 +13,6 @@ const siteNavPages: SitePage[] = [
 
 const commandMenuPages: SitePage[] = [
   ...siteNavPages,
-  { label: "style", route: "/style" },
   { label: "lab", route: "/lab" },
   { label: "dashboard", route: "/dashboard" },
 ];
