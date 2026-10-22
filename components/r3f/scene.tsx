@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { GLProps } from "@react-three/fiber";
 import { Html, Preload } from "@react-three/drei";
-import { Loader } from "lucide-react";
+import { SpinnerIcon } from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 import { checkWebGLAvailability } from "@/lib/webgl";
 import TorusMesh from "@/components/r3f/meshes/torus-mesh";
@@ -106,7 +106,7 @@ export function ThreeScene({
 export function ThreeSceneSkeleton() {
   return (
     <div className="bg-background flex size-96 items-center justify-center">
-      <Loader className="size-5 animate-spin" />
+      <SpinnerIcon className="size-5 animate-spin" />
     </div>
   );
 }

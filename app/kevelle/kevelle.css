@@ -1,0 +1,848 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./typeset.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Fonts. Dinamo's terms for ABC Areal and the Timeless Free Font License for
+ * Timeless Serif bar public repositories, so never commit those files to one.
+ * Consumers fetch them into public/fonts/ at build time with the script from
+ * @kkb/kevelle/fonts.
+ */
+@font-face {
+  font-family: "ABC Areal";
+  src: url("/fonts/abc-areal/ABCArealVariable.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Paper Mono";
+  src: url("/fonts/paper-mono/PaperMono-Variable.woff2") format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Departure Mono";
+  src: url("/fonts/departure-mono/DepartureMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Timeless Serif";
+  src: url("/fonts/timeless-serif/TimelessSerifVF.woff2") format("woff2");
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Timeless Serif";
+  src: url("/fonts/timeless-serif/TimelessSerifItalicVF.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint-foreground: var(--faint-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-destructive-subtle-hover: var(--destructive-subtle-hover);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-subtle-hover: var(--success-subtle-hover);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-subtle-hover: var(--warning-subtle-hover);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-signal-bright: var(--signal-bright);
+  --color-signal-dim: var(--signal-dim);
+  --color-signal-subtle: var(--signal-subtle);
+  --color-link: var(--link);
+  --color-backdrop: var(--backdrop);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /*
+   * Components are square: they use rounded-none. The ramp is for elements
+   * that opt into rounding, in whole pixels from one knob.
+   */
+  --radius-none: 0px;
+  --radius-xs: calc(var(--radius) * 0.25);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 3);
+  --radius-4xl: calc(var(--radius) * 4);
+}
+
+@theme {
+  /*
+   * Font roles. sans carries interface text, serif carries editorial text,
+   * mono carries code and every heading rank, pixel carries data and labels,
+   * and brand carries the wordmark. Brand shares Departure Mono with pixel
+   * but stays a separate role, and heading is the face the heading roles use.
+   */
+  --font-sans: "ABC Areal", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Timeless Serif", ui-serif, Georgia, serif;
+  --font-mono: "Paper Mono", ui-monospace, monospace;
+  --font-pixel: "Departure Mono", "Paper Mono", ui-monospace, monospace;
+  --font-brand: "Departure Mono", "Paper Mono", ui-monospace, monospace;
+  --font-heading: var(--font-mono);
+
+  /* Hairline system: inputs and outline buttons draw edges, not shadows. */
+  --shadow-2xs: 0 0 transparent;
+  --shadow-xs: 0 0 transparent;
+  --shadow-sm:
+    0 0.25px 0.75px 0 color-mix(in oklch, var(--shadow-color) 5%, transparent),
+    0 1px 3px 0 color-mix(in oklch, var(--shadow-color) 8%, transparent);
+  --shadow-md:
+    0 1px 4px 0 color-mix(in oklch, var(--shadow-color) 4%, transparent),
+    0 4px 16px 0 color-mix(in oklch, var(--shadow-color) 6%, transparent);
+  --shadow-lg:
+    0 3px 9px 0 color-mix(in oklch, var(--shadow-color) 6%, transparent),
+    0 12px 36px 0 color-mix(in oklch, var(--shadow-color) 9%, transparent);
+  --shadow-xl: var(--shadow-lg);
+  --shadow-2xl: var(--shadow-lg);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Indeterminate progress: a third-width bar sweeping the track. */
+  --animate-progress-sweep: progress-sweep 1.2s var(--ease-out) infinite
+    alternate;
+
+  @keyframes progress-sweep {
+    from {
+      translate: 0;
+    }
+    to {
+      translate: 200%;
+    }
+  }
+
+  /*
+   * Durations, Graphical's two motion roles. Small moves controls, menus,
+   * and small popovers. Large moves dialogs, sheets, drawers, toasts,
+   * navigation surfaces, and disclosure panels. Components read them through
+   * duration-(--duration-small) and duration-(--duration-large).
+   */
+  --duration-small: 160ms;
+  --duration-large: 280ms;
+  --default-transition-duration: var(--duration-small);
+  --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root {
+  --radius: 8px;
+
+  /*
+   * Neutral ramp. Semantic roles below pick steps from it; components use
+   * the roles. Light runs from a white canvas to near-black ink. The inner
+   * steps carry the Steel palette's tint: hue 240 at the chroma steel has at
+   * each step's lightness, at most 0.006.
+   */
+  --neutral-1: oklch(1 0 0);
+  --neutral-2: oklch(0.982 0.001 240);
+  --neutral-3: oklch(0.954 0.002 240);
+  --neutral-4: oklch(0.904 0.003 240);
+  --neutral-5: oklch(0.79 0.005 240);
+  --neutral-6: oklch(0.603 0.006 240);
+  --neutral-7: oklch(0.449 0.005 240);
+  --neutral-8: oklch(0.32 0.004 240);
+  --neutral-9: oklch(0.191 0.003 240);
+  --neutral-10: oklch(0.097 0 0);
+
+  --background: var(--neutral-1);
+  --foreground: var(--neutral-10);
+  --card: var(--neutral-1);
+  --card-foreground: var(--neutral-10);
+  --popover: var(--neutral-1);
+  --popover-foreground: var(--neutral-10);
+  --primary: var(--neutral-10);
+  --primary-foreground: var(--neutral-1);
+  /*
+   * A hover fill moves one step toward its own foreground, so hover never
+   * lowers the contrast of the text on it below the rest state's minimum.
+   */
+  --primary-hover: var(--neutral-8);
+  --secondary: var(--neutral-3);
+  --secondary-foreground: var(--neutral-10);
+  --secondary-hover: var(--neutral-4);
+  --muted: var(--neutral-3);
+  --muted-foreground: var(--neutral-7);
+  /* Ink for graphics such as dither tracks: 3:1 on the canvas, not for text. */
+  --faint-foreground: var(--neutral-6);
+  --accent: var(--neutral-3);
+  --accent-foreground: var(--neutral-10);
+  /*
+   * Status and signal colors take a family from the KKB Palette, the
+   * lightness their role needs for contrast, and the hue and chroma of the
+   * family's step at that lightness, reduced to the sRGB boundary where
+   * the step falls outside it. Status colors also color text, so they
+   * clear 4.5:1 on the canvas and on their badge tint. Warning has no
+   * family of its own and takes the midpoint of the flame and chrome steps.
+   */
+  --destructive: oklch(0.54 0.22 28);
+  --destructive-foreground: var(--neutral-1);
+  --destructive-hover: oklch(0.57 0.233 28);
+  --success: oklch(0.51 0.156 145.3);
+  --success-foreground: var(--neutral-1);
+  --warning: oklch(0.535 0.123 61.9);
+  --warning-foreground: var(--neutral-1);
+  /*
+   * Status tints: opaque, so each status color on its tint has one measured
+   * ratio. sRGB mixing matches how an opacity modifier composites. Light
+   * tints stay pale so status text on the hover tint still clears 4.5:1.
+   */
+  --destructive-subtle: color-mix(
+    in srgb,
+    var(--destructive) 6%,
+    var(--background)
+  );
+  --destructive-subtle-hover: color-mix(
+    in srgb,
+    var(--destructive) 10%,
+    var(--background)
+  );
+  --success-subtle: color-mix(in srgb, var(--success) 6%, var(--background));
+  --success-subtle-hover: color-mix(
+    in srgb,
+    var(--success) 10%,
+    var(--background)
+  );
+  --warning-subtle: color-mix(in srgb, var(--warning) 6%, var(--background));
+  --warning-subtle-hover: color-mix(
+    in srgb,
+    var(--warning) 10%,
+    var(--background)
+  );
+  --border: var(--neutral-4);
+  --input: var(--neutral-6);
+  /*
+   * Outside status and data the interface is grayscale, and one role
+   * carries color: astral in light, phosphor in dark. The signal is the
+   * color as seen, bright is its hottest core, dim is its afterglow, and
+   * subtle is its wash on the canvas. The focus ring and text selection
+   * take the signal, so it needs 3:1 on the canvas and its foreground
+   * needs 4.5:1 on it. In light the steps are astral-450, 375, and 575;
+   * links are astral-525.
+   */
+  --signal: oklch(0.45 0.31 264.1);
+  --signal-bright: oklch(0.375 0.223 264.1);
+  --signal-dim: oklch(0.575 0.233 260.4);
+  --signal-subtle: color-mix(in srgb, var(--signal) 6%, var(--background));
+  --signal-foreground: var(--neutral-1);
+  --ring: var(--signal);
+  --link: oklch(0.525 0.259 262.8);
+  /*
+   * Dims the page behind modal overlays. Overlays lay a 50% dither of the
+   * same color over the fill, so the average dim is about 20%.
+   */
+  --backdrop: oklch(0 0 0 / 0.14);
+
+  /*
+   * Signal colors from the KKB Images boards: oscilloscope phosphor, starry
+   * astral blue, and the flame's orange, magenta, and chrome. Each takes
+   * its family's step at the role's lightness. Charts read them through
+   * chart-1 to chart-5 and need 3:1 on the canvas. Series 1 is the mode's
+   * signal family, astral in light and phosphor in dark, and the other
+   * follows. Dark phosphor is the signal itself.
+   */
+  --phosphor: oklch(0.62 0.171 145.9);
+  --astral: oklch(0.5 0.266 263.5);
+  --flame: oklch(0.64 0.191 42.5);
+  --magenta: oklch(0.58 0.251 324.6);
+  --chrome: oklch(0.665 0.137 80);
+
+  --chart-1: var(--astral);
+  --chart-2: var(--phosphor);
+  --chart-3: var(--flame);
+  --chart-4: var(--magenta);
+  --chart-5: var(--chrome);
+
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  --shadow-color: var(--neutral-10);
+
+  /*
+   * Machined surfaces: flat fills and two values. The key line sits 1px
+   * below a raised control, and the press lands on it. It is the ink end
+   * of the ramp at 20% in both modes, so in dark it reads as a lit lower
+   * rim. The shade is one inset line along the top of a recessed field.
+   * The line follows the ramp, so .dark sets only the shade.
+   */
+  --alloy-line: 0 1px 0 0
+    color-mix(in oklch, var(--neutral-10) 20%, transparent);
+  --alloy-shade: inset 0 1px 0 0
+    color-mix(in oklch, var(--shadow-color) 8%, transparent);
+}
+
+.dark {
+  /*
+   * Dark runs from a near-black canvas to near-white ink, with the same
+   * steel tint on the inner steps.
+   */
+  --neutral-1: oklch(0.097 0 0);
+  --neutral-2: oklch(0.142 0.001 240);
+  --neutral-3: oklch(0.189 0.003 240);
+  --neutral-4: oklch(0.266 0.004 240);
+  --neutral-5: oklch(0.378 0.005 240);
+  --neutral-6: oklch(0.55 0.006 240);
+  --neutral-7: oklch(0.71 0.005 240);
+  --neutral-8: oklch(0.831 0.004 240);
+  --neutral-9: oklch(0.925 0.002 240);
+  --neutral-10: oklch(0.985 0 0);
+
+  --background: var(--neutral-1);
+  --foreground: var(--neutral-10);
+  --card: var(--neutral-2);
+  --card-foreground: var(--neutral-10);
+  --popover: var(--neutral-2);
+  --popover-foreground: var(--neutral-10);
+  --primary: var(--neutral-10);
+  --primary-foreground: var(--neutral-1);
+  --primary-hover: var(--neutral-8);
+  --secondary: var(--neutral-3);
+  --secondary-foreground: var(--neutral-10);
+  --secondary-hover: var(--neutral-4);
+  --muted: var(--neutral-3);
+  --muted-foreground: var(--neutral-7);
+  --faint-foreground: var(--neutral-6);
+  --accent: var(--neutral-4);
+  --accent-foreground: var(--neutral-10);
+  --destructive: oklch(0.67 0.194 28.9);
+  --destructive-foreground: var(--neutral-1);
+  --destructive-hover: oklch(0.63 0.248 29.3);
+  /*
+   * Dark success is phosphor-625, the matte afterglow green 0.26 below the
+   * signal and 22 CIEDE2000 from it, so a success badge does not read as
+   * the accent. Its foreground stays the canvas.
+   */
+  --success: oklch(0.625 0.172 145.9);
+  --success-foreground: var(--neutral-1);
+  --warning: oklch(0.84 0.142 76.3);
+  --warning-foreground: var(--neutral-1);
+  --destructive-subtle: color-mix(
+    in srgb,
+    var(--destructive) 16%,
+    var(--background)
+  );
+  --destructive-subtle-hover: color-mix(
+    in srgb,
+    var(--destructive) 24%,
+    var(--background)
+  );
+  --success-subtle: color-mix(in srgb, var(--success) 16%, var(--background));
+  --success-subtle-hover: color-mix(
+    in srgb,
+    var(--success) 24%,
+    var(--background)
+  );
+  --warning-subtle: color-mix(in srgb, var(--warning) 16%, var(--background));
+  --warning-subtle-hover: color-mix(
+    in srgb,
+    var(--warning) 24%,
+    var(--background)
+  );
+  --border: var(--neutral-4);
+  --input: var(--neutral-6);
+  /*
+   * The dark signal is the oscilloscope trace as it renders on the KKB
+   * boards, chroma 0.15, paler than the palette step. The core and the
+   * afterglow are measured from the same captures. Links, text selection,
+   * and chart-1 all take it.
+   */
+  --signal: oklch(0.88 0.15 146);
+  --signal-bright: oklch(0.94 0.1 150);
+  --signal-dim: oklch(0.6 0.14 143);
+  --signal-subtle: color-mix(in srgb, var(--signal) 16%, var(--background));
+  --signal-foreground: var(--neutral-1);
+  --ring: var(--signal);
+  --link: var(--signal);
+  /* With the dither layer, the average dim is about 70%. */
+  --backdrop: oklch(0 0 0 / 0.59);
+
+  --phosphor: var(--signal);
+  --astral: oklch(0.64 0.192 262);
+  --flame: oklch(0.72 0.177 55.2);
+  --magenta: oklch(0.69 0.213 324.8);
+  --chrome: oklch(0.89 0.181 99.6);
+
+  /* Phosphor is the signal, so it leads the series and astral follows. */
+  --chart-1: var(--phosphor);
+  --chart-2: var(--astral);
+  --chart-3: var(--flame);
+  --chart-4: var(--magenta);
+  --chart-5: var(--chrome);
+
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  --shadow-color: oklch(0 0 0);
+
+  /* Black at 8% does not read on a dark field. */
+  --alloy-shade: inset 0 1px 0 0
+    color-mix(in oklch, var(--shadow-color) 30%, transparent);
+}
+
+/*
+ * More contrast on request: edges step up to neutral-5 and faint ink to
+ * neutral-7, in both modes. The steps resolve per mode because .dark
+ * redefines the ramp on the same element.
+ */
+@media (prefers-contrast: more) {
+  :root,
+  .dark {
+    --border: var(--neutral-5);
+    --faint-foreground: var(--neutral-7);
+  }
+}
+
+/*
+ * Type roles that set family, size, line height, and tracking together.
+ * They are utilities rather than --text-* keys so cn() never mistakes them
+ * for text colors.
+ */
+
+/*
+ * Paper Mono page titles, each page's h1, in caps at the regular weight.
+ * Ranks separate by size and color, not weight or tracking. A two-line
+ * title balances.
+ */
+@utility type-display {
+  font-family: var(--font-heading);
+  font-size: 2.25rem;
+  font-weight: 400;
+  line-height: 2.5rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-wrap: balance;
+
+  @variant md {
+    font-size: 2.75rem;
+    line-height: 3rem;
+  }
+}
+
+/*
+ * The wordmark, the one font-brand role: Departure Mono at 22px, two grid
+ * steps, with a 24px line so the baseline lands on a whole pixel.
+ */
+@utility type-wordmark {
+  font-family: var(--font-brand);
+  font-size: 22px;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+
+/*
+ * Paper Mono headings in caps at the regular weight, ranked by size rather
+ * than HTML level, so any element can carry any rank: 1 for section titles,
+ * 2 for dialog, sheet, and card titles, 3 for the small titles of alerts,
+ * toasts, items, and empty states. The 11px Departure Mono labels sit under
+ * rank 3 by size and color. Rank 1 balances; ranks 2 and 3 keep pretty from
+ * the body. type-code resets the case, so an identifier keeps its spelling
+ * inside a heading.
+ */
+@utility type-heading-1 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.5rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+@utility type-heading-2 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+@utility type-heading-3 {
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+/*
+ * ABC Areal text blocks: running text, descriptions, and captions. Controls
+ * keep text-sm and text-xs instead, because their size variants override a
+ * base size through cn(), which merges Tailwind sizes but not these roles.
+ */
+@utility type-body-lg {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5rem;
+  letter-spacing: 0;
+}
+
+@utility type-body {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  letter-spacing: 0;
+}
+
+@utility type-caption {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1rem;
+  letter-spacing: 0;
+}
+
+/*
+ * Timeless Serif editorial roles. STYL is the family's custom axis and has no
+ * CSS property, so the roles set it with font-variation-settings: 0 is the
+ * display cut for titles, 100 is the Text cut tuned for reading sizes. The
+ * italic file has no STYL axis, so the setting is inert there. The lede and
+ * prose set oldstyle proportional figures; a value that changes or lines up in a column
+ * takes tabular-nums instead.
+ */
+@utility type-serif-display {
+  font-family: var(--font-serif);
+  font-variation-settings: "STYL" 0;
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 2.75rem;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+
+  @variant md {
+    font-size: 3.5rem;
+    line-height: 3.75rem;
+  }
+}
+
+@utility type-serif-title {
+  font-family: var(--font-serif);
+  font-variation-settings: "STYL" 0;
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 2rem;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+@utility type-lede {
+  font-family: var(--font-serif);
+  font-variation-settings: "STYL" 100;
+  font-size: 1.375rem;
+  font-weight: 400;
+  line-height: 1.875rem;
+  letter-spacing: 0;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+@utility type-prose {
+  font-family: var(--font-serif);
+  font-variation-settings: "STYL" 100;
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1.75rem;
+  letter-spacing: 0;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+/*
+ * Paper Mono identifiers and code in running text. It resets the case so an
+ * identifier keeps its spelling inside a caps heading or label.
+ */
+@utility type-code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/*
+ * Departure Mono caps labels: group labels, table heads, legends. Zero
+ * tracking keeps every glyph on the 11px grid, and the face has one weight.
+ */
+@utility type-label {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  line-height: 16px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+/*
+ * Departure Mono is drawn on an 11px grid and only renders crisply at
+ * multiples of 11px. The face has one weight, so it never fake-bolds.
+ * Values keep their case because they are data; labels set caps.
+ */
+@utility type-pixel {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
+@utility type-pixel-2x {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  line-height: 28px;
+  letter-spacing: 0;
+}
+
+/*
+ * Underlines are drawn where the font puts them. Pair with underline or
+ * hover:underline so the call site keeps the decoration line.
+ */
+@utility link-underline {
+  text-underline-position: from-font;
+  text-decoration-thickness: from-font;
+}
+
+/*
+ * Machined surfaces ride on Tailwind's shadow slots so they compose with
+ * ring-* edges and focus rings. The key line sits in --tw-shadow, the last
+ * layer, so a 2px focus ring covers it, shadow-none drops it, and a
+ * shadow-* utility replaces it. The shade sits in --tw-inset-shadow and
+ * composes with shadow-* elevation as well.
+ */
+
+/*
+ * Raised action: filled buttons. The key line below, dropped while pressed
+ * so the button lands on it with its 1px move. Popup triggers keep their
+ * place on press, as active:not-aria-[haspopup] in button.tsx says, so
+ * they keep the line too.
+ */
+@utility alloy-action {
+  --tw-shadow: var(--alloy-line);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+    var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+
+  @variant active {
+    &:not([aria-haspopup]) {
+      --tw-shadow: 0 0 #0000;
+    }
+  }
+}
+
+/*
+ * Raised control: checkbox, radio, select trigger, native select, and the
+ * questionnaire choice. The same key line as alloy-action. Switch and
+ * slider thumbs add shadow-none, where the line would hide under the
+ * track or the ring.
+ */
+@utility alloy-raised {
+  --tw-shadow: var(--alloy-line);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+    var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+
+  @variant active {
+    --tw-shadow: 0 0 #0000;
+  }
+}
+
+/* Recessed field: one inset shade along the top edge. */
+@utility alloy-recessed {
+  --tw-inset-shadow: var(--alloy-shade);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+    var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+}
+
+/*
+ * Ordered dither: 1px pixels in the current color at four densities. Each
+ * density lights a superset of the pixels below it, so adjacent steps line
+ * up. They set background-image, so they combine with bg-* fills and with
+ * the machined surfaces, which draw no image of their own. They are not
+ * bg-* utilities so cn() never merges them away as colors.
+ */
+
+/* 1 pixel in 8: faint grain. */
+@utility dither-12 {
+  background-image:
+    conic-gradient(at 1px 1px, transparent 75%, currentColor 0),
+    conic-gradient(at 1px 1px, transparent 75%, currentColor 0);
+  background-position:
+    1px 0,
+    3px 2px;
+  background-size: 4px 4px;
+}
+
+/* 1 pixel in 4: chart areas. */
+@utility dither-25 {
+  background-image: conic-gradient(currentColor 25%, transparent 0);
+  background-size: 2px 2px;
+}
+
+/* A checkerboard: tracks, skeletons, and modal backdrops. */
+@utility dither-50 {
+  background-image: conic-gradient(
+    currentColor 25%,
+    transparent 0 50%,
+    currentColor 0 75%,
+    transparent 0
+  );
+  background-size: 2px 2px;
+}
+
+/* 3 pixels in 4: the dense step before solid. */
+@utility dither-75 {
+  background-image: conic-gradient(currentColor 75%, transparent 0);
+  background-size: 2px 2px;
+}
+
+/*
+ * Instrument details from the KKB machine reports: a tick ruler and a
+ * phosphor glow.
+ */
+
+/*
+ * A 1px tick ruler, like the one under the top edge of the TR-100 report.
+ * Ticks repeat every --tick-pitch, 4px by default, in the current color, so
+ * a text color sets them. 4px tall; set h-* for a taller band. Inside a
+ * hairline, make the width one more than a multiple of the pitch so the
+ * strip starts and ends on a tick, as the dither utilities want an odd size.
+ */
+@utility tick-strip {
+  height: 4px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    currentColor 0 1px,
+    transparent 1px var(--tick-pitch, 4px)
+  );
+}
+
+/*
+ * Oscilloscope glow in the current color, so text-signal glow is a phosphor
+ * trace and text-chart-3 glow a flame one. Four layers follow the measured
+ * trace: a 1px core mixed 40% toward white, the 2px trace itself, an 8px
+ * halo, and a 16px afterglow at 60%. It takes the shadow slot, so it
+ * composes with the focus ring and the alloy shade. The key line lives in
+ * the same slot, so a raised control drops its line while it glows; the
+ * slider thumb already drops it with shadow-none. Dark mode only, on
+ * keyboard focus and drag. Nothing glows at rest, and light stays plain.
+ */
+@utility glow {
+  --tw-shadow:
+    0 0 0 1px color-mix(in oklch, currentColor 60%, white),
+    0 0 0 3px currentColor, 0 0 8px currentColor,
+    0 0 16px color-mix(in oklch, currentColor 60%, transparent);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+    var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    text-wrap: pretty;
+  }
+
+  /* Selections take the signal: astral under white in light, phosphor under black in dark. */
+  ::selection {
+    @apply bg-signal text-signal-foreground;
+  }
+
+  /* shadcn's `init --pointer` rule. Tailwind v4 leaves buttons on the default cursor. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Base UI popups and backdrops position against the root stacking context. */
+  .root {
+    isolation: isolate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

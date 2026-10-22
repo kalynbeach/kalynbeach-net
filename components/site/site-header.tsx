@@ -9,15 +9,12 @@ const siteNavPages: SitePage[] = [
   { label: "home", route: "/" },
   { label: "about", route: "/about" },
   { label: "tech", route: "/tech" },
-  { label: "sound", route: "/sound" },
 ];
 
 const commandMenuPages: SitePage[] = [
   ...siteNavPages,
-  { label: "style", route: "/style" },
   { label: "lab", route: "/lab" },
   { label: "dashboard", route: "/dashboard" },
-  // { label: "sound/wave-lab", route: "/sound/wave-lab" },
 ];
 
 export default function SiteHeader() {

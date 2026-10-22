@@ -22,7 +22,7 @@
 - **Runtime:** Bun (Strictly use `bun`/`bunx`).
 - **Identity:** Clerk.
 - **Data/Roles:** Convex (`guest | vip | admin`), Zod (Validation).
-- **UI:** `shadcn/ui` (Radix), `lucide-react`, `react-three-fiber` (R3F).
+- **UI:** Kevelle components from the kkb shadcn registry on Base UI, Phosphor icons, `react-three-fiber` (R3F).
 
 ## TypeScript
 
@@ -65,10 +65,7 @@ are compatible; recheck this boundary when changing these tools or their modes.
 
 ## Key Architectures
 
-- **Audio:**
-  - **Refactored (Target):** `lib/sound.ts`, `components/sound/`.
-  - **Legacy WavePlayer:** retired from this site. See the [development archive](docs/wave-player/legacy-player-archive.md) for its tag and source. `/sound/wave-player` temporarily redirects to the current audio case study at `/tech/audio`.
-  - **Wave-Lab (Legacy):** `components/wave-lab/` (Do not modify unless requested).
+- **Audio:** The sound pages, SoundCard, and Wave-Lab are archived at tag `archive/sound-2026-10`. The legacy WavePlayer is archived at tag `archive/legacy-wave-player-2026-10-04`. `/sound/wave-player` temporarily redirects to `/tech/audio`.
 - **3D:** Located in `components/r3f/`.
 - **Auth:** Clerk establishes identity; sensitive Convex functions enforce app roles.
 - **Data:** Convex schema/functions live in `convex/`; server adapters live in `lib/convex/`.
@@ -87,8 +84,7 @@ The workspace selects it as the formatter without changing format-on-save prefer
 ### Rule coverage
 
 The configuration explicitly lists the migrated Next.js, React, accessibility,
-and TypeScript rules rather than enabling new categories by default. It preserves
-the Wave Lab exceptions for `react/immutability` and `react/refs`.
+and TypeScript rules rather than enabling new categories by default.
 
 The following differences from the previous ESLint configuration are intentional:
 
@@ -167,7 +163,6 @@ expectations. `valid-expect` permits Vitest's optional second message argument.
 Four additional `jsx-a11y` warnings cover click handlers without keyboard handlers,
 interactive roles without focus support, static elements with interaction handlers,
 and positive tab indices. Prefer native buttons and links over adding roles to divs.
-Existing Wave Lab React exceptions do not disable these checks.
 
 See [Oxlint's built-in plugins](https://oxc.rs/docs/guide/usage/linter/plugins).
 Type-aware async rules (`no-floating-promises`, `no-misused-promises`) remain a

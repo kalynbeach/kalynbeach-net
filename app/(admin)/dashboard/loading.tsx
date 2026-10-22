@@ -1,9 +1,9 @@
-import { Loader } from "lucide-react";
+import { SpinnerIcon } from "@phosphor-icons/react/ssr";
 
 export default function Loading() {
   return (
     <div className="flex size-full items-center justify-center font-mono">
-      <Loader className="size-5 animate-spin" />
+      <SpinnerIcon className="size-5 animate-spin" />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { ArrowDown, ArrowRight } from "lucide-react";
+import { ArrowDownIcon, ArrowRightIcon } from "@phosphor-icons/react/ssr";
 import SitePage from "@/components/site/site-page";
 
 export const metadata: Metadata = {
@@ -76,11 +76,11 @@ export default function TechAudio() {
                   </div>
                   {index < flow.length - 1 && (
                     <>
-                      <ArrowRight
+                      <ArrowRightIcon
                         aria-hidden="true"
                         className="text-muted-foreground mt-0.5 hidden size-4 shrink-0 sm:block"
                       />
-                      <ArrowDown
+                      <ArrowDownIcon
                         aria-hidden="true"
                         className="text-muted-foreground mt-0.5 size-4 shrink-0 sm:hidden"
                       />

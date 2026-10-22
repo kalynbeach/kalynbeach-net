@@ -29,7 +29,7 @@ export default function Tech() {
           <a
             href="https://github.com/kalynbeach"
             target="_blank"
-            className="text-secondary-foreground decoration-accent dark:decoration-muted-foreground hover:text-kb-blue hover:decoration-kb-blue/50 dark:hover:text-kb-green dark:hover:decoration-kb-green/50 w-fit font-mono text-sm underline underline-offset-2 transition duration-150"
+            className="text-secondary-foreground decoration-accent dark:decoration-muted-foreground hover:text-signal hover:decoration-signal/50 w-fit font-mono text-sm underline underline-offset-2 transition duration-150"
           >
             github.com/kalynbeach
           </a>
@@ -39,7 +39,7 @@ export default function Tech() {
           <SectionHeader>PROJECTS</SectionHeader>
           <Link
             href="/tech/audio"
-            className="text-secondary-foreground decoration-accent dark:decoration-muted-foreground hover:text-kb-blue hover:decoration-kb-blue/50 dark:hover:text-kb-green dark:hover:decoration-kb-green/50 w-fit font-mono text-sm underline underline-offset-2 transition duration-150"
+            className="text-secondary-foreground decoration-accent dark:decoration-muted-foreground hover:text-signal hover:decoration-signal/50 w-fit font-mono text-sm underline underline-offset-2 transition duration-150"
           >
             kkb-audio
           </Link>

@@ -4,14 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { SitePage } from "@/lib/types/site";
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command";
 
 type SiteCommandMenuProps = {
@@ -46,14 +45,16 @@ export default function SiteCommandMenu({ pages }: SiteCommandMenuProps) {
         </kbd>
       </p> */}
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput
-          placeholder="Type a command or search..."
-          className="font-mono"
-        />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <PagesCommandGroup pages={pages} handler={navigateToPage} />
-        </CommandList>
+        <Command>
+          <CommandInput
+            placeholder="Type a command or search..."
+            className="font-mono"
+          />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <PagesCommandGroup pages={pages} handler={navigateToPage} />
+          </CommandList>
+        </Command>
       </CommandDialog>
     </div>
   );
