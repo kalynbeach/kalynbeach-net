@@ -1,27 +1,22 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-import { Geist } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
 import { ViewTransition } from "react";
-import { cn } from "@/lib/utils";
+import { preload } from "react-dom";
 import ConvexClerkProvider from "@/components/providers/convex-clerk-provider";
-import ThemeProvider from "@/components/site/theme-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import SiteHeader from "@/components/site/site-header";
 import SiteFooter from "@/components/site/site-footer";
 import "./globals.css";
 
-const berkeleyMono = localFont({
-  src: "./TX-02-VF.woff2",
-  variable: "--font-berkeley-mono",
-});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const fonts = [
+  "/fonts/abc-areal/ABCArealVariable.woff2",
+  "/fonts/departure-mono/DepartureMono-Regular.woff2",
+  "/fonts/paper-mono/PaperMono-Variable.woff2",
+  "/fonts/timeless-serif/TimelessSerifVF.woff2",
+];
 
 export const metadata: Metadata = {
   title: {
@@ -36,23 +31,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  for (const href of fonts) {
+    preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={cn(
-          "relative font-sans antialiased",
-          berkeleyMono.variable,
-          geistSans.variable
-        )}
-      >
+      <body className="relative">
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClerkProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
+            <ThemeProvider>
               <ViewTransition name="root-layout">
                 <div className="grid-rows-layout-root md:grid-rows-layout-root-md container grid size-full min-h-screen">
                   <SiteHeader />
