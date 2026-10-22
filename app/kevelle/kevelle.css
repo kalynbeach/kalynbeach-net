@@ -5,8 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Restricted fonts and licenses are fetched by scripts/kevelle-fonts.ts.
- * Their directories stay ignored by git so they do not enter this public repo.
+ * Fonts. Dinamo's terms for ABC Areal and the Timeless Free Font License for
+ * Timeless Serif bar public repositories, so never commit those files to one.
+ * Consumers fetch them into public/fonts/ at build time with the script from
+ * @kkb/kevelle/fonts.
  */
 @font-face {
   font-family: "ABC Areal";
