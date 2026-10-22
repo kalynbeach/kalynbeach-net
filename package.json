@@ -11,7 +11,10 @@
     "test": "vitest",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "typecheck": "tsc --noEmit --incremental false"
+    "typecheck": "tsc --noEmit --incremental false",
+    "predev": "bun scripts/kevelle-fonts.ts",
+    "prebuild": "bun scripts/kevelle-fonts.ts",
+    "prebuild:turbo": "bun scripts/kevelle-fonts.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.18",

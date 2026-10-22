@@ -43,3 +43,7 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# restricted Kevelle fonts
+/public/fonts/abc-areal/
+/public/fonts/timeless-serif/
