@@ -16,7 +16,7 @@ the `docs/` directory's markdown documents (besides this `NOTES.md` doc) are pre
 
 ## Tech Stack
 
-> This is the WIP target tech stack for the rebuild
+> This is the **WORK IN PROGRESS** target tech stack for the rebuild
 
 Core:
 
@@ -63,6 +63,8 @@ AI:
 
 ## Site Structure
 
+> **WORK IN PROGRESS**
+
 ```
 home
 about
@@ -87,9 +89,9 @@ waves
 		audio
 		music
 		components
-			WavePlayer
-			WaveGenerator
-			WaveFrame
+			WavePlayer (WIP)
+			Oscilloscope (Kevelle, WIP)
+			Binaural (Kevelle, WIP)
 	light
 		images
 		videos
@@ -100,12 +102,15 @@ waves
 
 ## Design
 
-### Design System(s)
+### Design System
 
+this site now uses my new `kevelle` design system from my `kkb` monorepo's `@kkb/registry` shadcn/ui registry; the redesign will build on it.
+
+- [@kkb/registry](https://github.com/kalynbeach/kkb/blob/main/apps/registry/README.md)
+- [@kkb/registry/kevelle](https://github.com/kalynbeach/kkb/tree/main/apps/registry/registry/kevelle)
+- [Kevelle design system](https://github.com/kalynbeach/kkb/blob/main/apps/registry/registry/kevelle/DESIGN.md)
 - [kalynbeach/kkb/DESIGN.md](https://github.com/kalynbeach/kkb/blob/main/DESIGN.md)
 - [kalynbeach/kkb/docs/design/kkb-design.md](https://github.com/kalynbeach/kkb/blob/main/docs/design/kkb-design.md)
-- [kalynbeach/kevelle-gui](https://github.com/kalynbeach/kevelle-gui)
-- [kalynbeach/kevelle-gui/DESIGN.md](https://github.com/kalynbeach/kevelle-gui/blob/main/DESIGN.md)
 
 ### Design Inspiration
 
