@@ -1,6 +1,5 @@
 "use client";
 
-/** Cmd+K page jumper over `commandItems` from the site map. */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { commandItems } from "@/lib/site";

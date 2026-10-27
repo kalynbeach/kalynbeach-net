@@ -1,7 +1,6 @@
 import { pageMetadata } from "@/lib/site";
 import { SectionHead } from "@/components/site/section-head";
 
-/** Title, lede, no glow, and the mini player come from the "/about" entry. */
 export const metadata = pageMetadata("/about");
 
 export default function About() {

@@ -50,9 +50,8 @@ const rowColor = {
 } as const satisfies Record<NavRow["state"], string>;
 
 /**
- * The nav list: padding 12 top, 20 inline, 20 bottom. Every row is a 32px
- * link with the dot at its right end, 12 in from the edge, so on desktop the
- * dot lines up with the mark at both depths.
+ * Every row is a 32px link with the dot at its right end, 12 in from the
+ * edge, so on desktop the dot lines up with the mark at both depths.
  */
 export function NavTree({
   rows,
@@ -112,9 +111,9 @@ function NavItem({
  * Below 1100px: the menu button and the sheet it slides in from the left.
  * Escape, a backdrop click, a link click and any navigation close it.
  *
- * Built on Base UI's Drawer directly. The registry's DrawerContent always
- * renders a dithered, blurred overlay; R7 wants a plain backdrop of
- * --background at 72%.
+ * Built on Base UI's Drawer directly. The registry's DrawerContent renders a
+ * dithered, blurred overlay whenever it is modal; R7 wants a plain backdrop
+ * of --background at 72%.
  */
 export function NavSheet({
   rows,

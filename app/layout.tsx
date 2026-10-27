@@ -28,11 +28,6 @@ export const metadata: Metadata = {
 /** cover lets the mobile top bar, sheet and player bar use the safe-area insets. */
 export const viewport: Viewport = { viewportFit: "cover" };
 
-/**
- * Providers, then the one player above every page, then the shell. The shell
- * resolves the site map entry and draws the nav, waveform, section 1's header
- * and section 3. `children` is the page body.
- */
 export default function RootLayout({
   children,
 }: Readonly<{

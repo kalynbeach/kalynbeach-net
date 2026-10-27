@@ -5,9 +5,6 @@
  * shell in the root layout resolves the current entry from the pathname and
  * draws the nav, the waveform, section 1's header and section 3 from it. Page
  * files render only the blocks of section 1's body.
- *
- * Pure data and pure functions. No React and no `@/` imports, so tests and
- * `next.config.ts` can import it.
  */
 import type { Metadata } from "next";
 
@@ -16,7 +13,6 @@ export const siteName = "Kalyn Beach";
 /** What section 3 shows. Each view has exactly one renderer, in `components/site/shell.tsx`. */
 export type AsideView = "player" | "library";
 
-/** A page drawn in the three-section layout. */
 type PageNode = {
   kind: "page";
   /** The nav row, breadcrumb crumb, h1, document title and Cmd+K item. */
@@ -269,7 +265,6 @@ function pageEntry(
   };
 }
 
-/** Nav rows with the active page's state applied. */
 function navFor(active: Route | null): readonly NavRow[] {
   const row = (label: string, href: Route): NavRow => ({
     label,

@@ -2,7 +2,7 @@
  * Seam for `kevelle/waveform` (kkb PR #196). Every waveform on the site is
  * drawn through `<Waveform>`, so the swap touches this file and its sprite:
  * replace each placeholder body with the Kevelle form, keep `data-waveform`
- * on each root (verify.ts reads it), and delete public/waveform.svg.
+ * on each root, and delete public/waveform.svg.
  *
  * Each form fills the box its caller sizes and places. The shell places the
  * stage and the glow in the window, the identity places the mark in its 21px

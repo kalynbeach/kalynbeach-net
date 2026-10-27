@@ -2,7 +2,6 @@ import { pageMetadata } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { SectionHead } from "@/components/site/section-head";
 
-/** Title, lede, glow and the mini player come from the "/software/agents" entry. */
 export const metadata = pageMetadata("/software/agents");
 
 type Stat = {
@@ -83,10 +82,7 @@ export default function Agents() {
   );
 }
 
-/**
- * Three cells whose top borders join into one hairline. Cells two and three
- * pad 20 left at 1100px and up, 12 below.
- */
+/** Three cells whose top borders join into one hairline. */
 function Stats() {
   return (
     <dl data-slot="stats" className="flex">
@@ -119,7 +115,6 @@ const marker = {
     "outline outline-ramp-7 -outline-offset-1 outline-dashed dark:outline-ramp-8",
 } as const;
 
-/** The first and the latest entries light up. */
 const lit = new Set([timeline[0].entries[0], timeline.at(-1)?.entries.at(-1)]);
 
 function markerOf(entry: Entry): keyof typeof marker {

@@ -27,7 +27,6 @@
   --font-long: var(--font-serif);
   --font-mono: var(--font-ui);
 
-  /* Layout geometry. Component paddings use Tailwind's 4px steps (2, 3, 5, 8, 13, 21). */
   --spacing-side: 12.5rem; /* 200: sections 2 and 3 */
   --spacing-side-min: 12rem; /* 192: the narrowest a side section gets */
   --spacing-main: 40.5rem; /* 648: section 1 */
@@ -37,8 +36,8 @@
   --spacing-row: 2rem; /* 32: nav, list, section-head and timeline rows */
   --spacing-inset: 3.25rem; /* 52: section 1 padding at 1100px and up */
   --spacing-edge: 0.75rem; /* 12: below 1100px, section 1, the sheet and the bar sit this far in */
-  --spacing-sheet: 18.75rem; /* 300 */
-  --spacing-glow: 79.75rem; /* 1276 */
+  --spacing-sheet: 18.75rem;
+  --spacing-glow: 79.75rem;
   --spacing-stage: min(40.5rem, calc(100vw - 1.5rem), calc(100dvh - 1.5rem));
   --spacing-safe-top: env(safe-area-inset-top);
   --spacing-safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
@@ -89,7 +88,6 @@
 :root {
   /* Paper's astral. Kevelle's light --astral is a different, deeper value. */
   --bloom: oklch(0.64 0.192 262);
-  /* Light mode uses one soft astral halo everywhere. */
   --lit-dot: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
   --lit-beam: var(--lit-dot);
   --lit-marker: var(--lit-dot);
@@ -223,7 +221,6 @@
   letter-spacing: 0;
 }
 
-/* About paragraphs. */
 @utility role-body {
   font-family: var(--font-text);
   font-size: 14px;

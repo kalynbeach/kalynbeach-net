@@ -6,17 +6,17 @@
  * pages, so the mini player and the bar keep their track across navigation.
  * The views read that state:
  *
- * | View              | Where                       | Size    |
- * | WavePlayerMini    | section 3, About and Agents | 200x380 |
- * | WavePlayerLibrary | section 3, Music            | 200x232 |
- * | WavePlayerCard    | Music body                  | 340x550 |
- * | WavePlayerBar     | below 1100px, fixed bottom  | fills the 416x57 box the shell fixes |
+ * | View              | Where                         | Size    |
+ * | WavePlayerMini    | section 3, About and Software | 200x380 |
+ * | WavePlayerLibrary | section 3, Music              | 200x232 |
+ * | WavePlayerCard    | Music body                    | 340x550 |
+ * | WavePlayerBar     | below 1100px, fixed bottom    | fills the 416x57 box the shell fixes |
  *
  * When the block lands, this file re-exports the block's provider and views
  * under these names, and the placeholder bodies, `sample`, the placeholder
  * type roles in globals.css and public/wave-player.svg go. The views keep
- * the data-slot names verify.ts reads (aside-header, wave-player-card,
- * player-bar, library-row), or verify.ts changes with them.
+ * their data-slot names (aside-header, wave-player-card, player-bar,
+ * library-row).
  *
  * Static: no audio and no handlers. Transport and expand buttons render as
  * drawn and stay aria-disabled.
@@ -42,7 +42,6 @@ export type PlayerState = {
   playing: boolean;
 };
 
-/** Sample tracks from the frames. Draft copy. */
 const sample: PlayerState = {
   queue: [
     {
@@ -97,7 +96,6 @@ function usePlayerView() {
   const track = queue[current];
   return {
     track,
-    /** "01 / 05" */
     counter: `${pad(current + 1)} / ${pad(queue.length)}`,
     count: pad(queue.length),
     elapsed: clock(position),
@@ -111,7 +109,6 @@ function usePlayerView() {
   };
 }
 
-/** Section 3 on About and Agents: the loaded track, its art, scrubber and transport. */
 export function WavePlayerMini() {
   const view = usePlayerView();
   return (
@@ -159,7 +156,6 @@ export function WavePlayerMini() {
   );
 }
 
-/** Section 3 on Music: the queue, with the loaded track at weight 500 and a signal duration. */
 export function WavePlayerLibrary() {
   const view = usePlayerView();
   return (
@@ -237,7 +233,6 @@ export function WavePlayerCard() {
   );
 }
 
-/** Below 1100px: a lit progress line, then the art, title, time and transport. */
 export function WavePlayerBar() {
   const view = usePlayerView();
   return (
@@ -264,7 +259,6 @@ export function WavePlayerBar() {
   );
 }
 
-/** Scrubber bars from the frames, played bars in the signal color, then the times. */
 function Scrubber({
   size,
   elapsed,
@@ -297,7 +291,6 @@ function Scrubber({
   );
 }
 
-/** Button and icon sizes and gaps per view, as drawn. */
 const transportSizes = {
   mini: { row: "gap-1", side: "h-8 w-9", pause: "h-8 w-11", icon: "size-4" },
   card: {

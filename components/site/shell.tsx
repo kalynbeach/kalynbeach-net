@@ -117,8 +117,7 @@ function SiteMain({
       {/*
        * Two page-header rows. Below 1100px the top bar is section 1's header
        * and the breadcrumb drops into the body; at 1100px and up the top bar
-       * hides and the breadcrumb row is the header. verify.ts reads the first
-       * visible [data-slot="page-header"], so the top bar comes first.
+       * hides and the breadcrumb row is the header.
        */}
       <div
         data-slot={page ? "page-header" : undefined}
@@ -135,7 +134,6 @@ function SiteMain({
           >
             <Breadcrumb crumbs={page.crumbs} />
           </div>
-          {/* Blocks are siblings, so gap-8 spaces each 32 below the lede and below each other. */}
           <div className="desktop:p-inset flex flex-col gap-8 p-5">
             <hgroup className="desktop:gap-3 flex flex-col gap-2">
               <h1 className="role-title text-ramp-10">{page.title}</h1>
