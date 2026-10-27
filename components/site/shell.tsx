@@ -111,7 +111,7 @@ function SiteMain({
       className={cn(
         "max-desktop:mx-edge max-desktop:mt-safe-top desktop:self-start",
         page && "bg-background",
-        clearsBar && "max-desktop:mb-clear-bar"
+        clearsBar && "max-desktop:pb-clear-bar"
       )}
     >
       {/*

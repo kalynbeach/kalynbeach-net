@@ -5,11 +5,12 @@
  * so the nav never reads the pathname to decide active state.
  */
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "@/lib/utils";
 import { siteName, type NavRow } from "@/lib/site";
+import { desktopMedia } from "@/lib/layout";
 import { Waveform } from "@/components/waveform";
 
 /**
@@ -115,25 +116,34 @@ function NavItem({
  * dithered, blurred overlay whenever it is modal; R7 wants a plain backdrop
  * of --background at 72%.
  */
-export function NavSheet({
-  rows,
-  atRest,
-}: {
-  rows: readonly NavRow[];
-  atRest: boolean;
-}) {
+export function NavSheet(props: { rows: readonly NavRow[]; atRest: boolean }) {
   const pathname = usePathname();
-  // The sheet remembers the path it opened on and is open only while that
-  // path is current, so a navigation closes it with no effect.
-  const [openOn, setOpenOn] = useState<string | null>(null);
-  const close = () => setOpenOn(null);
+  const desktop = useSyncExternalStore(
+    subscribeDesktop,
+    isDesktop,
+    () => false
+  );
+  // Every navigation, history steps included, and every move into the
+  // desktop layout mounts a closed sheet, so Base UI releases its scroll lock
+  // and Forward never reopens a sheet that Back closed.
+  return <Sheet key={`${pathname} ${desktop}`} {...props} />;
+}
+
+function subscribeDesktop(onChange: () => void) {
+  const query = window.matchMedia(desktopMedia);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+function isDesktop() {
+  return window.matchMedia(desktopMedia).matches;
+}
+
+function Sheet({ rows, atRest }: { rows: readonly NavRow[]; atRest: boolean }) {
+  const [open, setOpen] = useState(false);
 
   return (
-    <Drawer.Root
-      open={openOn === pathname}
-      onOpenChange={(open) => setOpenOn(open ? pathname : null)}
-      swipeDirection="left"
-    >
+    <Drawer.Root open={open} onOpenChange={setOpen} swipeDirection="left">
       <Drawer.Trigger
         aria-label="Open navigation"
         className="flex size-10 flex-col justify-center gap-1.25 px-2.5"
@@ -152,7 +162,7 @@ export function NavSheet({
             <Drawer.Title className="sr-only">Navigation</Drawer.Title>
             <div
               data-slot="sheet-header"
-              className="h-header flex items-center justify-between pr-3 pl-5"
+              className="h-header flex shrink-0 items-center justify-between pr-3 pl-5"
             >
               <Identity layout="inline" atRest={atRest} />
               <Drawer.Close
@@ -169,8 +179,12 @@ export function NavSheet({
                 </svg>
               </Drawer.Close>
             </div>
-            <nav data-slot="site-nav" aria-label="Site">
-              <NavTree rows={rows} onNavigate={close} />
+            <nav
+              data-slot="site-nav"
+              aria-label="Site"
+              className="min-h-0 overflow-y-auto"
+            >
+              <NavTree rows={rows} onNavigate={() => setOpen(false)} />
             </nav>
           </Drawer.Popup>
         </Drawer.Viewport>
