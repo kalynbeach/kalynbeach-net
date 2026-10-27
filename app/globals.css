@@ -35,3 +35,310 @@
 ::view-transition-new(.quick-out) {
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
 }
+
+/*
+ * Site tokens for the three-section shell. Kevelle (app/kevelle,
+ * registry-owned) supplies the neutral ramp, the signal colors and the font
+ * files. This file names the site's font roles, layout geometry, type roles
+ * and the few colors Kevelle lacks. Each value is set once here; components
+ * use the utility.
+ */
+
+@theme {
+  /* Three sections side by side at 1100px and up. Below it: top bar, nav sheet, player bar. */
+  --breakpoint-desktop: 68.75rem;
+
+  /*
+   * Font roles. ui: titles, headings, nav, labels, values, dates and code.
+   * text: the name and body. readout: years, times, counts and keys. long:
+   * long-form writing. Paper Mono stands in for TX-02 until kkb's font
+   * pipeline ships it; when it does, --font-ui is the one line to change.
+   * --font-mono follows it, so code and Kevelle's heading role switch too.
+   */
+  --font-ui: "TX-02", "Paper Mono", ui-monospace, monospace;
+  --font-text: var(--font-sans);
+  --font-readout: var(--font-pixel);
+  --font-long: var(--font-serif);
+  --font-mono: var(--font-ui);
+
+  /* Layout geometry. Component paddings use Tailwind's 4px steps (2, 3, 5, 8, 13, 21). */
+  --spacing-side: 12.5rem; /* 200: sections 2 and 3 */
+  --spacing-side-min: 12rem; /* 192: the narrowest a side section gets */
+  --spacing-main: 40.5rem; /* 648: section 1 */
+  --spacing-gutter: 1.25rem; /* 20: between sections */
+  --spacing-lead: 5.25rem; /* 84: above and below the sections, and the sticky top */
+  --spacing-header: 3.25rem; /* 52: the header row of every section */
+  --spacing-row: 2rem; /* 32: nav, list, section-head and timeline rows */
+  --spacing-inset: 3.25rem; /* 52: section 1 padding at 1100px and up */
+  --spacing-edge: 0.75rem; /* 12: below 1100px, section 1, the sheet and the bar sit this far in */
+  --spacing-sheet: 18.75rem; /* 300 */
+  --spacing-glow: 79.75rem; /* 1276 */
+  --spacing-stage: min(40.5rem, calc(100vw - 1.5rem), calc(100dvh - 1.5rem));
+  --spacing-safe-top: env(safe-area-inset-top);
+  --spacing-safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  /* Room under section 1 for the fixed player bar: the bar (57), its inset, and 12. */
+  --spacing-clear-bar: calc(
+    3.5625rem + max(0.75rem, env(safe-area-inset-bottom)) + 0.75rem
+  );
+
+  /*
+   * Equal side tracks keep section 1 centered at every width. Free space fills
+   * the sides to 200 first; section 1 gives way before a side drops under 192.
+   */
+  --grid-template-columns-shell: minmax(
+      var(--spacing-side-min),
+      var(--spacing-side)
+    )
+    minmax(0, var(--spacing-main))
+    minmax(var(--spacing-side-min), var(--spacing-side));
+}
+
+@theme inline {
+  /*
+   * The neutral ramp by step. The frames name colors dark-N and light-N at
+   * the same N, so text-ramp-7 is dark-7 in dark and light-7 in light.
+   * Section and page backgrounds use bg-background (ramp 1).
+   */
+  --color-ramp-1: var(--neutral-1);
+  --color-ramp-2: var(--neutral-2);
+  --color-ramp-3: var(--neutral-3);
+  --color-ramp-4: var(--neutral-4);
+  --color-ramp-5: var(--neutral-5);
+  --color-ramp-6: var(--neutral-6);
+  --color-ramp-7: var(--neutral-7);
+  --color-ramp-8: var(--neutral-8);
+  --color-ramp-9: var(--neutral-9);
+  --color-ramp-10: var(--neutral-10);
+
+  /* Waveform light: the glow, and the bloom layers of the Home stage. */
+  --color-bloom: var(--bloom);
+
+  /* Halos on lit signal elements: the active dot, the Home beam, timeline markers, the bar's progress. */
+  --shadow-lit-dot: var(--lit-dot);
+  --shadow-lit-beam: var(--lit-beam);
+  --shadow-lit-marker: var(--lit-marker);
+  --shadow-lit-progress: var(--lit-progress);
+}
+
+:root {
+  /* Paper's astral. Kevelle's light --astral is a different, deeper value. */
+  --bloom: oklch(0.64 0.192 262);
+  /* Light mode uses one soft astral halo everywhere. */
+  --lit-dot: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
+  --lit-beam: var(--lit-dot);
+  --lit-marker: var(--lit-dot);
+  --lit-progress: var(--lit-dot);
+}
+
+.dark {
+  --bloom: var(--signal);
+  --lit-dot: 0 0 6px 1px color-mix(in oklab, var(--signal) 55%, transparent);
+  --lit-beam: 0 0 5px 1px color-mix(in oklab, var(--signal) 70%, transparent);
+  --lit-marker: 0 0 6px 0 color-mix(in oklab, var(--signal) 50%, transparent);
+  --lit-progress: 0 0 4px 0 color-mix(in oklab, var(--signal) 60%, transparent);
+}
+
+/*
+ * Type roles. Each sets family, size, weight, line height and tracking
+ * together, and steps down below 1100px where the mobile frames do, so call
+ * sites never repeat a breakpoint. The role- prefix keeps them from merging
+ * with Kevelle's type- utilities (Kevelle's type-lede is a serif 22px role).
+ */
+
+@utility role-name {
+  font-family: var(--font-text);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.005em;
+  @variant max-desktop {
+    letter-spacing: 0;
+  }
+}
+
+@utility role-nav {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* Breadcrumb parts, section heads, "TIMELINE". */
+@utility role-caps {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@utility role-title {
+  font-family: var(--font-ui);
+  font-size: 37px;
+  font-weight: 500;
+  line-height: 44px;
+  letter-spacing: -0.03em;
+  @variant max-desktop {
+    font-size: 29px;
+    line-height: 36px;
+  }
+}
+
+@utility role-lede {
+  font-family: var(--font-text);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+  @variant max-desktop {
+    letter-spacing: 0;
+  }
+}
+
+@utility role-stat-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  @variant max-desktop {
+    letter-spacing: 0;
+  }
+}
+
+@utility role-stat-value {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+  @variant max-desktop {
+    font-size: 16px;
+    line-height: 20px;
+    letter-spacing: 0;
+  }
+}
+
+/* Timeline dates. 20px line height at every width, so rows top-align the same way. */
+@utility role-date {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* "inferred", repo tags, durations. The breadcrumb "/" adds font-medium. */
+@utility role-mono-sm {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
+@utility role-handle {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
+/* Timeline entries, "GitHub". */
+@utility role-entry {
+  font-family: var(--font-text);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* About paragraphs. */
+@utility role-body {
+  font-family: var(--font-text);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+
+/* Readouts: years, times, counts and keys. Departure Mono renders crisply only at multiples of 11px. */
+@utility role-readout {
+  font-family: var(--font-readout);
+  font-size: 11px;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
+@utility role-readout-2x {
+  font-family: var(--font-readout);
+  font-size: 22px;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  line-height: 28px;
+  letter-spacing: 0;
+}
+
+/* Long-form writing, in Timeless Serif's Text cut. */
+@utility role-long {
+  font-family: var(--font-long);
+  font-variation-settings: "STYL" 100;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 28px;
+  letter-spacing: 0;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+/*
+ * WavePlayer placeholder roles. They go with components/wave-player.tsx's
+ * placeholder bodies when the Kevelle block lands.
+ */
+
+@utility role-track {
+  font-family: var(--font-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+@utility role-tag {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@utility role-card-title {
+  font-family: var(--font-text);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* Library rows. The loaded track adds font-medium. */
+@utility role-library {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+@utility role-meta {
+  font-family: var(--font-text);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0;
+}
