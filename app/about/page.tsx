@@ -1,20 +1,8 @@
-import type { Metadata } from "next";
-import SitePage from "@/components/site/site-page";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "about",
-};
+/** Title, lede, no glow, and the mini player come from the "/about" entry. */
+export const metadata = pageMetadata("/about");
 
 export default function About() {
-  return (
-    <SitePage>
-      <main className="flex size-full flex-col gap-4">
-        <section className="flex flex-col gap-2">
-          <p className="font-mono text-sm font-medium dark:font-normal">
-            thinking...
-          </p>
-        </section>
-      </main>
-    </SitePage>
-  );
+  return null;
 }

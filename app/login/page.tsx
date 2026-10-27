@@ -1,12 +1,9 @@
 import { SignIn } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import SitePage from "@/components/site/site-page";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "login",
-};
+export const metadata = pageMetadata("/login");
 
 export default async function Login() {
   const { userId } = await auth();
@@ -15,11 +12,5 @@ export default async function Login() {
     redirect("/dashboard");
   }
 
-  return (
-    <SitePage>
-      <main className="flex size-full flex-col items-center justify-center gap-4">
-        <SignIn routing="hash" fallbackRedirectUrl="/dashboard" />
-      </main>
-    </SitePage>
-  );
+  return <SignIn routing="hash" fallbackRedirectUrl="/dashboard" />;
 }

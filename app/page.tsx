@@ -1,18 +1,8 @@
-import { ViewTransition } from "react";
-import SitePage from "@/components/site/site-page";
-import SiteLogo from "@/components/site/site-logo";
-// import { ThreeSceneBlock } from "@/components/r3f/scene-block";
-
+/**
+ * Home's look is its site map entry (`kind: "stage"` in lib/site.ts): the
+ * shell draws the waveform stage in the window and no section 1 box. Content
+ * returned here renders in section 1's column, under the stage.
+ */
 export default function Home() {
-  return (
-    <SitePage includeHeader={false}>
-      <main className="flex size-full items-center justify-center">
-        {/* TODO: Update site-logo transition animation to scale SVG down and back up (like it's warping to the footer) */}
-        <ViewTransition name="site-logo" default="quick-out">
-          <SiteLogo />
-          {/* <ThreeSceneBlock /> */}
-        </ViewTransition>
-      </main>
-    </SitePage>
-  );
+  return null;
 }

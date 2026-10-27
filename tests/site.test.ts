@@ -1,6 +1,52 @@
 // @vitest-environment node
+import { globSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { commandItems, landing, pageMetadata, resolve } from "@/lib/site";
+import nextConfig from "@/next.config";
+import {
+  commandItems,
+  landing,
+  pageMetadata,
+  resolve,
+  routes,
+} from "@/lib/site";
+
+/** app/(admin)/lab/page.tsx -> "/lab". Route groups drop out; the app root is "/". */
+function routeOf(file: string): string {
+  const segments = file
+    .split("/")
+    .slice(1, -1)
+    .filter((segment) => !/^\(.+\)$/.test(segment));
+  return "/" + segments.join("/");
+}
+
+const pages = globSync("app/**/page.tsx").map((file) => ({
+  file,
+  route: routeOf(file),
+}));
+
+describe("site map and page files", () => {
+  it("has an entry for every page file and a page file for every entry", () => {
+    expect(new Set(pages.map((page) => page.route))).toEqual(new Set(routes));
+  });
+
+  it("has each page name its own route in its metadata", () => {
+    for (const { file, route } of pages) {
+      // Home keeps the root layout title. Group routes only redirect, so they resolve to nothing.
+      if (route === "/" || resolve(route).route === null) continue;
+      expect(readFileSync(file, "utf8"), file).toContain(
+        `pageMetadata("${route}")`
+      );
+    }
+  });
+
+  it("redirects old links to real pages", async () => {
+    const redirects = (await nextConfig.redirects?.()) ?? [];
+    expect(redirects.length).toBeGreaterThan(0);
+    for (const { destination } of redirects) {
+      expect(routes).toContain(destination);
+    }
+  });
+});
 
 describe("site map", () => {
   it("expands Software and marks it as the ancestor on a Software page", () => {

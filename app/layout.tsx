@@ -1,14 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
-import { ViewTransition } from "react";
 import { preload } from "react-dom";
 import ConvexClerkProvider from "@/components/providers/convex-clerk-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import SiteHeader from "@/components/site/site-header";
-import SiteFooter from "@/components/site/site-footer";
+import { PlayerProvider } from "@/components/wave-player";
+import { SiteShell } from "@/components/site/shell";
 import "./globals.css";
 
 const fonts = [
@@ -26,6 +25,14 @@ export const metadata: Metadata = {
   description: "kalynbeach",
 };
 
+/** cover lets the mobile top bar, sheet and player bar use the safe-area insets. */
+export const viewport: Viewport = { viewportFit: "cover" };
+
+/**
+ * Providers, then the one player above every page, then the shell. The shell
+ * resolves the site map entry and draws the nav, waveform, section 1's header
+ * and section 3. `children` is the page body.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,17 +44,13 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="relative">
+      <body>
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClerkProvider>
             <ThemeProvider>
-              <ViewTransition name="root-layout">
-                <div className="grid-rows-layout-root md:grid-rows-layout-root-md container grid size-full min-h-screen">
-                  <SiteHeader />
-                  {children}
-                  <SiteFooter />
-                </div>
-              </ViewTransition>
+              <PlayerProvider>
+                <SiteShell>{children}</SiteShell>
+              </PlayerProvider>
             </ThemeProvider>
             <Analytics />
             <SpeedInsights />
