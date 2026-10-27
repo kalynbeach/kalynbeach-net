@@ -9,13 +9,14 @@
  * | View              | Where                       | Size    |
  * | WavePlayerMini    | section 3, About and Agents | 200x380 |
  * | WavePlayerLibrary | section 3, Music            | 200x232 |
+ * | WavePlayerCard    | Music body                  | 340x550 |
  * | WavePlayerBar     | below 1100px, fixed bottom  | fills the 416x57 box the shell fixes |
  *
  * When the block lands, this file re-exports the block's provider and views
  * under these names, and the placeholder bodies, `sample`, the placeholder
  * type roles in globals.css and public/wave-player.svg go. The views keep
- * the data-slot names verify.ts reads (aside-header, player-bar,
- * library-row), or verify.ts changes with them.
+ * the data-slot names verify.ts reads (aside-header, wave-player-card,
+ * player-bar, library-row), or verify.ts changes with them.
  *
  * Static: no audio and no handlers. Transport and expand buttons render as
  * drawn and stay aria-disabled.
@@ -204,6 +205,38 @@ export function WavePlayerLibrary() {
   );
 }
 
+/**
+ * The Music body's player. Its width gives way below 340, so it fits narrow
+ * phones; at 340 it is 550 tall, as drawn.
+ */
+export function WavePlayerCard() {
+  const view = usePlayerView();
+  return (
+    <div
+      data-slot="wave-player-card"
+      className="bg-background outline-ramp-4 flex w-full max-w-85 flex-col gap-3 p-3 outline -outline-offset-1"
+    >
+      <p className="flex h-8 items-center justify-between px-1">
+        <span className="role-card-title text-ramp-10">{view.track.title}</span>
+        <span className="role-mono-sm text-ramp-6">{view.duration}</span>
+      </p>
+      <div className="aspect-square w-full">
+        <Waveform form="screen" />
+      </div>
+      <p className="flex h-5 items-center justify-between px-1">
+        <span className="role-meta text-ramp-6">
+          {view.track.artist} · {view.track.record}
+        </span>
+        <span className="role-readout text-ramp-7">{view.counter}</span>
+      </p>
+      <Scrubber size="card" elapsed={view.elapsed} remaining={view.remaining} />
+      <div className="mt-3.5">
+        <Transport size="card" />
+      </div>
+    </div>
+  );
+}
+
 /** Below 1100px: a lit progress line, then the art, title, time and transport. */
 export function WavePlayerBar() {
   const view = usePlayerView();
@@ -243,7 +276,10 @@ function Scrubber({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <svg aria-hidden className={size === "mini" ? "h-6 w-44" : "h-9 w-79"}>
+      <svg
+        aria-hidden
+        className={size === "mini" ? "h-6 w-full" : "h-9 w-full"}
+      >
         <use
           href={`/wave-player.svg#scrubber-${size}-played`}
           className="text-signal"
