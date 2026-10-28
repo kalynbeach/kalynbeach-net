@@ -37,11 +37,13 @@ function fakeEnv(overrides: Partial<UploadEnv> = {}) {
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((yes) => {
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((yes, no) => {
     resolve = yes;
+    reject = no;
   });
 
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -210,6 +212,39 @@ describe("createAudioUpload", () => {
     log.mockRestore();
 
     expect(env.discard).toHaveBeenCalledExactlyOnceWith(blob);
+  });
+
+  it.fails("discards the blob when a save fails after release", async () => {
+    const save = deferred<void>();
+    const env = fakeEnv({ save: vi.fn<UploadEnv["save"]>(() => save.promise) });
+    const upload = createAudioUpload(env);
+
+    upload.send({ type: "pick", file });
+    await tick();
+    upload.send({ type: "start", save: attach });
+    await tick();
+    upload.release();
+    save.reject(new ConvexError("Track 3 not found"));
+    await tick();
+
+    expect(env.discard).toHaveBeenCalledExactlyOnceWith(blob);
+  });
+
+  it("discards nothing when a save succeeds after release", async () => {
+    const save = deferred<void>();
+    const env = fakeEnv({ save: vi.fn<UploadEnv["save"]>(() => save.promise) });
+    const upload = createAudioUpload(env);
+
+    upload.send({ type: "pick", file });
+    await tick();
+    upload.send({ type: "start", save: attach });
+    await tick();
+    upload.release();
+    save.resolve();
+    await tick();
+
+    expect(env.save).toHaveBeenCalledOnce();
+    expect(env.discard).not.toHaveBeenCalled();
   });
 
   it("discards nothing after a failed upload, which left no blob", async () => {
