@@ -4,7 +4,8 @@
  * The site's live look, for the shell's one WaveformProvider.
  *
  *   // app/layout.tsx
- *   <LiveLookProvider look={await readLiveLook()}>...</LiveLookProvider>
+ *   const look = await fetchPublicQuery(api.looks.live, {}, null);
+ *   <LiveLookProvider look={look}>...</LiveLookProvider>
  *
  *   // components/site/shell.tsx
  *   const look = useLiveLook();
