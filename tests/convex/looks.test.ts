@@ -5,7 +5,7 @@ import {
   cleanName,
   isLookRefusal,
   lookNameProblem,
-  MAX_CONFIG_JSON_LENGTH,
+  MAX_CONFIG_BYTES,
   MAX_NAME_LENGTH,
   planCreate,
   planRemove,
@@ -26,8 +26,8 @@ function lookId(value: string): Id<"looks"> {
 const config: LookConfig = { source: "tones", tones: { x: { hz: 140 } } };
 const otherConfig: LookConfig = { source: "audio" };
 
-function configOfLength(length: number): LookConfig {
-  const padding = length - JSON.stringify({ pad: "" }).length;
+function configOfBytes(bytes: number): LookConfig {
+  const padding = bytes - JSON.stringify({ pad: "" }).length;
 
   return { pad: "x".repeat(padding) };
 }
@@ -105,7 +105,7 @@ describe("planCreate", () => {
     expect(
       planCreate(
         made,
-        { ...input, config: configOfLength(MAX_CONFIG_JSON_LENGTH + 1) },
+        { ...input, config: configOfBytes(MAX_CONFIG_BYTES + 1) },
         9
       ).kind
     ).toBe("existing");
@@ -118,7 +118,7 @@ describe("planCreate", () => {
     });
   });
 
-  it.fails("refuses a config holding a value JSON can't carry", () => {
+  it("refuses a config holding a value JSON can't carry", () => {
     for (const odd of [new ArrayBuffer(8), BigInt(5), Number.NaN, Infinity]) {
       expect(
         planCreate(null, { ...input, config: { ...config, odd } }, 5)
@@ -126,8 +126,8 @@ describe("planCreate", () => {
     }
   });
 
-  it.fails("measures the size cap in UTF-8 bytes, not characters", () => {
-    const twoByteChars = { pad: "é".repeat(MAX_CONFIG_JSON_LENGTH / 2) };
+  it("measures the size cap in UTF-8 bytes, not characters", () => {
+    const twoByteChars = { pad: "é".repeat(MAX_CONFIG_BYTES / 2) };
 
     expect(planCreate(null, { ...input, config: twoByteChars }, 5)).toEqual({
       kind: "refuse",
@@ -135,18 +135,15 @@ describe("planCreate", () => {
     });
   });
 
-  it("accepts a config at the size cap and refuses one character more", () => {
+  it("accepts a config at the size cap and refuses one byte more", () => {
     expect(
-      planCreate(
-        null,
-        { ...input, config: configOfLength(MAX_CONFIG_JSON_LENGTH) },
-        5
-      ).kind
+      planCreate(null, { ...input, config: configOfBytes(MAX_CONFIG_BYTES) }, 5)
+        .kind
     ).toBe("insert");
     expect(
       planCreate(
         null,
-        { ...input, config: configOfLength(MAX_CONFIG_JSON_LENGTH + 1) },
+        { ...input, config: configOfBytes(MAX_CONFIG_BYTES + 1) },
         5
       )
     ).toEqual({ kind: "refuse", code: "config" });
@@ -177,8 +174,15 @@ describe("planSave", () => {
     });
   });
 
+  it("refuses a config holding bytes", () => {
+    expect(planSave(a, { ...config, blob: new ArrayBuffer(8) }, 9)).toEqual({
+      kind: "refuse",
+      code: "config",
+    });
+  });
+
   it("refuses a config over the size cap", () => {
-    expect(planSave(a, configOfLength(MAX_CONFIG_JSON_LENGTH + 1), 9)).toEqual({
+    expect(planSave(a, configOfBytes(MAX_CONFIG_BYTES + 1), 9)).toEqual({
       kind: "refuse",
       code: "config",
     });
