@@ -14,14 +14,13 @@
  * fill of its own.
  *
  * It owns the public site's player and waveform: one WavePlayerProvider,
- * fed the track list the root layout read from Convex for this document
- * (tracks.list through fetchPublicQuery), and one WaveformProvider fed by
- * the player's audio, where the site's look enters. The player draws its own
- * waveform in its frames (PlayerScreen), so the site's figure stays on Home's
- * stage and in the mark. It reads playback and the layout and draws what
- * `place()` (lib/layout.ts) decides: the Home stage, the mark and the
- * player's one frame. Pages render section 1's content, their header first;
- * the shell adds what outlives a page.
+ * fed tracks.list live (useLiveTracks, seeded by the root layout's read),
+ * and one WaveformProvider fed by the player's audio, where the site's look
+ * enters. The player draws its own waveform in its frames (PlayerScreen), so
+ * the site's figure stays on Home's stage and in the mark. It reads playback
+ * and the layout and draws what `place()` (lib/layout.ts) decides: the Home
+ * stage, the mark and the player's one frame. Pages render section 1's
+ * content, their header first; the shell adds what outlives a page.
  *
  * The top line: on desktop the sections start on one grid row, 96 below the
  * window's top. The name and a page's title trim to their cap tops
@@ -75,6 +74,7 @@ import {
   pointerZone,
   useWaveformControls,
 } from "@/components/site/waveform-controls";
+import { useLiveTracks } from "@/components/site/live-tracks";
 
 const columns = {
   stage: "desktop:grid-cols-three",
@@ -86,12 +86,15 @@ export function SiteShell({
   tracks,
   children,
 }: {
-  /** tracks.list as of this document's request, or [] when Convex failed or was slow. */
+  /** The root layout's read of tracks.list, or [] when Convex failed or was slow. First paint draws it. */
   tracks: readonly WavePlayerTrack[];
   children: ReactNode;
 }) {
   return (
-    <WavePlayerProvider tracks={tracks} screen={<PlayerScreen />}>
+    <WavePlayerProvider
+      tracks={useLiveTracks(tracks)}
+      screen={<PlayerScreen />}
+    >
       <PublicWaveform>
         <Sections>{children}</Sections>
       </PublicWaveform>
