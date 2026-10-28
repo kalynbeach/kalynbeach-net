@@ -78,7 +78,7 @@ describe("fetchPublicQuery", () => {
     expect(console.error).toHaveBeenCalledOnce();
   });
 
-  it.fails("aborts the request to Convex at the deadline", async () => {
+  it("aborts the request to Convex at the deadline", async () => {
     convex.mockImplementationOnce(hang);
 
     const result = fetchPublicQuery(api.tracks.list, {}, []);
