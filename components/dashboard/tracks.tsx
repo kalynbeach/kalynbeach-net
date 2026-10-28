@@ -6,9 +6,8 @@
  *
  * Rules and derivations live in model.ts and work in flight in upload.ts;
  * these components draw a view and send commands. The form and each row own
- * one upload each, so no two writers share one. Every write ends with
- * router.refresh(), so the root layout reads the new list and this tab's
- * player plays it.
+ * one upload each, so no two writers share one. The site shell subscribes to
+ * tracks.list, so every open tab's player follows each write.
  */
 import {
   useEffect,
@@ -18,7 +17,6 @@ import {
   useTransition,
   type FormEvent,
 } from "react";
-import { useRouter } from "next/navigation";
 import {
   Authenticated,
   AuthLoading,
@@ -426,7 +424,6 @@ function EditForm({
   onDone: () => void;
 }) {
   const update = useMutation(api.tracks.update);
-  const router = useRouter();
   const [base] = useState<TrackMetadata>(() => ({
     title: track.title,
     artist: track.artist,
@@ -452,7 +449,6 @@ function EditForm({
     startSaving(async () => {
       try {
         await update({ id: track.id, track: patch });
-        router.refresh();
         onDone();
       } catch (error) {
         setFailure(errorMessage(error));
@@ -489,7 +485,6 @@ function RemoveTrack({
   disabled: boolean;
 }) {
   const remove = useMutation(api.tracks.remove);
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [removing, startRemoving] = useTransition();
@@ -498,7 +493,6 @@ function RemoveTrack({
     startRemoving(async () => {
       try {
         await remove({ id: track.id });
-        router.refresh();
         setOpen(false);
       } catch (error) {
         setFailure(errorMessage(error));
@@ -541,10 +535,7 @@ function RemoveTrack({
  */
 function useAudioUpload(): readonly [UploadView, Send] {
   const convex = useConvex();
-  const router = useRouter();
-  const [upload] = useState(() =>
-    createAudioUpload(browserUploadEnv(convex, () => router.refresh()))
-  );
+  const [upload] = useState(() => createAudioUpload(browserUploadEnv(convex)));
 
   useEffect(() => upload.hold(), [upload]);
 
