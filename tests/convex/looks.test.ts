@@ -118,6 +118,23 @@ describe("planCreate", () => {
     });
   });
 
+  it.fails("refuses a config holding a value JSON can't carry", () => {
+    for (const odd of [new ArrayBuffer(8), BigInt(5), Number.NaN, Infinity]) {
+      expect(
+        planCreate(null, { ...input, config: { ...config, odd } }, 5)
+      ).toEqual({ kind: "refuse", code: "config" });
+    }
+  });
+
+  it.fails("measures the size cap in UTF-8 bytes, not characters", () => {
+    const twoByteChars = { pad: "é".repeat(MAX_CONFIG_JSON_LENGTH / 2) };
+
+    expect(planCreate(null, { ...input, config: twoByteChars }, 5)).toEqual({
+      kind: "refuse",
+      code: "config",
+    });
+  });
+
   it("accepts a config at the size cap and refuses one character more", () => {
     expect(
       planCreate(
