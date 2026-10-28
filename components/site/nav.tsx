@@ -5,25 +5,30 @@
  * so the nav never reads the pathname to decide active state.
  */
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "@/lib/utils";
 import { siteName, type NavRow } from "@/lib/site";
-import { desktopMedia } from "@/lib/layout";
-import { Waveform } from "@/components/waveform";
+import type { Layout } from "@/lib/layout";
+import { Waveform } from "@/components/waveform/waveform";
 
 /**
- * "Kalyn Beach" and the mark. `row` is section 2's 52px header row, with the
- * mark in the same column as the active dot. `inline` sits in the mobile top
- * bar and the sheet header. `atRest` shows the 3x3 beam (Home).
+ * "Kalyn Beach" and the mark, the static waveform. `row` is section 2's 52px
+ * header row, with the mark in the same column as the active dot. `inline`
+ * sits in the mobile top bar and the sheet header. The mark's box always
+ * renders, so the name never shifts. The shell sets `mark` on the one
+ * Identity its layout shows (none on Home), since the waveform lends its
+ * view-transition name to the newest mark even when CSS hides it. Below
+ * 1100px the open sheet's Identity is the newest, so it holds the name
+ * while the sheet covers the top bar.
  */
 export function Identity({
   layout,
-  atRest,
+  mark,
 }: {
   layout: "row" | "inline";
-  atRest: boolean;
+  mark: boolean;
 }) {
   return (
     <div
@@ -38,7 +43,7 @@ export function Identity({
         {siteName}
       </Link>
       <span className="size-5.25">
-        <Waveform form="mark" atRest={atRest} />
+        {mark && <Waveform form="mark" className="size-full" />}
       </span>
     </div>
   );
@@ -59,7 +64,7 @@ export function NavTree({
   onNavigate,
 }: {
   rows: readonly NavRow[];
-  onNavigate?: () => void;
+  onNavigate?: (href: NavRow["href"]) => void;
 }) {
   return (
     <ul className="px-5 pt-3 pb-5">
@@ -75,13 +80,13 @@ function NavItem({
   onNavigate,
 }: {
   row: NavRow;
-  onNavigate?: () => void;
+  onNavigate?: (href: NavRow["href"]) => void;
 }) {
   return (
     <li>
       <Link
         href={row.href}
-        onClick={onNavigate}
+        onClick={() => onNavigate?.(row.href)}
         aria-current={row.state === "active" ? "page" : undefined}
         className={cn(
           "role-nav flex h-row items-center justify-between pr-3",
@@ -116,31 +121,39 @@ function NavItem({
  * dithered, blurred overlay whenever it is modal; R7 wants a plain backdrop
  * of --background at 72%.
  */
-export function NavSheet(props: { rows: readonly NavRow[]; atRest: boolean }) {
+export function NavSheet({
+  layout,
+  ...props
+}: {
+  rows: readonly NavRow[];
+  mark: boolean;
+  layout: Layout | null;
+}) {
   const pathname = usePathname();
-  const desktop = useSyncExternalStore(
-    subscribeDesktop,
-    isDesktop,
-    () => false
-  );
   // Every navigation, history steps included, and every move into the
   // desktop layout mounts a closed sheet, so Base UI releases its scroll lock
   // and Forward never reopens a sheet that Back closed.
-  return <Sheet key={`${pathname} ${desktop}`} {...props} />;
+  return <Sheet key={`${pathname} ${layout}`} pathname={pathname} {...props} />;
 }
 
-function subscribeDesktop(onChange: () => void) {
-  const query = window.matchMedia(desktopMedia);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-function isDesktop() {
-  return window.matchMedia(desktopMedia).matches;
-}
-
-function Sheet({ rows, atRest }: { rows: readonly NavRow[]; atRest: boolean }) {
+function Sheet({
+  rows,
+  mark,
+  pathname,
+}: {
+  rows: readonly NavRow[];
+  mark: boolean;
+  pathname: string;
+}) {
   const [open, setOpen] = useState(false);
+  // A link to another page closes the sheet through the navigation, which
+  // mounts a closed sheet in its own transition. Closing it on the click as
+  // well commits a synchronous update while the navigation's view transition
+  // is pending, and React then skips that view transition. So only a link to
+  // the page already open, which changes no pathname, closes the sheet here.
+  const onNavigate = (href: NavRow["href"]) => {
+    if (href === pathname) setOpen(false);
+  };
 
   return (
     <Drawer.Root open={open} onOpenChange={setOpen} swipeDirection="left">
@@ -164,7 +177,7 @@ function Sheet({ rows, atRest }: { rows: readonly NavRow[]; atRest: boolean }) {
               data-slot="sheet-header"
               className="h-header flex shrink-0 items-center justify-between pr-3 pl-5"
             >
-              <Identity layout="inline" atRest={atRest} />
+              <Identity layout="inline" mark={mark} />
               <Drawer.Close
                 aria-label="Close navigation"
                 className="text-ramp-9 grid size-10 place-items-center"
@@ -184,7 +197,7 @@ function Sheet({ rows, atRest }: { rows: readonly NavRow[]; atRest: boolean }) {
               aria-label="Site"
               className="min-h-0 overflow-y-auto"
             >
-              <NavTree rows={rows} onNavigate={() => setOpen(false)} />
+              <NavTree rows={rows} onNavigate={onNavigate} />
             </nav>
           </Drawer.Popup>
         </Drawer.Viewport>

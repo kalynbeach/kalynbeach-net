@@ -103,6 +103,48 @@
 }
 
 /*
+ * View transitions. kevelle/waveform names its live canvas waveform (or
+ * lends the name to the mark) and the glow waveform-glow; kevelle/wave-player
+ * names the player's frame wave-player; the shell names its sections
+ * wrapper site.
+ *
+ * The root, the sections and the glow skip their old image and run no
+ * animation, so they show the new page at once, as a navigation without a
+ * transition does. Named groups paint in their elements' paint order, so the
+ * glow, behind the page at -z-10, stays under the sections' solid
+ * backgrounds instead of painting over section 1. Only the waveform and the
+ * player's frame move.
+ */
+::view-transition-old(root),
+::view-transition-old(site),
+::view-transition-old(waveform-glow) {
+  display: none;
+}
+
+::view-transition-group(site),
+::view-transition-group(waveform-glow),
+::view-transition-new(root),
+::view-transition-new(site),
+::view-transition-new(waveform-glow) {
+  animation: none;
+}
+
+/* kevelle/waveform's contract: the figure rides above the frames it crosses. */
+::view-transition-group(waveform) {
+  z-index: 1;
+}
+
+/* Kevelle's reduced-motion rule matches *, ::before and ::after, not these pseudo-elements. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/*
  * Type roles. Each sets family, size, weight, line height and tracking
  * together, and steps down below 1100px where the mobile frames do, so call
  * sites never repeat a breakpoint. The role- prefix keeps them from merging
