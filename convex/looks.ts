@@ -82,25 +82,31 @@ export const create = mutation({
   },
 });
 
-/** Replaces a look's config. The name changes through rename. */
+/**
+ * Saves a draft over a look's config and returns the stored version.
+ * `baseVersion` is the version the draft started from; a draft from an
+ * older version is refused as "stale". The name changes through rename.
+ */
 export const save = mutation({
-  args: { id: v.id("looks"), config: lookConfigValidator },
-  returns: v.null(),
+  args: {
+    id: v.id("looks"),
+    baseVersion: v.number(),
+    config: lookConfigValidator,
+  },
+  returns: v.number(),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const plan = planSave(
-      await ctx.db.get("looks", args.id),
-      args.config,
-      Date.now()
-    );
+    const plan = planSave(await ctx.db.get("looks", args.id), args, Date.now());
 
-    if (plan.kind === "refuse") {
-      refuse(plan.code);
+    switch (plan.kind) {
+      case "refuse":
+        return refuse(plan.code);
+      case "unchanged":
+        return plan.version;
+      case "patch":
+        await ctx.db.patch("looks", args.id, plan.patch);
+        return plan.patch.version;
     }
-
-    await ctx.db.patch("looks", args.id, plan.patch);
-
-    return null;
   },
 });
 

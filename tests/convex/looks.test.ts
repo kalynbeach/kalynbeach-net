@@ -25,6 +25,7 @@ function lookId(value: string): Id<"looks"> {
 
 const config: LookConfig = { source: "tones", tones: { x: { hz: 140 } } };
 const otherConfig: LookConfig = { source: "audio" };
+const thirdConfig: LookConfig = { source: "tones", tones: { x: { hz: 90 } } };
 
 function configOfBytes(bytes: number): LookConfig {
   const padding = bytes - JSON.stringify({ pad: "" }).length;
@@ -38,6 +39,7 @@ function look(id: string, fields: Partial<Look> = {}): Look {
     _creationTime: 1,
     name: `Look ${id}`,
     config,
+    version: 0,
     createKey: `key-${id}`,
     createdAt: 10,
     updatedAt: 20,
@@ -82,6 +84,7 @@ describe("planCreate", () => {
       look: {
         name: "Dusk",
         config,
+        version: 0,
         createKey: "k1",
         createdAt: 5,
         updatedAt: 5,
@@ -151,41 +154,65 @@ describe("planCreate", () => {
 });
 
 describe("planSave", () => {
+  const saved = { ...a, config: otherConfig, version: 1 };
+
   it("refuses a missing look", () => {
-    expect(planSave(null, config, 5)).toEqual({
+    expect(planSave(null, { baseVersion: 0, config }, 5)).toEqual({
       kind: "refuse",
       code: "missing",
     });
   });
 
-  it("replaces the config and moves updatedAt, leaving the name alone", () => {
-    expect(planSave(a, otherConfig, 9)).toEqual({
+  it("saves a draft from the stored version as the next version, leaving the name alone", () => {
+    expect(planSave(a, { baseVersion: 0, config: otherConfig }, 9)).toEqual({
       kind: "patch",
-      patch: { config: otherConfig, updatedAt: 9 },
+      patch: { config: otherConfig, version: 1, updatedAt: 9 },
     });
   });
 
-  it("writes the same config again when it runs twice", () => {
-    const saved = { ...a, config: otherConfig, updatedAt: 9 };
-
-    expect(planSave(saved, otherConfig, 12)).toEqual({
-      kind: "patch",
-      patch: { config: otherConfig, updatedAt: 12 },
+  it("refuses a draft from an older version, so it never replaces another tab's save", () => {
+    expect(
+      planSave(saved, { baseVersion: 0, config: thirdConfig }, 12)
+    ).toEqual({
+      kind: "refuse",
+      code: "stale",
     });
+  });
+
+  it("writes nothing when the config is already stored, so a retry of a landed save returns its version", () => {
+    expect(
+      planSave(saved, { baseVersion: 0, config: otherConfig }, 12)
+    ).toEqual({
+      kind: "unchanged",
+      version: 1,
+    });
+    expect(
+      planSave(
+        { ...saved, config: { b: 2, a: { d: 4, c: 3 } } },
+        { baseVersion: 0, config: { a: { c: 3, d: 4 }, b: 2 } },
+        12
+      ).kind
+    ).toBe("unchanged");
   });
 
   it("refuses a config holding bytes", () => {
-    expect(planSave(a, { ...config, blob: new ArrayBuffer(8) }, 9)).toEqual({
-      kind: "refuse",
-      code: "config",
-    });
+    expect(
+      planSave(
+        a,
+        { baseVersion: 0, config: { ...config, blob: new ArrayBuffer(8) } },
+        9
+      )
+    ).toEqual({ kind: "refuse", code: "config" });
   });
 
   it("refuses a config over the size cap", () => {
-    expect(planSave(a, configOfBytes(MAX_CONFIG_BYTES + 1), 9)).toEqual({
-      kind: "refuse",
-      code: "config",
-    });
+    expect(
+      planSave(
+        a,
+        { baseVersion: 0, config: configOfBytes(MAX_CONFIG_BYTES + 1) },
+        9
+      )
+    ).toEqual({ kind: "refuse", code: "config" });
   });
 });
 
@@ -271,6 +298,7 @@ describe("toAdminLook", () => {
       id: lookId("a"),
       name: "Look a",
       config,
+      version: 0,
       live: true,
     });
     expect(toAdminLook(b, siteOn("a")).live).toBe(false);
