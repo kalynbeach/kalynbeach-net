@@ -52,11 +52,8 @@ import { cn } from "@/lib/utils";
 import { desktopMedia, place, type Layout } from "@/lib/layout";
 import { resolve, type SiteEntry } from "@/lib/site";
 import { Waveform, WaveformProvider } from "@/components/waveform/waveform";
-import {
-  DEFAULT_WAVEFORM_CONFIG,
-  parseWaveformConfig,
-  type WaveformConfig,
-} from "@/components/waveform/settings";
+import { parseWaveformConfig } from "@/components/waveform/settings";
+import { useLiveLook } from "@/components/looks/live";
 import {
   WavePlayerBar,
   WavePlayerCard,
@@ -127,19 +124,20 @@ function PlayerScreen() {
 }
 
 /**
- * The Home stage's keys edit a local copy of the look that nothing saves and
- * a reload drops. setLocal takes the exact object onConfigChange gives, since
- * the keys know their own commits by identity.
+ * The public site's one WaveformProvider, reacting to the player's audio.
+ * It draws the live look. The Home stage's keys edit a copy that useLiveLook
+ * holds and nothing saves; it takes back the exact object onConfigChange
+ * gives, since the keys know their own commits by identity.
  */
 function PublicWaveform({ children }: { children: ReactNode }) {
   // An audio restart replaces the feed, so read it on every render.
   const { feed } = useWavePlayer();
-  const [local, setLocal] = useState<WaveformConfig | null>(null);
+  const look = useLiveLook();
 
   return (
     <WaveformProvider
-      config={local ?? DEFAULT_WAVEFORM_CONFIG}
-      onConfigChange={setLocal}
+      config={look.config}
+      onConfigChange={look.onConfigChange}
       audio={feed}
     >
       {children}
