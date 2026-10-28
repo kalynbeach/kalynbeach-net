@@ -170,14 +170,7 @@ function isWork(state: UploadState): state is WorkStep {
   );
 }
 
-/**
- * `refresh` runs after each save, so the root layout reads the new list and
- * this tab's player plays it.
- */
-export function browserUploadEnv(
-  convex: ConvexReactClient,
-  refresh: () => void
-): UploadEnv {
+export function browserUploadEnv(convex: ConvexReactClient): UploadEnv {
   return {
     read: readAudioFile,
     put: async (file, onProgress, signal) =>
@@ -192,7 +185,6 @@ export function browserUploadEnv(
       await (save.kind === "create"
         ? convex.mutation(api.tracks.create, { track: save.track, audio })
         : convex.mutation(api.tracks.attachAudio, { id: save.id, audio }));
-      refresh();
     },
     discard: async (storageId) => {
       await convex.mutation(api.tracks.discardUpload, { storageId });
