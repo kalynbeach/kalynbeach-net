@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./lib/auth";
@@ -217,6 +217,30 @@ export const remove = mutation({
   },
 });
 
+/**
+ * Deletes an uploaded blob that no track holds, for an upload the dashboard
+ * gave up on after its save failed. A blob a track holds, such as one whose
+ * save committed but whose reply was lost, stays. A missing blob is a no-op.
+ */
+export const discardUpload = mutation({
+  args: { storageId: v.id("_storage") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    const [file, holder] = await Promise.all([
+      ctx.db.system.get("_storage", args.storageId),
+      findHolder(ctx, args.storageId),
+    ]);
+
+    if (file && !holder) {
+      await ctx.storage.delete(args.storageId);
+    }
+
+    return null;
+  },
+});
+
 function findTrack(
   ctx: MutationCtx,
   publicId: number
@@ -229,7 +253,8 @@ function findTrack(
 
 /**
  * Throws when the blob is missing or isn't usable audio, and returns the
- * track that already holds it, if any. A rejected blob stays unattached.
+ * track that already holds it, if any. A rejected blob stays unattached
+ * until the dashboard discards it.
  */
 async function checkUpload(
   ctx: MutationCtx,
@@ -247,10 +272,17 @@ async function checkUpload(
     throw new ConvexError(problem);
   }
 
+  return findHolder(ctx, audio.storageId);
+}
+
+function findHolder(
+  ctx: MutationCtx,
+  storageId: Id<"_storage">
+): Promise<Doc<"tracks"> | null> {
   return ctx.db
     .query("tracks")
     .withIndex("by_audio_storage_id", (query) =>
-      query.eq("audio.storageId", audio.storageId)
+      query.eq("audio.storageId", storageId)
     )
     .unique();
 }
