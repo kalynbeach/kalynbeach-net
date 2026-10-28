@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { connection } from "next/server";
 import { api } from "@/convex/_generated/api";
 import { fetchPublicQuery } from "@/lib/convex/server";
 
@@ -89,5 +90,15 @@ describe("fetchPublicQuery", () => {
     await vi.advanceTimersByTimeAsync(1_000);
     await result;
     expect(signal?.aborted).toBe(true);
+  });
+
+  it("lets connection() end a prerender without reading Convex", async () => {
+    const prerender = new Error("prerender bail-out");
+    vi.mocked(connection).mockRejectedValueOnce(prerender);
+
+    await expect(fetchPublicQuery(api.tracks.list, {}, [])).rejects.toBe(
+      prerender
+    );
+    expect(convexFetch).not.toHaveBeenCalled();
   });
 });
