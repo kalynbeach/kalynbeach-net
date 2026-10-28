@@ -69,6 +69,7 @@ are compatible; recheck this boundary when changing these tools or their modes.
 - **3D:** Located in `components/r3f/`.
 - **Auth:** Clerk establishes identity; sensitive Convex functions enforce app roles.
 - **Data:** Convex schema/functions live in `convex/`; server adapters live in `lib/convex/`.
+- **Tracks:** Track audio lives in Convex file storage. The root layout reads `tracks.list` through `fetchPublicQuery` (`lib/convex/server.ts`) on every document request, so every route renders per request. When Convex fails or takes longer than 1 s, the page renders with an empty list. An open page keeps its list until a reload or `router.refresh()`.
 
 ## Linting and formatting
 
