@@ -15,6 +15,12 @@ export default defineSchema({
     .index("by_public_id", ["publicId"])
     .index("by_audio_storage_id", ["audio.storageId"]),
 
+  /**
+   * At most one row: the highest publicId a removed track had. tracks.create
+   * issues ids above it, so a removed track's id never names another track.
+   */
+  retiredTrackIds: defineTable({ highest: v.number() }),
+
   playlists: defineTable({
     publicId: v.number(),
     title: v.string(),
