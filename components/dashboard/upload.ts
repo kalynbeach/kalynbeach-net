@@ -55,12 +55,17 @@ export type AudioUpload = {
    */
   readonly send: (command: UploadCommand) => void;
   /**
-   * Aborts a read or an upload in flight, and discards the blob of a failed
-   * save. Call it on unmount. A save in flight finishes on the server, and
-   * its result goes nowhere. The store stays usable, so StrictMode's second
-   * mount works.
+   * Marks the store as shown and returns its release, for an effect:
+   *
+   *   useEffect(() => upload.hold(), [upload]);
+   *
+   * Release aborts a read or an upload in flight and discards the blob of a
+   * failed save. A save in flight finishes on the server, and if it then
+   * fails, no one is left to retry it, so the store discards its blob too.
+   * Holding again, as StrictMode's second mount does, keeps a failed save
+   * for Retry.
    */
-  readonly release: () => void;
+  readonly hold: () => () => void;
 };
 
 /**
@@ -71,6 +76,7 @@ export type AudioUpload = {
 export function createAudioUpload(env: UploadEnv): AudioUpload {
   let state = EMPTY_UPLOAD;
   let work: AbortController | null = null;
+  let held = true;
   const listeners = new Set<() => void>();
 
   function apply(event: UploadEvent) {
@@ -89,6 +95,9 @@ export function createAudioUpload(env: UploadEnv): AudioUpload {
       if (isWork(next)) begin(next);
     }
     for (const listener of listeners) listener();
+    // A save can outlive its component. Released, no one can retry it, so
+    // dismissing it discards its blob.
+    if (!held && next.step === "failed") apply({ type: "clear" });
   }
 
   function begin(step: WorkStep) {
@@ -142,7 +151,14 @@ export function createAudioUpload(env: UploadEnv): AudioUpload {
     },
     getSnapshot: () => state,
     send: apply,
-    release: () => apply({ type: "clear" }),
+    hold() {
+      held = true;
+
+      return () => {
+        held = false;
+        apply({ type: "clear" });
+      };
+    },
   };
 }
 
