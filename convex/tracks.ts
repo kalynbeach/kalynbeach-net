@@ -1,9 +1,9 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./lib/auth";
-import { assertNonEmpty, assertPositiveInteger } from "./lib/domain";
+import { assertPositiveInteger } from "./lib/domain";
 import {
   adminTrackValidator,
   audioFileProblem,
@@ -14,9 +14,17 @@ import {
   toAdminTrack,
   trackAudioProblem,
   trackAudioValidator,
+  trackMetadataProblems,
   trackMetadataValidator,
   type TrackAudio,
 } from "./lib/tracks";
+
+/*
+ * A refusal an admin can cause throws ConvexError with its message as the
+ * data, and the dashboard shows that message as written. Production Convex
+ * replaces a plain Error's message with "Server Error", so only bug guards,
+ * such as a non-integer id, stay plain Errors.
+ */
 
 /** Every track whose audio is in Convex storage, by publicId. */
 export const list = query({
@@ -75,8 +83,12 @@ export const create = mutation({
   returns: v.number(),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    assertNonEmpty(args.track.title, "track title");
-    assertNonEmpty(args.track.artist, "track artist");
+
+    const [problem] = trackMetadataProblems(args.track);
+
+    if (problem) {
+      throw new ConvexError(problem.message);
+    }
 
     const holder = await checkUpload(ctx, args.audio);
 
@@ -118,13 +130,15 @@ export const attachAudio = mutation({
     const track = await findTrack(ctx, args.id);
 
     if (!track) {
-      throw new Error(`Track ${args.id} not found`);
+      throw new ConvexError(`Track ${args.id} not found`);
     }
 
     const holder = await checkUpload(ctx, args.audio);
 
     if (holder && holder.publicId !== args.id) {
-      throw new Error(`Audio already belongs to track ${holder.publicId}`);
+      throw new ConvexError(
+        `Audio already belongs to track ${holder.publicId}`
+      );
     }
 
     const plan = planAttach(track, args.audio, Date.now());
@@ -149,17 +163,16 @@ export const update = mutation({
     await requireAdmin(ctx);
     assertPositiveInteger(args.id, "track id");
 
-    if (args.track.title !== undefined) {
-      assertNonEmpty(args.track.title, "track title");
-    }
-    if (args.track.artist !== undefined) {
-      assertNonEmpty(args.track.artist, "track artist");
+    const [problem] = trackMetadataProblems(args.track);
+
+    if (problem) {
+      throw new ConvexError(problem.message);
     }
 
     const track = await findTrack(ctx, args.id);
 
     if (!track) {
-      throw new Error(`Track ${args.id} not found`);
+      throw new ConvexError(`Track ${args.id} not found`);
     }
 
     await ctx.db.patch("tracks", track._id, {
@@ -191,7 +204,7 @@ export const remove = mutation({
       .first();
 
     if (playlistTrack) {
-      throw new Error(`Track ${args.id} is still used by a playlist`);
+      throw new ConvexError(`Track ${args.id} is still used by a playlist`);
     }
 
     await ctx.db.delete("tracks", track._id);
@@ -225,13 +238,13 @@ async function checkUpload(
   const file = await ctx.db.system.get("_storage", audio.storageId);
 
   if (!file) {
-    throw new Error("Uploaded audio not found");
+    throw new ConvexError("Uploaded audio not found");
   }
 
   const problem = audioFileProblem(file) ?? trackAudioProblem(audio);
 
   if (problem) {
-    throw new Error(problem);
+    throw new ConvexError(problem);
   }
 
   return ctx.db

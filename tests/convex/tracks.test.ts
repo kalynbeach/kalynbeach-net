@@ -7,6 +7,7 @@ import {
   planAttach,
   toPublicTrack,
   trackAudioProblem,
+  trackMetadataProblems,
   type LegacyTrack,
   type StoredTrack,
   type TrackAudio,
@@ -46,6 +47,15 @@ describe("audioFileProblem", () => {
     expect(audioFileProblem({ contentType, size: 1024 })).toBeNull();
   });
 
+  it.each([undefined, ""])(
+    "names a missing type %s as (none)",
+    (contentType) => {
+      expect(audioFileProblem({ contentType, size: 1024 })).toBe(
+        "Unsupported audio type (none)"
+      );
+    }
+  );
+
   it.each([undefined, "", "video/mp4", "audio/ogg", "application/json"])(
     "rejects the content type %s",
     (contentType) => {
@@ -76,6 +86,12 @@ describe("trackAudioProblem", () => {
     expect(trackAudioProblem({ duration: 8, peaks: [0, 0.5, 1] })).toBeNull();
   });
 
+  it("accepts a readonly peaks array, as the dashboard's read returns", () => {
+    const peaks: readonly number[] = Object.freeze([0.25, 1]);
+
+    expect(trackAudioProblem({ duration: 8, peaks })).toBeNull();
+  });
+
   it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
     "rejects the duration %s",
     (duration) => {
@@ -91,6 +107,26 @@ describe("trackAudioProblem", () => {
     ["a NaN peak", [Number.NaN]],
   ])("rejects %s", (_, peaks) => {
     expect(trackAudioProblem({ duration: 8, peaks })).toMatch(/peaks/);
+  });
+});
+
+describe("trackMetadataProblems", () => {
+  const fields = (track: Parameters<typeof trackMetadataProblems>[0]) =>
+    trackMetadataProblems(track).map((problem) => problem.field);
+
+  it("names a blank title and an empty artist, and allows an empty record", () => {
+    expect(fields({ title: "  ", artist: "", record: "" })).toEqual([
+      "title",
+      "artist",
+    ]);
+    expect(
+      fields({ title: "Low Tide", artist: "Kalyn Beach", record: "" })
+    ).toEqual([]);
+  });
+
+  it("checks only the fields a partial update sends", () => {
+    expect(fields({ record: "" })).toEqual([]);
+    expect(fields({ artist: " " })).toEqual(["artist"]);
   });
 });
 
