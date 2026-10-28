@@ -257,6 +257,20 @@ describe("viewEditor unsaved markers", () => {
     expect(view.anyUnsaved).toBe(false);
   });
 
+  it.fails("drops a draft edited back to the stored look, so a later save elsewhere shows that save", () => {
+    const state = run(
+      { type: "select", id: lookId("b") },
+      { type: "edit", id: lookId("b"), config: edited },
+      { type: "edit", id: lookId("b"), config: withHz(edited, 220) }
+    );
+    const savedElsewhere = [adminLook("b", withHz(rosette, 440)), a];
+    const selection = viewEditor(state, savedElsewhere).selection;
+
+    expect(selection?.draft).toBeNull();
+    expect(selection?.save).toBeNull();
+    expect(selection?.useOnSite).toEqual({ kind: "ready", id: "b" });
+  });
+
   it("reads as saved and keeps the draft object once the list returns the saved content", () => {
     const state = run(
       { type: "select", id: lookId("b") },
