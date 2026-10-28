@@ -1,17 +1,7 @@
-export type MigrationTrack = {
-  publicId: number;
-  title: string;
-  artist: string;
-  record: string;
-  src: string;
-  image: {
-    src: string;
-    alt: string;
-  };
-  isLoop: boolean;
-  createdAt: number;
-  updatedAt: number;
-};
+import type { LegacyTrack } from "./tracks";
+
+/** Derived from the schema, so the seed below fails typecheck if the schema stops accepting production tracks. */
+export type MigrationTrack = LegacyTrack;
 
 export type MigrationPlaylist = {
   publicId: number;
