@@ -10,16 +10,29 @@
  * use the utility.
  */
 
+/*
+ * TX-02 (Berkeley Mono v2), the UI face. Kevelle's base styles don't declare
+ * it. scripts/kevelle-fonts.ts fetches the file into public/fonts/tx-02/,
+ * which git ignores; never commit it.
+ */
+@font-face {
+  font-family: "TX-02";
+  src: url("/fonts/tx-02/TX-02-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 60% 100%;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   /* Three sections side by side at 1100px and up. Below it: top bar, nav sheet, player bar. */
   --breakpoint-desktop: 68.75rem;
 
   /*
-   * Font roles. ui: titles, headings, nav, labels, values, dates and code.
-   * text: the name and body. readout: years, times, counts and keys. long:
-   * long-form writing. Paper Mono stands in for TX-02 until kkb's font
-   * pipeline ships it; when it does, --font-ui is the one line to change.
-   * --font-mono follows it, so code and Kevelle's heading role switch too.
+   * Font roles. ui: titles, headings, nav, labels, values, dates and code,
+   * in TX-02, with Paper Mono while it loads. text: the name and body.
+   * readout: years, times, counts and keys. long: long-form writing.
+   * --font-mono follows ui, so code, Kevelle's one mono role, sets in TX-02.
    */
   --font-ui: "TX-02", "Paper Mono", ui-monospace, monospace;
   --font-text: var(--font-sans);
