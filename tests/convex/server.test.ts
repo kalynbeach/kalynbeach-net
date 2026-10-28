@@ -16,8 +16,7 @@ const track = {
   peaks: [0.2, 1],
 };
 
-/** Convex's HTTP query endpoint, as the global fetch the client calls. */
-const convex = vi.fn<typeof fetch>();
+const convexFetch = vi.fn<typeof fetch>();
 
 function answer(value: unknown) {
   return new Response(JSON.stringify({ status: "success", value }));
@@ -37,7 +36,7 @@ describe("fetchPublicQuery", () => {
       "NEXT_PUBLIC_CONVEX_URL",
       "https://happy-otter-123.convex.cloud"
     );
-    vi.stubGlobal("fetch", convex);
+    vi.stubGlobal("fetch", convexFetch);
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
   afterEach(() => {
@@ -45,11 +44,11 @@ describe("fetchPublicQuery", () => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    convex.mockReset();
+    convexFetch.mockReset();
   });
 
   it("returns the query's value", async () => {
-    convex.mockResolvedValueOnce(answer([track]));
+    convexFetch.mockResolvedValueOnce(answer([track]));
 
     await expect(fetchPublicQuery(api.tracks.list, {}, [])).resolves.toEqual([
       track,
@@ -58,7 +57,7 @@ describe("fetchPublicQuery", () => {
   });
 
   it("returns the fallback and logs when Convex fails", async () => {
-    convex.mockRejectedValueOnce(new TypeError("fetch failed"));
+    convexFetch.mockRejectedValueOnce(new TypeError("fetch failed"));
 
     await expect(fetchPublicQuery(api.tracks.list, {}, [])).resolves.toEqual(
       []
@@ -67,7 +66,7 @@ describe("fetchPublicQuery", () => {
   });
 
   it("returns the fallback once Convex has not answered in 1 s", async () => {
-    convex.mockImplementationOnce(hang);
+    convexFetch.mockImplementationOnce(hang);
 
     const result = fetchPublicQuery(api.tracks.list, {}, []);
 
@@ -79,12 +78,12 @@ describe("fetchPublicQuery", () => {
   });
 
   it("aborts the request to Convex at the deadline", async () => {
-    convex.mockImplementationOnce(hang);
+    convexFetch.mockImplementationOnce(hang);
 
     const result = fetchPublicQuery(api.tracks.list, {}, []);
 
     await vi.advanceTimersByTimeAsync(0);
-    const signal = convex.mock.calls[0]?.[1]?.signal;
+    const signal = convexFetch.mock.calls[0]?.[1]?.signal;
 
     expect(signal?.aborted).toBe(false);
     await vi.advanceTimersByTimeAsync(1_000);

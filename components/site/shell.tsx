@@ -11,10 +11,11 @@
  *
  * It owns the public site's player and waveform: one WavePlayerProvider,
  * fed tracks.list live (useLiveTracks, seeded by the root layout's read),
- * and one WaveformProvider fed by the player's audio, where the look enters. It reads playback and the
- * layout and draws what `place()` (lib/layout.ts) decides: the Home stage,
- * the mark, the player's one frame and its screen. Pages render section 1's
- * content, their header first; the shell adds what outlives a page.
+ * and one WaveformProvider fed by the player's audio, where the look
+ * enters. It reads playback and the layout and draws what `place()`
+ * (lib/layout.ts) decides: the Home stage, the mark, the player's one frame
+ * and its screen. Pages render section 1's content, their header first; the
+ * shell adds what outlives a page.
  *
  * The top line: on desktop the sidebar and section 1 start on one grid row,
  * the lead below the window's top. The name and a page's title trim to their
