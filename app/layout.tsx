@@ -4,9 +4,11 @@ import { Analytics } from "@vercel/analytics/react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
 import { preload } from "react-dom";
+import { api } from "@/convex/_generated/api";
 import ConvexClerkProvider from "@/components/providers/convex-clerk-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteShell } from "@/components/site/shell";
+import { fetchPublicQuery } from "@/lib/convex/server";
 import "./globals.css";
 
 const fonts = [
@@ -27,7 +29,7 @@ export const metadata: Metadata = {
 /** cover lets the mobile top bar, sheet and player bar use the safe-area insets. */
 export const viewport: Viewport = { viewportFit: "cover" };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -36,13 +38,16 @@ export default function RootLayout({
     preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   }
 
+  // It makes every route render per request; see fetchPublicQuery.
+  const tracks = await fetchPublicQuery(api.tracks.list, {}, []);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClerkProvider>
             <ThemeProvider>
-              <SiteShell>{children}</SiteShell>
+              <SiteShell tracks={tracks}>{children}</SiteShell>
             </ThemeProvider>
             <Analytics />
             <SpeedInsights />
