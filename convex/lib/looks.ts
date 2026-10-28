@@ -48,7 +48,7 @@ export type Site = Doc<"site">;
 
 export const MAX_NAME_LENGTH = 60;
 
-export const MAX_CONFIG_JSON_LENGTH = 16 * 1024;
+export const MAX_CONFIG_BYTES = 16 * 1024;
 
 /**
  * Why a looks mutation refused. Plain Error messages may reach the client
@@ -89,9 +89,48 @@ export function lookNameProblem(name: string): "name" | null {
 }
 
 function lookConfigProblem(config: LookConfig): "config" | null {
-  return JSON.stringify(config).length > MAX_CONFIG_JSON_LENGTH
+  const json = canonicalJson(config);
+
+  return json === null ||
+    new TextEncoder().encode(json).length > MAX_CONFIG_BYTES
     ? "config"
     : null;
+}
+
+/**
+ * v.any() admits every Convex value, and JSON.stringify writes bytes as {}
+ * and NaN as null.
+ */
+function canonicalJson(value: unknown): string | null {
+  if (
+    value === null ||
+    typeof value === "boolean" ||
+    typeof value === "string" ||
+    (typeof value === "number" && Number.isFinite(value))
+  ) {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    const items = value.map(canonicalJson);
+
+    return items.includes(null) ? null : `[${items.join(",")}]`;
+  }
+  if (
+    typeof value === "object" &&
+    [Object.prototype, null].includes(Object.getPrototypeOf(value))
+  ) {
+    const fields = Object.entries(value)
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([key, inner]) => {
+        const json = canonicalJson(inner);
+
+        return json === null ? null : `${JSON.stringify(key)}:${json}`;
+      });
+
+    return fields.includes(null) ? null : `{${fields.join(",")}}`;
+  }
+
+  return null;
 }
 
 export type CreateInput = {
