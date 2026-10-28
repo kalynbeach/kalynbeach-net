@@ -10,8 +10,10 @@
 
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_domain from "../lib/domain.js";
+import type * as lib_looks from "../lib/looks.js";
 import type * as lib_migration from "../lib/migration.js";
 import type * as lib_tracks from "../lib/tracks.js";
+import type * as looks from "../looks.js";
 import type * as migrations from "../migrations.js";
 import type * as playlists from "../playlists.js";
 import type * as tracks from "../tracks.js";
@@ -27,8 +29,10 @@ import type {
 declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/domain": typeof lib_domain;
+  "lib/looks": typeof lib_looks;
   "lib/migration": typeof lib_migration;
   "lib/tracks": typeof lib_tracks;
+  looks: typeof looks;
   migrations: typeof migrations;
   playlists: typeof playlists;
   tracks: typeof tracks;
