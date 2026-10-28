@@ -75,8 +75,9 @@ export const generateUploadUrl = mutation({
 });
 
 /**
- * Creates a track around an uploaded blob and returns its publicId. A retry
- * finds the track that already holds the blob and returns its publicId.
+ * Creates a track around an uploaded blob and returns its publicId, one no
+ * track has had before. A retry finds the track that already holds the blob
+ * and returns its publicId.
  */
 export const create = mutation({
   args: { track: trackMetadataValidator, audio: trackAudioValidator },
@@ -96,12 +97,12 @@ export const create = mutation({
       return holder.publicId;
     }
 
-    const lastTrack = await ctx.db
-      .query("tracks")
-      .withIndex("by_public_id")
-      .order("desc")
-      .first();
-    const publicId = (lastTrack?.publicId ?? 0) + 1;
+    const [lastTrack, retired] = await Promise.all([
+      ctx.db.query("tracks").withIndex("by_public_id").order("desc").first(),
+      ctx.db.query("retiredTrackIds").unique(),
+    ]);
+    const publicId =
+      Math.max(lastTrack?.publicId ?? 0, retired?.highest ?? 0) + 1;
     const now = Date.now();
 
     await ctx.db.insert("tracks", {
@@ -211,6 +212,7 @@ export const remove = mutation({
     }
 
     await ctx.db.delete("tracks", track._id);
+    await retireTrackId(ctx, track.publicId);
 
     if (isStored(track)) {
       await deleteBlob(ctx, track.audio.storageId);
@@ -238,6 +240,20 @@ export const discardUpload = mutation({
     return null;
   },
 });
+
+/** Records a removed track's publicId so create never issues it again. */
+async function retireTrackId(
+  ctx: MutationCtx,
+  publicId: number
+): Promise<void> {
+  const retired = await ctx.db.query("retiredTrackIds").unique();
+
+  if (!retired) {
+    await ctx.db.insert("retiredTrackIds", { highest: publicId });
+  } else if (publicId > retired.highest) {
+    await ctx.db.patch("retiredTrackIds", retired._id, { highest: publicId });
+  }
+}
 
 /**
  * Deletes a blob unless it is already gone, which a deletion in the Convex
