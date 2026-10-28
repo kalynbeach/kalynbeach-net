@@ -1,17 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { fetchPublicQuery } from "@/lib/convex/server";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@clerk/nextjs/server", () => ({ auth: vi.fn() }));
 vi.mock("next/server", () => ({ connection: vi.fn(async () => {}) }));
-vi.mock("convex/nextjs", () => ({
-  fetchMutation: vi.fn(),
-  fetchQuery: vi.fn(),
-}));
 
-const query = vi.mocked(fetchQuery);
 const track = {
   id: "1",
   title: "Take",
@@ -22,18 +16,40 @@ const track = {
   peaks: [0.2, 1],
 };
 
+/** Convex's HTTP query endpoint, as the global fetch the client calls. */
+const convex = vi.fn<typeof fetch>();
+
+function answer(value: unknown) {
+  return new Response(JSON.stringify({ status: "success", value }));
+}
+
+/** A request Convex never answers. Like fetch, it rejects once its signal aborts. */
+function hang(_input: RequestInfo | URL, init?: RequestInit) {
+  return new Promise<Response>((_, reject) =>
+    init?.signal?.addEventListener("abort", () => reject(init.signal?.reason))
+  );
+}
+
 describe("fetchPublicQuery", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.stubEnv(
+      "NEXT_PUBLIC_CONVEX_URL",
+      "https://happy-otter-123.convex.cloud"
+    );
+    vi.stubGlobal("fetch", convex);
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    convex.mockReset();
   });
 
   it("returns the query's value", async () => {
-    query.mockResolvedValueOnce([track]);
+    convex.mockResolvedValueOnce(answer([track]));
 
     await expect(fetchPublicQuery(api.tracks.list, {}, [])).resolves.toEqual([
       track,
@@ -42,7 +58,7 @@ describe("fetchPublicQuery", () => {
   });
 
   it("returns the fallback and logs when Convex fails", async () => {
-    query.mockRejectedValueOnce(new Error("Convex is down"));
+    convex.mockRejectedValueOnce(new TypeError("fetch failed"));
 
     await expect(fetchPublicQuery(api.tracks.list, {}, [])).resolves.toEqual(
       []
@@ -51,7 +67,7 @@ describe("fetchPublicQuery", () => {
   });
 
   it("returns the fallback once Convex has not answered in 1 s", async () => {
-    query.mockReturnValueOnce(new Promise(() => {}));
+    convex.mockImplementationOnce(hang);
 
     const result = fetchPublicQuery(api.tracks.list, {}, []);
 
@@ -60,5 +76,19 @@ describe("fetchPublicQuery", () => {
     await vi.advanceTimersByTimeAsync(1);
     await expect(result).resolves.toEqual([]);
     expect(console.error).toHaveBeenCalledOnce();
+  });
+
+  it.fails("aborts the request to Convex at the deadline", async () => {
+    convex.mockImplementationOnce(hang);
+
+    const result = fetchPublicQuery(api.tracks.list, {}, []);
+
+    await vi.advanceTimersByTimeAsync(0);
+    const signal = convex.mock.calls[0]?.[1]?.signal;
+
+    expect(signal?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1_000);
+    await result;
+    expect(signal?.aborted).toBe(true);
   });
 });
