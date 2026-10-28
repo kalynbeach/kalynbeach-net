@@ -91,6 +91,7 @@ function Sections({ children }: { children: ReactNode }) {
   const entry = resolve(pathname);
   const layout = useLayout();
   const placement = place(entry, usePlayback(), layout);
+  const reducedMotion = useReducedMotion();
   // The glow's anchor, held in state so the glow follows it.
   const [main, setMain] = useState<HTMLElement | null>(null);
   const screen =
@@ -108,7 +109,7 @@ function Sections({ children }: { children: ReactNode }) {
        * on every route change, so the waveform morphs even where no player
        * frame comes or goes. It wraps nothing, so it animates nothing itself.
        */}
-      <ViewTransition key={pathname} default="none" />
+      {!reducedMotion && <ViewTransition key={pathname} default="none" />}
       {placement.glow !== null && (
         <Waveform
           form="glow"
@@ -203,6 +204,22 @@ function usePlayback(): Playback {
   const ended = useDeferredValue(status.kind === "ended");
 
   return active ? "active" : ended ? "ended" : "idle";
+}
+
+const reducedMotionMedia = "(prefers-reduced-motion: reduce)";
+
+function useReducedMotion(): boolean {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia(reducedMotionMedia).matches,
+    () => true
+  );
+}
+
+function subscribeReducedMotion(onChange: () => void) {
+  const query = window.matchMedia(reducedMotionMedia);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
 }
 
 /**
