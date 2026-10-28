@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { lookValidator, siteValidator } from "./lib/looks";
 import { trackValidator } from "./lib/tracks";
 import { userRoleValidator } from "./validators";
 
@@ -38,4 +39,8 @@ export default defineSchema({
     .index("by_playlist_id_and_position", ["playlistId", "position"])
     .index("by_playlist_id_and_track_id", ["playlistId", "trackId"])
     .index("by_track_id", ["trackId"]),
+
+  looks: defineTable(lookValidator).index("by_create_key", ["createKey"]),
+
+  site: defineTable(siteValidator),
 });
