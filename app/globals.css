@@ -37,14 +37,9 @@
   --spacing-inset: 3.25rem; /* 52: section 1 padding at 1100px and up */
   --spacing-edge: 0.75rem; /* 12: below 1100px, section 1, the sheet and the bar sit this far in */
   --spacing-sheet: 18.75rem;
-  --spacing-glow: 79.75rem;
   --spacing-stage: min(40.5rem, calc(100vw - 1.5rem), calc(100dvh - 1.5rem));
   --spacing-safe-top: env(safe-area-inset-top);
   --spacing-safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
-  /* Room under section 1 for the fixed player bar: the bar (57), its inset, and 12. */
-  --spacing-clear-bar: calc(
-    3.5625rem + max(0.75rem, env(safe-area-inset-bottom)) + 0.75rem
-  );
 
   /*
    * Equal side tracks keep section 1 centered at every width. Free space fills
@@ -75,31 +70,19 @@
   --color-ramp-9: var(--neutral-9);
   --color-ramp-10: var(--neutral-10);
 
-  /* Waveform light: the glow, and the bloom layers of the Home stage. */
-  --color-bloom: var(--bloom);
-
-  /* Halos on lit signal elements: the active dot, the Home beam, timeline markers, the bar's progress. */
+  /* Halos on lit signal elements: the active dot and timeline markers. */
   --shadow-lit-dot: var(--lit-dot);
-  --shadow-lit-beam: var(--lit-beam);
   --shadow-lit-marker: var(--lit-marker);
-  --shadow-lit-progress: var(--lit-progress);
 }
 
 :root {
-  /* Paper's astral. Kevelle's light --astral is a different, deeper value. */
-  --bloom: oklch(0.64 0.192 262);
   --lit-dot: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
-  --lit-beam: var(--lit-dot);
   --lit-marker: var(--lit-dot);
-  --lit-progress: var(--lit-dot);
 }
 
 .dark {
-  --bloom: var(--signal);
   --lit-dot: 0 0 6px 1px color-mix(in oklab, var(--signal) 55%, transparent);
-  --lit-beam: 0 0 5px 1px color-mix(in oklab, var(--signal) 70%, transparent);
   --lit-marker: 0 0 6px 0 color-mix(in oklab, var(--signal) 50%, transparent);
-  --lit-progress: 0 0 4px 0 color-mix(in oklab, var(--signal) 60%, transparent);
 }
 
 /*
@@ -301,45 +284,7 @@
   font-variant-numeric: oldstyle-nums proportional-nums;
 }
 
-/*
- * WavePlayer placeholder roles. They go with components/wave-player.tsx's
- * placeholder bodies when the Kevelle block lands.
- */
-
-@utility role-track {
-  font-family: var(--font-text);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  letter-spacing: 0;
-}
-
-@utility role-tag {
-  font-family: var(--font-ui);
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 16px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-@utility role-card-title {
-  font-family: var(--font-text);
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 20px;
-  letter-spacing: 0;
-}
-
-/* Library rows. The loaded track adds font-medium. */
-@utility role-library {
-  font-family: var(--font-text);
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 20px;
-  letter-spacing: 0;
-}
-
+/* Captions under figures. */
 @utility role-meta {
   font-family: var(--font-text);
   font-size: 12px;
