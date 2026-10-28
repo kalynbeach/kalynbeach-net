@@ -5,12 +5,12 @@
  *
  * It owns the public site's player and waveform: one WavePlayerProvider,
  * fed tracks.list live (useLiveTracks, seeded by the root layout's read),
- * and one WaveformProvider fed by the player's audio, where the look enters. It resolves the site map entry
- * for the current pathname, reads playback and the layout, and draws
- * everything `place()` (lib/layout.ts) decides: the nav (section 2),
- * section 1's header, the Home stage, the glow, the mark, the player's one
- * frame and its screen, and the Library. The page's `children` are the
- * blocks of section 1's body and nothing else.
+ * and one WaveformProvider fed by the player's audio, where the look
+ * enters. It resolves the site map entry for the current pathname, reads
+ * playback and the layout, and draws everything `place()` (lib/layout.ts)
+ * decides: the nav (section 2), section 1's header, the Home stage, the
+ * glow, the mark, the player's one frame and its screen, and the Library.
+ * The page's `children` are the blocks of section 1's body and nothing else.
  *
  * A client component because the pathname is only readable on the client.
  * It still renders on the server for the first request, with playback off
