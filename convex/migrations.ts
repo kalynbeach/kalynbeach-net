@@ -31,6 +31,21 @@ async function assertNoPositionConflicts(ctx: MutationCtx): Promise<void> {
   }
 }
 
+async function hasTrack(ctx: MutationCtx, publicId: number): Promise<boolean> {
+  const track = await ctx.db
+    .query("tracks")
+    .withIndex("by_public_id", (query) => query.eq("publicId", publicId))
+    .unique();
+
+  return track !== null;
+}
+
+/**
+ * Gives a preview the production catalog (legacy S3 tracks, a playlist).
+ * Inserts only the rows that are missing, so a rerun converges any preview
+ * and never rewrites a track the dashboard moved to storage. Returns the rows
+ * it inserted.
+ */
 export const seedPreview = internalMutation({
   args: {},
   returns: migrationResultValidator,
@@ -38,18 +53,12 @@ export const seedPreview = internalMutation({
     validateMigrationData(repositorySeedData);
     await assertNoPositionConflicts(ctx);
 
-    for (const track of repositorySeedData.tracks) {
-      const existing = await ctx.db
-        .query("tracks")
-        .withIndex("by_public_id", (query) =>
-          query.eq("publicId", track.publicId)
-        )
-        .unique();
+    const inserted = { tracks: 0, playlists: 0, playlistTracks: 0 };
 
-      if (existing) {
-        await ctx.db.patch("tracks", existing._id, track);
-      } else {
+    for (const track of repositorySeedData.tracks) {
+      if (!(await hasTrack(ctx, track.publicId))) {
         await ctx.db.insert("tracks", track);
+        inserted.tracks += 1;
       }
     }
 
@@ -61,10 +70,9 @@ export const seedPreview = internalMutation({
         )
         .unique();
 
-      if (existing) {
-        await ctx.db.patch("playlists", existing._id, playlist);
-      } else {
+      if (!existing) {
         await ctx.db.insert("playlists", playlist);
+        inserted.playlists += 1;
       }
     }
 
@@ -78,17 +86,12 @@ export const seedPreview = internalMutation({
         )
         .unique();
 
-      if (existing) {
-        await ctx.db.patch("playlistTracks", existing._id, playlistTrack);
-      } else {
+      if (!existing) {
         await ctx.db.insert("playlistTracks", playlistTrack);
+        inserted.playlistTracks += 1;
       }
     }
 
-    return {
-      tracks: repositorySeedData.tracks.length,
-      playlists: repositorySeedData.playlists.length,
-      playlistTracks: repositorySeedData.playlistTracks.length,
-    };
+    return inserted;
   },
 });
