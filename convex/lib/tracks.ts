@@ -79,6 +79,7 @@ export const adminTrackValidator = v.object({
 });
 
 export type TrackAudio = Infer<typeof trackAudioValidator>;
+export type TrackMetadata = Infer<typeof trackMetadataValidator>;
 export type LegacyTrack = Infer<typeof legacyTrackValidator>;
 export type StoredTrack = Infer<typeof storedTrackValidator>;
 export type Track = LegacyTrack | StoredTrack;
@@ -119,7 +120,7 @@ export function audioFileProblem(file: {
   const type = file.contentType?.split(";")[0].trim().toLowerCase();
 
   if (!type || !AUDIO_CONTENT_TYPES.has(type)) {
-    return `Unsupported audio type ${file.contentType ?? "(none)"}`;
+    return `Unsupported audio type ${file.contentType || "(none)"}`;
   }
   if (file.size <= 0) {
     return "Audio file is empty";
@@ -132,9 +133,10 @@ export function audioFileProblem(file: {
 }
 
 /** Why a duration or peaks array can't describe a track, or null. */
-export function trackAudioProblem(
-  audio: Pick<TrackAudio, "duration" | "peaks">
-): string | null {
+export function trackAudioProblem(audio: {
+  readonly duration: number;
+  readonly peaks: readonly number[];
+}): string | null {
   if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
     return "Audio duration must be a positive number of seconds";
   }
@@ -146,6 +148,26 @@ export function trackAudioProblem(
   }
 
   return null;
+}
+
+export type MetadataProblem = {
+  readonly field: "title" | "artist";
+  readonly message: string;
+};
+
+/**
+ * Why these fields can't describe a track, one entry per field in field
+ * order, or none. An absent field passes, so update's partial patch checks
+ * only what it sends. Record may be empty.
+ */
+export function trackMetadataProblems(
+  track: Partial<TrackMetadata>
+): readonly MetadataProblem[] {
+  return (["title", "artist"] as const).flatMap((field) =>
+    track[field]?.trim() === ""
+      ? [{ field, message: `track ${field} must not be empty` }]
+      : []
+  );
 }
 
 export type AttachPlan =
