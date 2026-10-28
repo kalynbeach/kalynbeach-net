@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { trackImageValidator, userRoleValidator } from "./validators";
+import { trackValidator } from "./lib/tracks";
+import { userRoleValidator } from "./validators";
 
 export default defineSchema({
   users: defineTable({
@@ -10,17 +11,9 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_clerk_user_id", ["clerkUserId"]),
 
-  tracks: defineTable({
-    publicId: v.number(),
-    title: v.string(),
-    artist: v.string(),
-    record: v.string(),
-    src: v.string(),
-    image: trackImageValidator,
-    isLoop: v.boolean(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index("by_public_id", ["publicId"]),
+  tracks: defineTable(trackValidator)
+    .index("by_public_id", ["publicId"])
+    .index("by_audio_storage_id", ["audio.storageId"]),
 
   playlists: defineTable({
     publicId: v.number(),
