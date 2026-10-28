@@ -147,7 +147,7 @@ export const attachAudio = mutation({
       await ctx.db.replace("tracks", track._id, plan.next);
 
       if (plan.deleteBlob) {
-        await ctx.storage.delete(plan.deleteBlob);
+        await deleteBlob(ctx, plan.deleteBlob);
       }
     }
 
@@ -184,7 +184,10 @@ export const update = mutation({
   },
 });
 
-/** Deletes a track and its blob. A track that is already gone is a no-op. */
+/**
+ * Deletes a track and its blob. A track that is already gone is a no-op, and
+ * a track whose blob is already gone is still deleted.
+ */
 export const remove = mutation({
   args: { id: v.number() },
   returns: v.null(),
@@ -210,7 +213,7 @@ export const remove = mutation({
     await ctx.db.delete("tracks", track._id);
 
     if (isStored(track)) {
-      await ctx.storage.delete(track.audio.storageId);
+      await deleteBlob(ctx, track.audio.storageId);
     }
 
     return null;
@@ -228,18 +231,27 @@ export const discardUpload = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const [file, holder] = await Promise.all([
-      ctx.db.system.get("_storage", args.storageId),
-      findHolder(ctx, args.storageId),
-    ]);
-
-    if (file && !holder) {
-      await ctx.storage.delete(args.storageId);
+    if (!(await findHolder(ctx, args.storageId))) {
+      await deleteBlob(ctx, args.storageId);
     }
 
     return null;
   },
 });
+
+/**
+ * Deletes a blob unless it is already gone, which a deletion in the Convex
+ * dashboard can cause. storage.delete throws on a missing blob and would
+ * roll back the write that dropped it.
+ */
+async function deleteBlob(
+  ctx: MutationCtx,
+  storageId: Id<"_storage">
+): Promise<void> {
+  if (await ctx.db.system.get("_storage", storageId)) {
+    await ctx.storage.delete(storageId);
+  }
+}
 
 function findTrack(
   ctx: MutationCtx,
