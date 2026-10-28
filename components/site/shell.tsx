@@ -14,13 +14,14 @@
  * fill of its own.
  *
  * It owns the public site's player and waveform: one WavePlayerProvider,
- * where the track list enters, and one WaveformProvider fed by the player's
- * audio, where the site's look enters. The player draws its own waveform in
- * its frames (PlayerScreen), so the site's figure stays on Home's stage and
- * in the mark. It reads playback and the layout and draws what `place()`
- * (lib/layout.ts) decides: the Home stage, the mark and the player's one
- * frame. Pages render section 1's content, their header first; the shell
- * adds what outlives a page.
+ * fed the track list the root layout read from Convex for this document
+ * (tracks.list through fetchPublicQuery), and one WaveformProvider fed by
+ * the player's audio, where the site's look enters. The player draws its own
+ * waveform in its frames (PlayerScreen), so the site's figure stays on Home's
+ * stage and in the mark. It reads playback and the layout and draws what
+ * `place()` (lib/layout.ts) decides: the Home stage, the mark and the
+ * player's one frame. Pages render section 1's content, their header first;
+ * the shell adds what outlives a page.
  *
  * The top line: on desktop the sections start on one grid row, 96 below the
  * window's top. The name and a page's title trim to their cap tops
@@ -50,7 +51,6 @@ import {
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { desktopMedia, place, type Layout } from "@/lib/layout";
-import { sampleTracks } from "@/lib/sample-tracks";
 import { resolve, type SiteEntry } from "@/lib/site";
 import { Waveform, WaveformProvider } from "@/components/waveform/waveform";
 import {
@@ -65,6 +65,7 @@ import {
   WavePlayerProvider,
   WavePlayerTracks,
   useWavePlayer,
+  type WavePlayerTrack,
 } from "@/components/wave-player/wave-player";
 import { Identity, NavSheet, NavTree } from "@/components/site/nav";
 import { PageHeader } from "@/components/site/page-header";
@@ -82,9 +83,16 @@ const columns = {
   wide: "desktop:grid-cols-wide",
 } as const satisfies Record<SiteEntry["kind"], string>;
 
-export function SiteShell({ children }: { children: ReactNode }) {
+export function SiteShell({
+  tracks,
+  children,
+}: {
+  /** tracks.list as of this document's request, or [] when Convex failed or was slow. */
+  tracks: readonly WavePlayerTrack[];
+  children: ReactNode;
+}) {
   return (
-    <WavePlayerProvider tracks={sampleTracks} screen={<PlayerScreen />}>
+    <WavePlayerProvider tracks={tracks} screen={<PlayerScreen />}>
       <PublicWaveform>
         <Sections>{children}</Sections>
       </PublicWaveform>
