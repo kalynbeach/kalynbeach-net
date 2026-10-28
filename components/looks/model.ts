@@ -3,11 +3,19 @@
  * ./editor.tsx wires them to Convex and React.
  *
  * Each look keeps its own draft, so selecting another look never blocks or
- * loses edits. A draft is unsaved while its content key differs from the
- * stored look's, so a slider dragged away and back reads as saved. A Save
- * drops its draft once it resolves, so a later save from another tab never
- * reads as an edit here. The preview keeps its object while its content
- * holds (nextPreview), so Save never resets the figure.
+ * loses edits. An edit that matches the stored look is not a draft: the
+ * reducer drops it on the edit and whenever a new list arrives, so every
+ * draft is unsaved. A draft turns stale when another tab saves a newer
+ * version. It can't save until it is kept, which moves it onto that
+ * version, or discarded.
+ *
+ * A Save pins its draft until it ends. The listed look is about to become
+ * what the Save sent, so the draft keeps every edit, even one that matches
+ * that look, and offers no Save, Keep, or Discard. When the Save lands, the
+ * draft drops if it holds what was stored, else it moves onto the stored
+ * version. When it fails or is refused, the draft stays for another try.
+ * The preview keeps its object while its content holds (nextPreview), so
+ * Save never resets the figure.
  *
  * The view carries each command with its arguments, or why it is off, so
  * the UI can't send a call the rules forbid. The server's refusals stay the
@@ -29,31 +37,49 @@ import type {
 } from "@/components/waveform/settings";
 import { configKey, settle, type KeyedConfig } from "./look";
 
+export type Draft = {
+  readonly baseVersion: number;
+  readonly config: WaveformConfig;
+  /** The config a running Save sent, or null when none runs. */
+  readonly saving: WaveformConfig | null;
+};
+
 export type EditorState = {
+  /** The last list Convex delivered, or null before the first. */
+  readonly looks: readonly AdminLook[] | null;
   /** null follows the live look, else the first look. */
   readonly selected: LookId | null;
-  readonly drafts: ReadonlyMap<LookId, WaveformConfig>;
+  /**
+   * Only listed looks. A draft differs from the stored look, except while
+   * its Save runs; the Save's end restores that.
+   */
+  readonly drafts: ReadonlyMap<LookId, Draft>;
   /** create()'s idempotency key, replaced after each create resolves. */
   readonly createKey: string;
 };
 
 export function initialEditor(createKey: string): EditorState {
-  return { selected: null, drafts: new Map(), createKey };
+  return { looks: null, selected: null, drafts: new Map(), createKey };
 }
 
 export type EditorAction =
+  | { readonly type: "listed"; readonly looks: readonly AdminLook[] }
   | { readonly type: "select"; readonly id: LookId }
   | {
       readonly type: "edit";
       readonly id: LookId;
       readonly config: WaveformConfig;
     }
+  | { readonly type: "keep"; readonly id: LookId }
   | { readonly type: "discard"; readonly id: LookId }
   | {
-      readonly type: "saved";
+      readonly type: "save";
       readonly id: LookId;
       readonly config: WaveformConfig;
     }
+  | { readonly type: "saved"; readonly id: LookId; readonly version: number }
+  /** The running Save failed or was refused; nothing was stored. */
+  | { readonly type: "saveFailed"; readonly id: LookId }
   | {
       readonly type: "created";
       readonly id: LookId;
@@ -65,29 +91,82 @@ export function reduceEditor(
   action: EditorAction
 ): EditorState {
   switch (action.type) {
-    case "select":
-      return { ...state, selected: action.id };
-    case "edit":
+    case "listed":
       return {
         ...state,
-        drafts: new Map(state.drafts).set(action.id, action.config),
+        looks: action.looks,
+        drafts: new Map(
+          action.looks.flatMap((look) => {
+            const draft = state.drafts.get(look.id);
+
+            return draft && stays(draft, look.config) ? [[look.id, draft]] : [];
+          })
+        ),
       };
-    case "discard": {
-      const drafts = new Map(state.drafts);
+    case "select":
+      return { ...state, selected: action.id };
+    case "edit": {
+      const look = findLook(state, action.id);
 
-      drafts.delete(action.id);
+      if (!look) return state;
 
-      return { ...state, drafts };
+      const draft = state.drafts.get(action.id);
+
+      return setDraft(state, look.id, look.config, {
+        baseVersion: draft?.baseVersion ?? look.version,
+        config: action.config,
+        saving: draft?.saving ?? null,
+      });
+    }
+    case "keep": {
+      const look = findLook(state, action.id);
+      const draft = state.drafts.get(action.id);
+
+      return look && draft && !draft.saving
+        ? setDraft(state, look.id, look.config, {
+            ...draft,
+            baseVersion: look.version,
+          })
+        : state;
+    }
+    case "discard":
+      return state.drafts.get(action.id)?.saving
+        ? state
+        : dropDraft(state, action.id);
+    case "save": {
+      const draft = state.drafts.get(action.id);
+
+      return draft && !draft.saving
+        ? putDraft(state, action.id, { ...draft, saving: action.config })
+        : state;
     }
     case "saved": {
-      // Edits made while the Save ran are a new draft object, so they stay.
-      if (state.drafts.get(action.id) !== action.config) return state;
+      const look = findLook(state, action.id);
+      const draft = state.drafts.get(action.id);
 
-      const drafts = new Map(state.drafts);
+      if (!look || !draft?.saving) return state;
 
-      drafts.delete(action.id);
+      // Edits made while the Save ran sit on what it stored. A list that
+      // already shows this version or a newer one drops a draft it matches,
+      // as it would if it came second, so both orders end alike.
+      const rebased: Draft = {
+        baseVersion: action.version,
+        config: draft.config,
+        saving: null,
+      };
 
-      return { ...state, drafts };
+      return stays(rebased, draft.saving) &&
+        (look.version < action.version || stays(rebased, look.config))
+        ? putDraft(state, look.id, rebased)
+        : dropDraft(state, look.id);
+    }
+    case "saveFailed": {
+      const look = findLook(state, action.id);
+      const draft = state.drafts.get(action.id);
+
+      return look && draft?.saving
+        ? setDraft(state, look.id, look.config, { ...draft, saving: null })
+        : state;
     }
     case "created":
       return {
@@ -96,6 +175,41 @@ export function reduceEditor(
         createKey: action.nextCreateKey,
       };
   }
+}
+
+function findLook(state: EditorState, id: LookId): AdminLook | undefined {
+  return state.looks?.find((look) => look.id === id);
+}
+
+/**
+ * Whether a draft stays over this stored config: while its Save runs, or
+ * while its content differs. The one rule every drop goes through.
+ */
+function stays(draft: Draft, stored: StoredValue): boolean {
+  return draft.saving !== null || configKey(draft.config) !== configKey(stored);
+}
+
+function setDraft(
+  state: EditorState,
+  id: LookId,
+  stored: StoredValue,
+  draft: Draft
+): EditorState {
+  return stays(draft, stored)
+    ? putDraft(state, id, draft)
+    : dropDraft(state, id);
+}
+
+function putDraft(state: EditorState, id: LookId, draft: Draft): EditorState {
+  return { ...state, drafts: new Map(state.drafts).set(id, draft) };
+}
+
+function dropDraft(state: EditorState, id: LookId): EditorState {
+  const drafts = new Map(state.drafts);
+
+  drafts.delete(id);
+
+  return { ...state, drafts };
 }
 
 export const NEW_LOOK_NAME = "Untitled look";
@@ -119,14 +233,14 @@ export type Remove =
 
 export type Selection = {
   readonly look: AdminLook;
-  /** The draft to preview, unsaved or not, or null to preview the stored look. */
   readonly draft: WaveformConfig | null;
-  readonly unsaved: boolean;
   readonly save: {
     readonly id: LookId;
+    readonly baseVersion: number;
     readonly config: WaveformConfig;
   } | null;
   readonly discard: LookId | null;
+  readonly keep: LookId | null;
   readonly useOnSite: UseOnSite;
   readonly remove: Remove;
 };
@@ -137,62 +251,45 @@ export type EditorView = {
   readonly anyUnsaved: boolean;
 };
 
-/**
- * Everything the editor shows for one list of looks. A draft whose look is
- * gone, such as one deleted in another tab, drops out with it.
- */
-export function viewEditor(
-  state: EditorState,
-  looks: readonly AdminLook[]
-): EditorView {
+export function viewEditor(state: EditorState): EditorView {
+  const looks = state.looks ?? [];
   const shown =
     looks.find((look) => look.id === state.selected) ??
     looks.find((look) => look.live) ??
     looks[0] ??
     null;
-  const rows = looks.map((look) => ({
-    id: look.id,
-    name: look.name,
-    live: look.live,
-    unsaved: isUnsaved(look, state.drafts.get(look.id)),
-    selected: look.id === shown?.id,
-  }));
-  const shownRow = rows.find((row) => row.selected);
 
   return {
-    rows,
-    selection:
-      shown &&
-      select(
-        shown,
-        state.drafts.get(shown.id) ?? null,
-        shownRow?.unsaved ?? false
-      ),
-    anyUnsaved: rows.some((row) => row.unsaved),
+    rows: looks.map((look) => ({
+      id: look.id,
+      name: look.name,
+      live: look.live,
+      unsaved: state.drafts.has(look.id),
+      selected: look.id === shown?.id,
+    })),
+    selection: shown && select(shown, state.drafts.get(shown.id) ?? null),
+    anyUnsaved: state.drafts.size > 0,
   };
 }
 
-function isUnsaved(look: AdminLook, draft: WaveformConfig | undefined) {
-  return draft !== undefined && configKey(draft) !== configKey(look.config);
-}
-
-function select(
-  look: AdminLook,
-  draft: WaveformConfig | null,
-  unsaved: boolean
-): Selection {
-  const save =
-    draft !== null && unsaved ? { id: look.id, config: draft } : null;
+function select(look: AdminLook, draft: Draft | null): Selection {
+  // While a Save runs, a newer listed version may be that Save's own, so
+  // staleness waits for the Save to end, and so do Save, Keep, and Discard.
+  const idle = draft !== null && draft.saving === null;
+  const stale = idle && draft.baseVersion < look.version;
 
   return {
     look,
-    draft,
-    unsaved,
-    save,
-    discard: unsaved ? look.id : null,
+    draft: draft?.config ?? null,
+    save:
+      idle && !stale
+        ? { id: look.id, baseVersion: draft.baseVersion, config: draft.config }
+        : null,
+    discard: idle ? look.id : null,
+    keep: stale ? look.id : null,
     useOnSite: look.live
       ? { kind: "live" }
-      : unsaved
+      : draft
         ? { kind: "unsaved" }
         : { kind: "ready", id: look.id },
     remove: look.live ? { kind: "live" } : { kind: "ready", id: look.id },
@@ -236,6 +333,7 @@ export const REFUSAL_LABELS: { readonly [C in LookRefusalCode]: string } = {
   missing: "This look no longer exists.",
   name: `A name needs 1 to ${MAX_NAME_LENGTH} characters.`,
   config: "This look is too large to save.",
+  stale: "Another tab saved this look first.",
 };
 
 export const FAILURE_LABEL = "That didn't go through. Try again.";
