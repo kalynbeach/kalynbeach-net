@@ -4,13 +4,14 @@
  * The site shell. The root layout renders it once around every page.
  *
  * It owns the public site's player and waveform: one WavePlayerProvider,
- * where the track list enters, and one WaveformProvider fed by the player's
- * audio, where the look enters. It resolves the site map entry for the
- * current pathname, reads playback and the layout, and draws everything
- * `place()` (lib/layout.ts) decides: the nav (section 2), section 1's header,
- * the Home stage, the glow, the mark, the player's one frame and its screen,
- * and the Library. The page's `children` are the blocks of section 1's body
- * and nothing else.
+ * fed the track list the root layout read from Convex for this document
+ * (tracks.list through fetchPublicQuery), and one WaveformProvider fed by
+ * the player's audio, where the look enters. It resolves the site map entry
+ * for the current pathname, reads playback and the layout, and draws
+ * everything `place()` (lib/layout.ts) decides: the nav (section 2),
+ * section 1's header, the Home stage, the glow, the mark, the player's one
+ * frame and its screen, and the Library. The page's `children` are the
+ * blocks of section 1's body and nothing else.
  *
  * A client component because the pathname is only readable on the client.
  * It still renders on the server for the first request, with playback off
@@ -38,7 +39,6 @@ import {
   type Placement,
   type Playback,
 } from "@/lib/layout";
-import { sampleTracks } from "@/lib/sample-tracks";
 import { resolve, siteName, type SiteEntry } from "@/lib/site";
 import { Waveform, WaveformProvider } from "@/components/waveform/waveform";
 import {
@@ -52,15 +52,23 @@ import {
   WavePlayerProvider,
   WavePlayerTracks,
   useWavePlayer,
+  type WavePlayerTrack,
 } from "@/components/wave-player/wave-player";
 import { Identity, NavSheet, NavTree } from "@/components/site/nav";
 import { CommandMenu } from "@/components/site/command-menu";
 
 type PageEntry = Extract<SiteEntry, { kind: "page" }>;
 
-export function SiteShell({ children }: { children: ReactNode }) {
+export function SiteShell({
+  tracks,
+  children,
+}: {
+  /** tracks.list as of this document's request, or [] when Convex failed or was slow. */
+  tracks: readonly WavePlayerTrack[];
+  children: ReactNode;
+}) {
   return (
-    <WavePlayerProvider tracks={sampleTracks}>
+    <WavePlayerProvider tracks={tracks}>
       <PublicWaveform>
         <Sections>{children}</Sections>
       </PublicWaveform>
