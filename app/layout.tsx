@@ -8,6 +8,8 @@ import { api } from "@/convex/_generated/api";
 import ConvexClerkProvider from "@/components/providers/convex-clerk-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteShell } from "@/components/site/shell";
+import { LiveLookProvider } from "@/components/looks/live";
+import { readLiveLook } from "@/components/looks/read";
 import { fetchPublicQuery } from "@/lib/convex/server";
 import "./globals.css";
 
@@ -38,8 +40,12 @@ export default async function RootLayout({
     preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   }
 
-  // It makes every route render per request; see fetchPublicQuery.
-  const tracks = await fetchPublicQuery(api.tracks.list, {}, []);
+  // Both reads make every route render per request; see fetchPublicQuery and
+  // readLiveLook. They run together, so a slow Convex costs one deadline.
+  const [tracks, liveLook] = await Promise.all([
+    fetchPublicQuery(api.tracks.list, {}, []),
+    readLiveLook(),
+  ]);
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -47,7 +53,9 @@ export default async function RootLayout({
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClerkProvider>
             <ThemeProvider>
-              <SiteShell tracks={tracks}>{children}</SiteShell>
+              <LiveLookProvider look={liveLook}>
+                <SiteShell tracks={tracks}>{children}</SiteShell>
+              </LiveLookProvider>
             </ThemeProvider>
             <Analytics />
             <SpeedInsights />

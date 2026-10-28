@@ -40,10 +40,7 @@ import {
 } from "@/lib/layout";
 import { resolve, siteName, type SiteEntry } from "@/lib/site";
 import { Waveform, WaveformProvider } from "@/components/waveform/waveform";
-import {
-  DEFAULT_WAVEFORM_CONFIG,
-  type WaveformConfig,
-} from "@/components/waveform/settings";
+import { useLiveLook } from "@/components/looks/live";
 import {
   WavePlayerBar,
   WavePlayerCard,
@@ -78,18 +75,16 @@ export function SiteShell({
 
 /**
  * The public site's one WaveformProvider, reacting to the player's audio.
- * The Home stage's keys edit a local copy of the look that nothing saves and
- * a reload drops.
  */
 function PublicWaveform({ children }: { children: ReactNode }) {
   // An audio restart replaces the feed, so read it on every render.
   const { feed } = useWavePlayer();
-  const [local, setLocal] = useState<WaveformConfig | null>(null);
+  const look = useLiveLook();
 
   return (
     <WaveformProvider
-      config={local ?? DEFAULT_WAVEFORM_CONFIG}
-      onConfigChange={setLocal}
+      config={look.config}
+      onConfigChange={look.onConfigChange}
       audio={feed}
     >
       {children}
