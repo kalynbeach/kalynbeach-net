@@ -1,7 +1,12 @@
 import { v } from "convex/values";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation } from "./_generated/server";
-import { repositorySeedData, validateMigrationData } from "./lib/migration";
+import {
+  previewSamples,
+  renderSampleWav,
+  repositorySeedData,
+  validateMigrationData,
+} from "./lib/migration";
 
 const migrationResultValidator = v.object({
   tracks: v.number(),
@@ -41,10 +46,10 @@ async function hasTrack(ctx: MutationCtx, publicId: number): Promise<boolean> {
 }
 
 /**
- * Gives a preview the production catalog (legacy S3 tracks, a playlist).
- * Inserts only the rows that are missing, so a rerun converges any preview
- * and never rewrites a track the dashboard moved to storage. Returns the rows
- * it inserted.
+ * Gives a preview the production catalog (legacy S3 tracks, a playlist) and
+ * stored sample tracks it can play. Inserts only the rows that are missing,
+ * so a rerun converges any preview, and one transaction, so a failure stores
+ * nothing. Returns the rows it inserted.
  */
 export const seedPreview = internalMutation({
   args: {},
@@ -60,6 +65,29 @@ export const seedPreview = internalMutation({
         await ctx.db.insert("tracks", track);
         inserted.tracks += 1;
       }
+    }
+
+    for (const sample of previewSamples) {
+      if (await hasTrack(ctx, sample.publicId)) {
+        continue;
+      }
+
+      const { wav, duration, peaks } = renderSampleWav(sample);
+      const storageId = await ctx.storage.store(
+        new Blob([wav], { type: "audio/wav" })
+      );
+      const now = Date.now();
+
+      await ctx.db.insert("tracks", {
+        publicId: sample.publicId,
+        title: sample.title,
+        artist: sample.artist,
+        record: sample.record,
+        audio: { storageId, duration, peaks },
+        createdAt: now,
+        updatedAt: now,
+      });
+      inserted.tracks += 1;
     }
 
     for (const playlist of repositorySeedData.playlists) {
