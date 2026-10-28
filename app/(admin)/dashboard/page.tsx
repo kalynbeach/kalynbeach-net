@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { pageMetadata } from "@/lib/site";
 import SiteAuth from "@/components/site/site-auth";
+import { TracksDashboard } from "@/components/dashboard/tracks";
 
 export const metadata = pageMetadata("/dashboard");
 
@@ -11,6 +12,7 @@ export default function Dashboard() {
         <SiteAuth />
       </Suspense>
       <p className="font-mono text-sm">Convex admin access verified.</p>
+      <TracksDashboard />
     </>
   );
 }
