@@ -11,8 +11,6 @@
  * when parseWaveformConfig turns them into the same JSON with sorted keys,
  * so key order, unknown fields, and values the parser fits into range don't
  * count.
- *
- * Pure and free of React, so the root layout's server read can import it.
  */
 import {
   parseWaveformConfig,
