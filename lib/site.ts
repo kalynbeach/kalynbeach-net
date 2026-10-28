@@ -68,13 +68,6 @@ const nav = [
       },
       {
         kind: "page",
-        label: "Lab",
-        route: "/software/lab",
-        glow: false,
-        aside: "player",
-      },
-      {
-        kind: "page",
         label: "Kevelle",
         route: "/software/kevelle",
         glow: false,
@@ -182,7 +175,7 @@ export type SiteEntry =
     };
 
 export type CommandItem = {
-  /** Crumbs joined with " / ", so "Software / Lab" and the admin "Lab" stay distinct. */
+  /** Crumbs joined with " / ", such as "Software / Agents". */
   label: string;
   href: Route;
   section: "Pages" | "Admin";

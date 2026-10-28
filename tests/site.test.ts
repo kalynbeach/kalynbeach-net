@@ -120,8 +120,8 @@ describe("site map", () => {
       description:
         "Tracks and playlists, played through WavePlayer. Every track here is a sample for now.",
     });
-    expect(pageMetadata("/software/lab")).toEqual({
-      title: "Lab",
+    expect(pageMetadata("/software/kevelle")).toEqual({
+      title: "Kevelle",
       description: undefined,
     });
     expect(pageMetadata("/")).toEqual({});
@@ -135,11 +135,12 @@ describe("site map", () => {
     const labels = commandItems.map((item) => item.label);
     expect(new Set(labels).size).toBe(labels.length);
     expect(commandItems.map((item) => item.section)).toEqual([
-      ...Array<string>(8).fill("Pages"),
+      ...Array<string>(7).fill("Pages"),
       "Admin",
       "Admin",
     ]);
-    expect(labels).toContain("Software / Lab");
+    expect(labels).toContain("Software / Agents");
+    expect(labels).not.toContain("Software / Lab");
     expect(labels).not.toContain("Sign in");
   });
 });
