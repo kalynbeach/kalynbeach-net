@@ -62,6 +62,7 @@ type Command = "create" | "save" | "rename" | "useOnSite" | "remove";
 type Commands = {
   readonly edit: (id: LookId, config: WaveformConfig) => void;
   readonly save: (args: NonNullable<Selection["save"]>) => void;
+  readonly keep: (id: LookId) => void;
   readonly discard: (id: LookId) => void;
   readonly rename: (args: { id: LookId; name: string }) => void;
   readonly useOnSite: (id: LookId) => void;
@@ -70,14 +71,25 @@ type Commands = {
 
 export function LooksEditor() {
   const { isAuthenticated } = useConvexAuth();
-  const list = useLatestLooks(
-    useQueries(isAuthenticated ? LIST : NO_QUERIES).list
-  );
+  const result: readonly AdminLook[] | Error | undefined = useQueries(
+    isAuthenticated ? LIST : NO_QUERIES
+  ).list;
   const [state, dispatch] = useReducer(reduceEditor, null, () =>
     initialEditor(crypto.randomUUID())
   );
-  const view = viewEditor(state, list.looks ?? []);
+
+  // A new list enters the reducer during render, React's pattern for state
+  // derived from a changing input. useQueries gives undefined while it
+  // resubscribes and an Error when the query throws; neither replaces the
+  // list held, so a reconnect never unmounts the preview, and drafts
+  // survive a failing query.
+  if (Array.isArray(result) && result !== state.looks) {
+    dispatch({ type: "listed", looks: result });
+  }
+
+  const view = viewEditor(state);
   const { selection } = view;
+  const failed = result instanceof Error;
   const [pending, setPending] = useState<Command | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -123,11 +135,25 @@ export function LooksEditor() {
     edit: (id, config) => dispatch({ type: "edit", id, config }),
     save: (args) =>
       run("save", async () => {
-        await save(args);
+        dispatch({ type: "save", id: args.id, config: args.config });
 
-        dispatch({ type: "saved", ...args });
+        try {
+          const version = await save(args);
+
+          dispatch({ type: "saved", id: args.id, version });
+        } catch (error) {
+          dispatch({ type: "saveFailed", id: args.id });
+          throw error;
+        }
       }),
-    discard: (id) => dispatch({ type: "discard", id }),
+    keep: (id) => {
+      setFailure(null);
+      dispatch({ type: "keep", id });
+    },
+    discard: (id) => {
+      setFailure(null);
+      dispatch({ type: "discard", id });
+    },
     rename: (args) => run("rename", () => rename(args)),
     useOnSite: (id) => run("useOnSite", () => setLive({ id })),
     remove: (id) => run("remove", () => remove({ id })),
@@ -141,26 +167,28 @@ export function LooksEditor() {
           <Button
             variant="outline"
             size="sm"
-            disabled={pending !== null || list.looks === null}
+            disabled={pending !== null || state.looks === null}
             onClick={newLook}
           >
             {pending === "create" && <Spinner />}
             New look
           </Button>
         </div>
-        {list.failed && (
+        {failed && (
           <p role="alert" className="role-body text-destructive pt-3">
-            {list.looks === null
+            {state.looks === null
               ? "Looks didn't load."
               : "Looks stopped updating. Unsaved edits are kept."}
           </p>
         )}
-        {list.looks === null && !list.failed && (
+        {state.looks === null && !failed && (
           <div className="h-row text-ramp-6 flex items-center">
             <Spinner />
           </div>
         )}
-        {list.looks !== null && <LookList rows={view.rows} onSelect={select} />}
+        {state.looks !== null && (
+          <LookList rows={view.rows} onSelect={select} />
+        )}
         {!selection && failure && <Failure label={failure} />}
       </section>
       {selection && (
@@ -219,24 +247,6 @@ function SelectedLook({
       <WaveformPanel form={form} onFormChange={setForm} />
     </WaveformProvider>
   );
-}
-
-/**
- * The last list Convex delivered. useQueries gives undefined while it
- * resubscribes and an Error when the query throws. Neither replaces a list
- * already shown, so a reconnect never unmounts the preview, and drafts
- * survive a failing query.
- */
-function useLatestLooks(result: readonly AdminLook[] | Error | undefined): {
-  readonly looks: readonly AdminLook[] | null;
-  readonly failed: boolean;
-} {
-  const [last, setLast] = useState<readonly AdminLook[] | null>(null);
-  const looks = result === undefined || result instanceof Error ? last : result;
-
-  if (looks !== last) setLast(looks);
-
-  return { looks, failed: result instanceof Error };
 }
 
 /** While any draft is unsaved, the browser asks before a reload or close. Client navigation still drops drafts. */
@@ -311,7 +321,7 @@ function LookControls({
   failure: string | null;
   commands: Commands;
 }) {
-  const { look, save, discard, useOnSite, remove } = selection;
+  const { look, save, discard, keep, useOnSite, remove } = selection;
   const [name, setName] = useState(look.name);
   const [confirming, setConfirming] = useState(false);
   const rename = renameLook(look, name);
@@ -348,6 +358,16 @@ function LookControls({
           )}
         </Field>
       </form>
+      {keep && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span role="alert" className="role-body text-ramp-9">
+            Saved in another tab since you started editing.
+          </span>
+          <Button variant="outline" onClick={() => commands.keep(keep)}>
+            Keep my edits
+          </Button>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Button
           disabled={!save || busy}
