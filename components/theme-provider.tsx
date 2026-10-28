@@ -12,6 +12,9 @@ function ThemeProvider({
       attribute="class"
       defaultTheme="system"
       enableSystem
+      // The site has no theme toggle, so the theme follows the OS. A new key
+      // ignores the choice the removed toggle saved under "theme".
+      storageKey="theme-os"
       disableTransitionOnChange
       {...props}
     >
