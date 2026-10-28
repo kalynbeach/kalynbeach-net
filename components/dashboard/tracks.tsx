@@ -536,7 +536,8 @@ function RemoveTrack({
 
 /**
  * The store lives as long as the component, and unmounting releases it,
- * which aborts a read or an upload in flight.
+ * which aborts a read or an upload in flight and discards the blob of a
+ * save that fails with no one left to retry it.
  */
 function useAudioUpload(): readonly [UploadView, Send] {
   const convex = useConvex();
@@ -545,7 +546,7 @@ function useAudioUpload(): readonly [UploadView, Send] {
     createAudioUpload(browserUploadEnv(convex, () => router.refresh()))
   );
 
-  useEffect(() => upload.release, [upload]);
+  useEffect(() => upload.hold(), [upload]);
 
   const state = useSyncExternalStore(
     upload.subscribe,
