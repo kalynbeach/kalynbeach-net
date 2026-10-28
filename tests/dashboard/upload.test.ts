@@ -202,28 +202,30 @@ describe("createAudioUpload", () => {
       save: vi.fn<UploadEnv["save"]>().mockRejectedValue(new Error("offline")),
     });
     const upload = createAudioUpload(env);
+    const release = upload.hold();
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
 
     upload.send({ type: "pick", file });
     await tick();
     upload.send({ type: "start", save: attach });
     await tick();
-    upload.release();
+    release();
     log.mockRestore();
 
     expect(env.discard).toHaveBeenCalledExactlyOnceWith(blob);
   });
 
-  it.fails("discards the blob when a save fails after release", async () => {
+  it("discards the blob when a save fails after release", async () => {
     const save = deferred<void>();
     const env = fakeEnv({ save: vi.fn<UploadEnv["save"]>(() => save.promise) });
     const upload = createAudioUpload(env);
+    const release = upload.hold();
 
     upload.send({ type: "pick", file });
     await tick();
     upload.send({ type: "start", save: attach });
     await tick();
-    upload.release();
+    release();
     save.reject(new ConvexError("Track 3 not found"));
     await tick();
 
@@ -234,16 +236,37 @@ describe("createAudioUpload", () => {
     const save = deferred<void>();
     const env = fakeEnv({ save: vi.fn<UploadEnv["save"]>(() => save.promise) });
     const upload = createAudioUpload(env);
+    const release = upload.hold();
 
     upload.send({ type: "pick", file });
     await tick();
     upload.send({ type: "start", save: attach });
     await tick();
-    upload.release();
+    release();
     save.resolve();
     await tick();
 
     expect(env.save).toHaveBeenCalledOnce();
+    expect(env.discard).not.toHaveBeenCalled();
+  });
+
+  it("keeps a failed save for Retry once held again, as after StrictMode's second mount", async () => {
+    const save = deferred<void>();
+    const env = fakeEnv({ save: vi.fn<UploadEnv["save"]>(() => save.promise) });
+    const upload = createAudioUpload(env);
+
+    upload.hold()();
+    upload.hold();
+    upload.send({ type: "pick", file });
+    await tick();
+    upload.send({ type: "start", save: attach });
+    await tick();
+    save.reject(new ConvexError("Track 3 not found"));
+    await tick();
+
+    expect(describeUpload(upload.getSnapshot()).failure).toBe(
+      "Track 3 not found"
+    );
     expect(env.discard).not.toHaveBeenCalled();
   });
 
@@ -321,9 +344,10 @@ describe("createAudioUpload", () => {
         }),
       })
     );
+    const release = upload.hold();
 
     upload.send({ type: "pick", file });
-    upload.release();
+    release();
 
     expect(signal?.aborted).toBe(true);
   });
