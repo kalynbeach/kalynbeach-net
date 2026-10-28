@@ -14,6 +14,14 @@ export type Layout = "desktop" | "narrow";
 export type Frame = "card" | "mini" | "bar";
 
 /**
+ * Where playback stands. idle: nothing has played yet. active:
+ * useWavePlayer().active, from the first play until the last track ends,
+ * pauses included. ended: the last track ended and stays current, until
+ * Replay or another track makes playback active again.
+ */
+export type Playback = "idle" | "active" | "ended";
+
+/**
  * Who holds the live canvas (view-transition name `waveform`) and which
  * frame is on screen. One field each, so a page can't show two frames or
  * two live holders. The union also rules out a screen slot without a frame,
@@ -27,7 +35,6 @@ export type Holder =
       readonly frame: "mini" | "bar" | null;
       readonly mark: null;
     }
-  /** The frame's screen slot holds the canvas, paused included. */
   | {
       readonly live: "screen";
       readonly frame: Frame;
@@ -56,18 +63,20 @@ export type Placement = Holder & {
  * frame go. The shell renders these from what this returns and decides
  * none of them itself.
  *
- * `active` is useWavePlayer().active: true from the first play until the
- * last track ends, pauses included. `layout` is null on the server and
- * through hydration; until it is known nothing that depends on it renders
- * (the mark, the mini player, the bar, the glow), so nothing has to unmount
- * once it is. `mark` names the Identity that draws the static mark, since
- * the engine lends `waveform` to the newest mark even when CSS hides it.
+ * Once playback starts, the card holds the live waveform, ended included,
+ * while the mini player and the bar leave when playback ends. `layout` is
+ * null on the server and through hydration; until it is known nothing that
+ * depends on it renders (the mark, the mini player, the bar, the glow), so
+ * nothing has to unmount once it is. `mark` names the Identity that draws
+ * the static mark, since the engine lends `waveform` to the newest mark
+ * even when CSS hides it.
  */
 export function place(
   entry: SiteEntry,
-  active: boolean,
+  playback: Playback,
   layout: Layout | null
 ): Placement {
+  const active = playback === "active";
   const follower =
     layout === "desktop" ? "mini" : layout === "narrow" ? "bar" : null;
 
@@ -89,7 +98,11 @@ export function place(
 
   switch (entry.player) {
     case "full":
-      return { ...page, live: active ? "screen" : null, frame: "card" };
+      return {
+        ...page,
+        live: playback === "idle" ? null : "screen",
+        frame: "card",
+      };
     case "follow":
       return active && follower
         ? { ...page, live: "screen", frame: follower }

@@ -28,7 +28,13 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { desktopMedia, place, type Layout, type Placement } from "@/lib/layout";
+import {
+  desktopMedia,
+  place,
+  type Layout,
+  type Placement,
+  type Playback,
+} from "@/lib/layout";
 import { sampleTracks } from "@/lib/sample-tracks";
 import { resolve, siteName, type SiteEntry } from "@/lib/site";
 import { Waveform, WaveformProvider } from "@/components/waveform/waveform";
@@ -84,7 +90,7 @@ function Sections({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const entry = resolve(pathname);
   const layout = useLayout();
-  const placement = place(entry, useWavePlayer().active, layout);
+  const placement = place(entry, usePlayback(), layout);
   // The glow's anchor, held in state so the glow follows it.
   const [main, setMain] = useState<HTMLElement | null>(null);
   const screen =
@@ -184,6 +190,19 @@ function subscribeLayout(onChange: () => void) {
 
 function readLayout(): Layout {
   return window.matchMedia(desktopMedia).matches ? "desktop" : "narrow";
+}
+
+/**
+ * The player's phase for `place()`. `active` is deferred in the block, so
+ * the frames it mounts animate; `ended` is deferred here to change in the
+ * same render, or Replay would show a render with neither and the card
+ * would drop the live waveform for a frame.
+ */
+function usePlayback(): Playback {
+  const { active, status } = useWavePlayer();
+  const ended = useDeferredValue(status.kind === "ended");
+
+  return active ? "active" : ended ? "ended" : "idle";
 }
 
 /**

@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { desktopMedia, place, type Layout, type Placement } from "@/lib/layout";
+import {
+  desktopMedia,
+  place,
+  type Layout,
+  type Placement,
+  type Playback,
+} from "@/lib/layout";
 import { resolve, routes } from "@/lib/site";
 
 describe("desktop breakpoint", () => {
@@ -18,34 +24,40 @@ describe("desktop breakpoint", () => {
 });
 
 describe("placement", () => {
-  test.each<[string, boolean, Layout | null, Placement]>([
+  test.each<[string, Playback, Layout | null, Placement]>([
     [
       "/",
-      false,
+      "idle",
       "desktop",
       { live: "stage", frame: null, mark: null, glow: false, library: false },
     ],
     [
       "/",
-      true,
+      "active",
       "desktop",
       { live: "stage", frame: "mini", mark: null, glow: false, library: false },
     ],
     [
       "/",
-      true,
+      "active",
       "narrow",
       { live: "stage", frame: "bar", mark: null, glow: null, library: false },
     ],
     [
+      "/",
+      "ended",
+      "desktop",
+      { live: "stage", frame: null, mark: null, glow: false, library: false },
+    ],
+    [
       "/music",
-      false,
+      "idle",
       "desktop",
       { live: null, frame: "card", mark: "desktop", glow: true, library: true },
     ],
     [
       "/music",
-      true,
+      "active",
       "desktop",
       {
         live: "screen",
@@ -57,7 +69,31 @@ describe("placement", () => {
     ],
     [
       "/music",
-      true,
+      "active",
+      "narrow",
+      {
+        live: "screen",
+        frame: "card",
+        mark: "narrow",
+        glow: null,
+        library: true,
+      },
+    ],
+    [
+      "/music",
+      "ended",
+      "desktop",
+      {
+        live: "screen",
+        frame: "card",
+        mark: "desktop",
+        glow: true,
+        library: true,
+      },
+    ],
+    [
+      "/music",
+      "ended",
       "narrow",
       {
         live: "screen",
@@ -69,13 +105,13 @@ describe("placement", () => {
     ],
     [
       "/about",
-      false,
+      "idle",
       "desktop",
       { live: null, frame: null, mark: "desktop", glow: false, library: false },
     ],
     [
       "/about",
-      true,
+      "active",
       "desktop",
       {
         live: "screen",
@@ -87,7 +123,7 @@ describe("placement", () => {
     ],
     [
       "/about",
-      true,
+      "active",
       "narrow",
       {
         live: "screen",
@@ -98,8 +134,20 @@ describe("placement", () => {
       },
     ],
     [
+      "/about",
+      "ended",
+      "desktop",
+      { live: null, frame: null, mark: "desktop", glow: false, library: false },
+    ],
+    [
+      "/about",
+      "ended",
+      "narrow",
+      { live: null, frame: null, mark: "narrow", glow: null, library: false },
+    ],
+    [
       "/software/agents",
-      true,
+      "active",
       "desktop",
       {
         live: "screen",
@@ -111,59 +159,61 @@ describe("placement", () => {
     ],
     [
       "/software/agents",
-      false,
+      "idle",
       "narrow",
       { live: null, frame: null, mark: "narrow", glow: null, library: false },
     ],
     [
       "/dashboard",
-      true,
+      "active",
       "desktop",
       { live: null, frame: null, mark: "desktop", glow: false, library: false },
     ],
     [
       "/no-such-page",
-      true,
+      "active",
       "narrow",
       { live: null, frame: null, mark: "narrow", glow: null, library: false },
     ],
     [
       "/about",
-      true,
+      "active",
       null,
       { live: null, frame: null, mark: null, glow: null, library: false },
     ],
     [
       "/music",
-      false,
+      "idle",
       null,
       { live: null, frame: "card", mark: null, glow: null, library: true },
     ],
     [
       "/",
-      true,
+      "active",
       null,
       { live: "stage", frame: null, mark: null, glow: null, library: false },
     ],
-  ])("%s, active %s, %s", (path, active, layout, expected) => {
-    expect(place(resolve(path), active, layout)).toEqual(expected);
+  ])("%s, %s, %s", (path, playback, layout, expected) => {
+    expect(place(resolve(path), playback, layout)).toEqual(expected);
   });
 
   const cases = routes.flatMap((route) =>
-    [false, true].flatMap((active) =>
+    (["idle", "active", "ended"] as const).flatMap((playback) =>
       (["desktop", "narrow", null] as const).map((layout) => ({
         route,
-        active,
+        playback,
         layout,
         entry: resolve(route),
-        placement: place(resolve(route), active, layout),
+        placement: place(resolve(route), playback, layout),
       }))
     )
   );
 
-  test("gives a frame's screen the live waveform only during playback", () => {
-    for (const { route, active, placement } of cases) {
-      if (placement.live === "screen") expect(active, route).toBe(true);
+  test("gives a screen the live waveform once playback starts, and after the end only the card's", () => {
+    for (const { route, playback, placement } of cases) {
+      if (placement.live !== "screen") continue;
+      expect(playback, route).not.toBe("idle");
+      if (playback === "ended") expect(placement.frame, route).toBe("card");
     }
   });
 
@@ -174,9 +224,11 @@ describe("placement", () => {
     }
   });
 
-  test("shows no player view before playback except Music's card", () => {
-    for (const { route, active, placement } of cases) {
-      if (!active) expect([null, "card"], route).toContain(placement.frame);
+  test("shows no player view outside playback except Music's card", () => {
+    for (const { route, playback, placement } of cases) {
+      if (playback !== "active") {
+        expect([null, "card"], route).toContain(placement.frame);
+      }
     }
   });
 
