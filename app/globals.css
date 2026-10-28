@@ -30,9 +30,9 @@
 
   /*
    * Font roles. ui: titles, headings, nav, labels, values, dates and code,
-   * in TX-02, with Paper Mono while it loads. text: the name and body.
-   * readout: years, times, counts and keys. long: long-form writing.
-   * --font-mono follows ui, so code, Kevelle's one mono role, sets in TX-02.
+   * in TX-02. text: the name and body. readout: years, times, counts and
+   * keys. long: long-form writing. --font-mono follows ui, so code,
+   * Kevelle's one mono role, sets in TX-02.
    */
   --font-ui: "TX-02", "Paper Mono", ui-monospace, monospace;
   --font-text: var(--font-sans);
