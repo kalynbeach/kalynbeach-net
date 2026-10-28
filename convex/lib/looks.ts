@@ -13,6 +13,13 @@ export const lookValidator = v.object({
   name: v.string(),
   config: lookConfigValidator,
   /**
+   * Counts the saves that changed the config, from 0 at create. A dashboard
+   * draft carries the version it started from, and save() refuses a draft
+   * whose version has moved on, so a save never silently replaces another
+   * tab's.
+   */
+  version: v.number(),
+  /**
    * The key the dashboard sent to create this look. create() with a key
    * that already has a look returns that look, so a double click makes one.
    */
@@ -37,6 +44,7 @@ export const adminLookValidator = v.object({
   id: v.id("looks"),
   name: v.string(),
   config: lookConfigValidator,
+  version: v.number(),
   live: v.boolean(),
 });
 
@@ -60,6 +68,7 @@ export const LOOK_REFUSAL_CODES = [
   "missing",
   "name",
   "config",
+  "stale",
 ] as const;
 
 export type LookRefusalCode = (typeof LOOK_REFUSAL_CODES)[number];
@@ -170,6 +179,7 @@ export function planCreate(
     look: {
       name: cleanName(input.name),
       config: input.config,
+      version: 0,
       createKey: input.createKey,
       createdAt: now,
       updatedAt: now,
@@ -177,30 +187,55 @@ export function planCreate(
   };
 }
 
+export type SaveInput = {
+  readonly baseVersion: number;
+  readonly config: LookConfig;
+};
+
 export type SavePlan =
   | {
       readonly kind: "patch";
       readonly patch: {
         readonly config: LookConfig;
+        readonly version: number;
         readonly updatedAt: number;
       };
     }
-  | { readonly kind: "refuse"; readonly code: "missing" | "config" };
+  | { readonly kind: "unchanged"; readonly version: number }
+  | {
+      readonly kind: "refuse";
+      readonly code: "missing" | "config" | "stale";
+    };
 
+/**
+ * A config that is already stored writes nothing, so a retry of a save that
+ * landed succeeds with the version it made.
+ */
 export function planSave(
   look: Look | null,
-  config: LookConfig,
+  input: SaveInput,
   now: number
 ): SavePlan {
   if (!look) {
     return { kind: "refuse", code: "missing" };
   }
 
-  const problem = lookConfigProblem(config);
+  const problem = lookConfigProblem(input.config);
 
-  return problem
-    ? { kind: "refuse", code: problem }
-    : { kind: "patch", patch: { config, updatedAt: now } };
+  if (problem) {
+    return { kind: "refuse", code: problem };
+  }
+  if (canonicalJson(input.config) === canonicalJson(look.config)) {
+    return { kind: "unchanged", version: look.version };
+  }
+  if (input.baseVersion !== look.version) {
+    return { kind: "refuse", code: "stale" };
+  }
+
+  return {
+    kind: "patch",
+    patch: { config: input.config, version: look.version + 1, updatedAt: now },
+  };
 }
 
 export type RenamePlan =
@@ -277,6 +312,7 @@ export function toAdminLook(look: Look, site: Site | null): AdminLook {
     id: look._id,
     name: look.name,
     config: look.config,
+    version: look.version,
     live: site?.liveLook === look._id,
   };
 }
