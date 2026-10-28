@@ -1,17 +1,22 @@
 /**
  * The site map: the one place where each page's presentation lives.
  *
- * An entry carries its nav label, route, lede, glow and section 3 view. The
+ * An entry carries its nav label, route, lede, glow and player role. The
  * shell in the root layout resolves the current entry from the pathname and
- * draws the nav, the waveform, section 1's header and section 3 from it. Page
- * files render only the blocks of section 1's body.
+ * draws the nav, the waveform, section 1's header and the player from it
+ * (through `place()` in lib/layout.ts). Page files render only the blocks of
+ * section 1's body.
  */
 import type { Metadata } from "next";
 
 export const siteName = "Kalyn Beach";
 
-/** What section 3 shows. Each view has exactly one renderer, in `components/site/shell.tsx`. */
-export type AsideView = "player" | "library";
+/**
+ * How a page shows the player. full: the card opens section 1's body and the
+ * Library fills section 3 (Music). follow: once playback is under way, the
+ * mini player in section 3, or the bar below 1100px, follows the visitor here.
+ */
+export type PlayerRole = "full" | "follow";
 
 type PageNode = {
   kind: "page";
@@ -22,12 +27,14 @@ type PageNode = {
   lede?: string;
   /** Waveform light behind section 1. Flip it here; nothing else reads a per-page glow. */
   glow: boolean;
-  aside: AsideView | null;
+  /** null: no section 3 and no player view. */
+  player: PlayerRole | null;
 };
 
 /**
  * Home. The waveform stage, centered in the window, takes the place of
- * section 1. The type has no glow, lede or aside, so Home cannot get them.
+ * section 1. The type has no glow, lede or player role, so Home cannot get
+ * them; `place()` gives Home its own player rule.
  */
 type StageNode = { kind: "stage"; label: string; route: "/" };
 
@@ -51,7 +58,7 @@ const nav = [
     route: "/about",
     lede: "I love learning, creating and building. I like making complex things as simple as possible.",
     glow: false,
-    aside: "player",
+    player: "follow",
   },
   {
     kind: "group",
@@ -64,14 +71,14 @@ const nav = [
         route: "/software/agents",
         lede: "Three and a half years of building with AI agents, from a LangChain tool for music makers to the setup that builds this site.",
         glow: true,
-        aside: "player",
+        player: "follow",
       },
       {
         kind: "page",
         label: "Kevelle",
         route: "/software/kevelle",
         glow: false,
-        aside: "player",
+        player: "follow",
       },
       {
         kind: "page",
@@ -79,14 +86,14 @@ const nav = [
         route: "/software/kkb-audio",
         lede: "A Rust foundation for my sound, audio, and music software. One real-time render engine runs in the browser through WebAssembly and natively on macOS.",
         glow: false,
-        aside: "player",
+        player: "follow",
       },
       {
         kind: "page",
         label: "This site",
         route: "/software/this-site",
         glow: false,
-        aside: "player",
+        player: "follow",
       },
     ],
   },
@@ -96,7 +103,7 @@ const nav = [
     route: "/music",
     lede: "Tracks and playlists, played through WavePlayer. Every track here is a sample for now.",
     glow: true,
-    aside: "library",
+    player: "full",
   },
 ] as const satisfies readonly (StageNode | PageNode | GroupNode)[];
 
@@ -107,27 +114,33 @@ const admin = [
     label: "Dashboard",
     route: "/dashboard",
     glow: false,
-    aside: null,
+    player: null,
   },
-  { kind: "page", label: "Lab", route: "/lab", glow: false, aside: null },
+  { kind: "page", label: "Lab", route: "/lab", glow: false, player: null },
 ] as const satisfies readonly PageNode[];
 
 /** Shell pages with no nav row and no Cmd+K item. */
 const system = [
-  { kind: "page", label: "Sign in", route: "/login", glow: false, aside: null },
+  {
+    kind: "page",
+    label: "Sign in",
+    route: "/login",
+    glow: false,
+    player: null,
+  },
   {
     kind: "page",
     label: "Unauthorized",
     route: "/auth/unauthorized",
     glow: false,
-    aside: null,
+    player: null,
   },
 ] as const satisfies readonly PageNode[];
 
 type PageFields = Omit<PageNode, "kind" | "route">;
 
 /** What an unknown pathname resolves to, so `app/not-found.tsx` renders inside the shell. */
-const notFound: PageFields = { label: "Not found", glow: false, aside: null };
+const notFound: PageFields = { label: "Not found", glow: false, player: null };
 
 type Group = Extract<(typeof nav)[number], { kind: "group" }>;
 type Leaf =
@@ -157,7 +170,7 @@ export type NavRow = {
 
 /**
  * Everything the shell draws for one pathname. The two kinds keep Home's
- * rules in the type: a stage has no header, glow or section 3.
+ * rules in the type: a stage has no header, glow or player role.
  */
 export type SiteEntry =
   | { kind: "stage"; route: "/"; nav: readonly NavRow[] }
@@ -171,7 +184,7 @@ export type SiteEntry =
       title: string;
       lede: string | null;
       glow: boolean;
-      aside: AsideView | null;
+      player: PlayerRole | null;
     };
 
 export type CommandItem = {
@@ -254,7 +267,7 @@ function pageEntry(
     title: page.label,
     lede: page.lede ?? null,
     glow: page.glow,
-    aside: page.aside,
+    player: page.player,
   };
 }
 

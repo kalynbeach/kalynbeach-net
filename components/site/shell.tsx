@@ -16,7 +16,7 @@
 import { Fragment, type ComponentType, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { resolve, siteName, type AsideView, type SiteEntry } from "@/lib/site";
+import { resolve, siteName, type PlayerRole, type SiteEntry } from "@/lib/site";
 import { Waveform, type WaveformProps } from "@/components/waveform";
 import {
   WavePlayerBar,
@@ -33,10 +33,10 @@ type PageEntry = Extract<SiteEntry, { kind: "page" }>;
  * the fixed player bar; a `flow` view follows section 1 in the document.
  */
 const asideViews = {
-  player: { Section: WavePlayerMini, mobile: "bar" },
-  library: { Section: WavePlayerLibrary, mobile: "flow" },
+  follow: { Section: WavePlayerMini, mobile: "bar" },
+  full: { Section: WavePlayerLibrary, mobile: "flow" },
 } as const satisfies Record<
-  AsideView,
+  PlayerRole,
   { Section: ComponentType; mobile: "bar" | "flow" }
 >;
 
@@ -80,8 +80,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <NavTree rows={entry.nav} />
         </nav>
         <SiteMain entry={entry}>{children}</SiteMain>
-        {entry.kind === "page" && entry.aside && (
-          <SiteAside view={entry.aside} />
+        {entry.kind === "page" && entry.player && (
+          <SiteAside view={entry.player} />
         )}
       </div>
       <CommandMenu />
@@ -103,7 +103,7 @@ function SiteMain({
 }) {
   const page = entry.kind === "page" ? entry : null;
   const clearsBar =
-    page?.aside != null && asideViews[page.aside].mobile === "bar";
+    page?.player != null && asideViews[page.player].mobile === "bar";
 
   return (
     <main
@@ -182,7 +182,7 @@ function Breadcrumb({ crumbs }: { crumbs: PageEntry["crumbs"] }) {
 }
 
 /** Section 3. Same tree position on every page, so the mini player stays mounted from page to page. */
-function SiteAside({ view }: { view: AsideView }) {
+function SiteAside({ view }: { view: PlayerRole }) {
   const { Section, mobile } = asideViews[view];
   return (
     <>

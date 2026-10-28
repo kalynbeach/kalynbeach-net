@@ -80,7 +80,7 @@ describe("site map", () => {
       crumbs: ["Software", "Agents"],
       title: "Agents",
       glow: true,
-      aside: "player",
+      player: "follow",
     });
   });
 
@@ -88,7 +88,7 @@ describe("site map", () => {
     expect(resolve("/music/")).toMatchObject({ route: "/music" });
   });
 
-  it("keeps Home free of a header, glow and section 3", () => {
+  it("keeps Home free of a header, glow and player role", () => {
     expect(resolve("/")).toEqual({
       kind: "stage",
       route: "/",
@@ -107,7 +107,7 @@ describe("site map", () => {
       crumbs: ["Not found"],
       title: "Not found",
       glow: false,
-      aside: null,
+      player: null,
     });
     expect(
       entry.nav.flatMap((row) => [row, ...row.rows]).map((row) => row.state)
