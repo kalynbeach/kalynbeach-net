@@ -8,7 +8,7 @@ import {
   assertPositiveInteger,
   buildPlaylistPatch,
 } from "./lib/domain";
-import { resolvePublicTrack } from "./lib/tracks";
+import { resolvePublicTracks } from "./lib/tracks";
 import { playlistViewValidator } from "./validators";
 
 async function getPlaylistView(ctx: QueryCtx, playlistId: number) {
@@ -41,14 +41,14 @@ async function getPlaylistView(ctx: QueryCtx, playlistId: number) {
         throw new Error(`Track ${playlistTrack.trackId} not found`);
       }
 
-      return resolvePublicTrack(ctx, track);
+      return track;
     })
   );
 
   return {
     id: playlist.publicId,
     title: playlist.title,
-    tracks: tracks.filter((track) => track !== null),
+    tracks: await resolvePublicTracks(ctx, tracks),
     createdAt: playlist.createdAt,
     updatedAt: playlist.updatedAt,
   };
