@@ -18,6 +18,19 @@
   font-display: swap;
 }
 
+/*
+ * The same file again as ABC Areal's italic. Its slnt axis runs from 0 to
+ * -12, and a face declared italic makes the browser set slnt -12 instead of
+ * skewing the upright glyphs.
+ */
+@font-face {
+  font-family: "ABC Areal";
+  src: url("/fonts/abc-areal/ABCArealVariable.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 @font-face {
   font-family: "Paper Mono";
   src: url("/fonts/paper-mono/PaperMono-Variable.woff2") format("woff2");
@@ -105,6 +118,10 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Per-theme elevation, inline so a nested .dark scope reads its own. */
+  --shadow-surface: var(--surface-shadow);
+  --shadow-float: var(--float-shadow);
+
   /*
    * Components are square: they use rounded-none. The ramp is for elements
    * that opt into rounding, in whole pixels from one knob.
@@ -122,17 +139,17 @@
 
 @theme {
   /*
-   * Font roles. sans carries interface text, serif carries editorial text,
-   * mono carries code and every heading rank, pixel carries data and labels,
-   * and brand carries the wordmark. Brand shares Departure Mono with pixel
-   * but stays a separate role, and heading is the face the heading roles use.
+   * Font roles, one job per face. pixel is the machine's voice: page and
+   * section titles, labels, and values. sans is the human's voice: component
+   * titles, text, and controls. serif carries long-form text, mono carries
+   * code only, and brand carries the wordmark. Brand shares Departure Mono
+   * with pixel but stays a separate role.
    */
   --font-sans: "ABC Areal", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Timeless Serif", ui-serif, Georgia, serif;
   --font-mono: "Paper Mono", ui-monospace, monospace;
   --font-pixel: "Departure Mono", "Paper Mono", ui-monospace, monospace;
   --font-brand: "Departure Mono", "Paper Mono", ui-monospace, monospace;
-  --font-heading: var(--font-mono);
 
   /* Hairline system: inputs and outline buttons draw edges, not shadows. */
   --shadow-2xs: 0 0 transparent;
@@ -172,7 +189,7 @@
   --duration-small: 160ms;
   --duration-large: 280ms;
   --default-transition-duration: var(--duration-small);
-  --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  --default-transition-timing-function: var(--ease-out);
 }
 
 :root {
@@ -315,16 +332,48 @@
   --shadow-color: var(--neutral-10);
 
   /*
-   * Machined surfaces: flat fills and two values. The key line sits 1px
-   * below a raised control, and the press lands on it. It is the ink end
-   * of the ramp at 20% in both modes, so in dark it reads as a lit lower
-   * rim. The shade is one inset line along the top of a recessed field.
-   * The line follows the ramp, so .dark sets only the shade.
+   * Machined alloy. A raised control takes a sheen over its fill, a 1px
+   * highlight along its top edge, the key line 1px below it, and a small
+   * soft drop. The sheen is one translucent gradient, white at the top and
+   * black at the bottom, so it shades any fill without a gradient per
+   * variant. A light primary key runs from about L 0.27 down to its fill.
+   * The stops are as strong as the destructive labels allow, and bun run
+   * contrast measures every key label under both. The key line is the ink
+   * end of the ramp at 20% in both modes, so in dark it reads as a lit
+   * lower rim, and the press lands on it. The shade is a soft inset along
+   * the top of a recessed field. The line follows the ramp, so .dark sets
+   * the rest.
    */
+  --alloy-sheen: linear-gradient(oklch(1 0 0 / 0.15), oklch(0 0 0 / 0.03));
+  --alloy-highlight: inset 0 1px 0 0 oklch(1 0 0 / 0.16);
   --alloy-line: 0 1px 0 0
     color-mix(in oklch, var(--neutral-10) 20%, transparent);
-  --alloy-shade: inset 0 1px 0 0
-    color-mix(in oklch, var(--shadow-color) 8%, transparent);
+  --alloy-drop: 0 2px 3px -1px
+    color-mix(in oklch, var(--shadow-color) 20%, transparent);
+  --alloy-shade: inset 0 1px 2px 0
+    color-mix(in oklch, var(--shadow-color) 10%, transparent);
+
+  /*
+   * Elevation is smooth layered shadows, never dither, so shaders can sit
+   * behind surfaces later. Cards lift on the surface shadow, and floating
+   * surfaces, which also carry the aura, on the float shadow.
+   */
+  --surface-shadow:
+    0 1px 2px -1px color-mix(in oklch, var(--shadow-color) 8%, transparent),
+    0 2px 4px 0 color-mix(in oklch, var(--shadow-color) 5%, transparent),
+    0 8px 24px -8px color-mix(in oklch, var(--shadow-color) 10%, transparent);
+  --float-shadow:
+    0 2px 4px -1px color-mix(in oklch, var(--shadow-color) 8%, transparent),
+    0 12px 32px -8px color-mix(in oklch, var(--shadow-color) 20%, transparent);
+
+  /*
+   * The 1px edge a floating surface draws inside its aura, a pale step of
+   * the signal's hue in light and a deep one in dark.
+   */
+  --aura-edge: oklch(0.8 0.08 262);
+
+  /* ABC Areal's DRKM axis, off in light. The base layer applies it. */
+  --drkm: 0;
 }
 
 .dark {
@@ -436,10 +485,61 @@
 
   --shadow-color: oklch(0 0 0);
 
-  /* Black at 8% does not read on a dark field. */
-  --alloy-shade: inset 0 1px 0 0
-    color-mix(in oklch, var(--shadow-color) 30%, transparent);
+  /*
+   * In dark a secondary key runs from about L 0.27 down to its fill, and a
+   * primary key falls from its fill to about L 0.92. Black text on the
+   * destructive hover fill holds the bottom stop at 8%. The drop and the
+   * shade need far more black to read.
+   */
+  --alloy-sheen: linear-gradient(oklch(1 0 0 / 0.08), oklch(0 0 0 / 0.08));
+  --alloy-highlight: inset 0 1px 0 0 oklch(1 0 0 / 0.12);
+  --alloy-drop: 0 2px 4px -1px
+    color-mix(in oklch, var(--shadow-color) 70%, transparent);
+  --alloy-shade: inset 0 1px 2px 0
+    color-mix(in oklch, var(--shadow-color) 60%, transparent);
+
+  /*
+   * Shadows barely read on the near-black canvas, so a white top highlight
+   * lifts each surface too. A floating surface's aura outline covers its
+   * first row, so its highlight is 2px tall to show one row.
+   */
+  --surface-shadow:
+    inset 0 1px 0 0 oklch(1 0 0 / 0.06),
+    0 2px 4px -1px color-mix(in oklch, var(--shadow-color) 60%, transparent),
+    0 12px 28px -10px color-mix(in oklch, var(--shadow-color) 80%, transparent);
+  --float-shadow:
+    inset 0 2px 0 0 oklch(1 0 0 / 0.08),
+    0 12px 32px -8px color-mix(in oklch, var(--shadow-color) 90%, transparent);
+
+  --aura-edge: oklch(0.42 0.08 146);
+
+  /* Light text on the dark canvas reads heavier, and DRKM thins it. */
+  --drkm: 1;
 }
+
+/* BEGIN generated by tools/aura.ts */
+/*
+ * Do not edit: change the falloffs in tools/aura.ts, then run
+ * `bun tools/aura.ts`. The box images carry each theme's signal color, so
+ * they follow --signal-dim and --signal when the script reruns.
+ */
+:root {
+  --aura-spread: 6;
+  --aura-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' shape-rendering='crispEdges' fill='oklch(0.575 0.233 260.4)'%3E%3Cstyle%3Epattern rect%7Bwidth:1px%3Bheight:1px%7D.w3%7Bwidth:calc(100%25 - 6px)%7D.w2%7Bwidth:calc(100%25 - 4px)%7D.w1%7Bwidth:calc(100%25 - 2px)%7D.w5%7Bwidth:calc(100%25 - 10px)%7D.w4%7Bwidth:calc(100%25 - 8px)%7D.w6%7Bwidth:calc(100%25 - 12px)%7D.h1%7Bheight:calc(100%25 - 2px)%7D.h2%7Bheight:calc(100%25 - 4px)%7D.h3%7Bheight:calc(100%25 - 6px)%7D.h5%7Bheight:calc(100%25 - 10px)%7D.h4%7Bheight:calc(100%25 - 8px)%7D.h6%7Bheight:calc(100%25 - 12px)%7D%3C/style%3E%3Cdefs%3E%3Cpattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'/%3E%3Cpattern id='p0' href='%23p'%3E%3Crect x='0' y='0'/%3E%3C/pattern%3E%3Cpattern id='p1' href='%23p'%3E%3Crect x='4' y='4'/%3E%3C/pattern%3E%3Cpattern id='p2' href='%23p'%3E%3Crect x='4' y='0'/%3E%3C/pattern%3E%3Cpattern id='p3' href='%23p'%3E%3Crect x='0' y='4'/%3E%3C/pattern%3E%3Cpattern id='p4' href='%23p'%3E%3Crect x='2' y='2'/%3E%3C/pattern%3E%3Cpattern id='p5' href='%23p'%3E%3Crect x='6' y='6'/%3E%3C/pattern%3E%3Cpattern id='p6' href='%23p'%3E%3Crect x='6' y='2'/%3E%3C/pattern%3E%3Cpattern id='p7' href='%23p'%3E%3Crect x='2' y='6'/%3E%3C/pattern%3E%3Cpattern id='p8' href='%23p'%3E%3Crect x='2' y='0'/%3E%3C/pattern%3E%3Cpattern id='p9' href='%23p'%3E%3Crect x='6' y='4'/%3E%3C/pattern%3E%3Cpattern id='p10' href='%23p'%3E%3Crect x='6' y='0'/%3E%3C/pattern%3E%3Cpattern id='p11' href='%23p'%3E%3Crect x='2' y='4'/%3E%3C/pattern%3E%3Cpattern id='p12' href='%23p'%3E%3Crect x='0' y='2'/%3E%3C/pattern%3E%3Cpattern id='p13' href='%23p'%3E%3Crect x='4' y='6'/%3E%3C/pattern%3E%3Cpattern id='p14' href='%23p'%3E%3Crect x='4' y='2'/%3E%3C/pattern%3E%3Cpattern id='p15' href='%23p'%3E%3Crect x='0' y='6'/%3E%3C/pattern%3E%3Cpattern id='p16' href='%23p'%3E%3Crect x='1' y='1'/%3E%3C/pattern%3E%3Cpattern id='p17' href='%23p'%3E%3Crect x='5' y='5'/%3E%3C/pattern%3E%3Cpattern id='p18' href='%23p'%3E%3Crect x='5' y='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='3' y='1' class='w3 h1' fill='url(%23p0)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p0)'/%3E%3Crect x='1' y='3' class='w1 h3' fill='url(%23p0)'/%3E%3Crect x='5' y='1' class='w5 h1' fill='url(%23p1)'/%3E%3Crect x='3' y='2' class='w3 h2' fill='url(%23p1)'/%3E%3Crect x='2' y='3' class='w2 h3' fill='url(%23p1)'/%3E%3Crect x='1' y='5' class='w1 h5' fill='url(%23p1)'/%3E%3Crect x='4' y='2' class='w4 h2' fill='url(%23p2)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p2)'/%3E%3Crect x='2' y='4' class='w2 h4' fill='url(%23p2)'/%3E%3Crect x='5' y='2' class='w5 h2' fill='url(%23p3)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p3)'/%3E%3Crect x='2' y='5' class='w2 h5' fill='url(%23p3)'/%3E%3Crect x='4' y='3' class='w4 h3' fill='url(%23p4)'/%3E%3Crect x='3' y='4' class='w3 h4' fill='url(%23p4)'/%3E%3Crect x='4' y='3' class='w4 h3' fill='url(%23p5)'/%3E%3Crect x='3' y='4' class='w3 h4' fill='url(%23p5)'/%3E%3Crect x='5' y='3' class='w5 h3' fill='url(%23p6)'/%3E%3Crect x='4' y='4' class='w4 h4' fill='url(%23p6)'/%3E%3Crect x='3' y='5' class='w3 h5' fill='url(%23p6)'/%3E%3Crect x='5' y='3' class='w5 h3' fill='url(%23p7)'/%3E%3Crect x='4' y='4' class='w4 h4' fill='url(%23p7)'/%3E%3Crect x='3' y='5' class='w3 h5' fill='url(%23p7)'/%3E%3Crect x='4' y='4' class='w4 h4' fill='url(%23p8)'/%3E%3Crect x='4' y='4' class='w4 h4' fill='url(%23p9)'/%3E%3Crect x='5' y='4' class='w5 h4' fill='url(%23p10)'/%3E%3Crect x='4' y='5' class='w4 h5' fill='url(%23p10)'/%3E%3Crect x='5' y='4' class='w5 h4' fill='url(%23p11)'/%3E%3Crect x='4' y='5' class='w4 h5' fill='url(%23p11)'/%3E%3Crect x='5' y='4' class='w5 h4' fill='url(%23p12)'/%3E%3Crect x='4' y='5' class='w4 h5' fill='url(%23p12)'/%3E%3Crect x='5' y='5' class='w5 h5' fill='url(%23p13)'/%3E%3Crect x='5' y='5' class='w5 h5' fill='url(%23p14)'/%3E%3Crect x='5' y='5' class='w5 h5' fill='url(%23p15)'/%3E%3Crect x='5' y='5' class='w5 h5' fill='url(%23p16)'/%3E%3Crect x='5' y='5' class='w5 h5' fill='url(%23p17)'/%3E%3Crect x='6' y='5' class='w6 h5' fill='url(%23p18)'/%3E%3Crect x='5' y='6' class='w5 h6' fill='url(%23p18)'/%3E%3C/svg%3E");
+  --aura-focus-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' shape-rendering='crispEdges' fill='oklch(0.575 0.233 260.4)'%3E%3Cstyle%3Epattern rect%7Bwidth:1px%3Bheight:1px%7D.w3%7Bwidth:calc(100%25 - 6px)%7D.w1%7Bwidth:calc(100%25 - 2px)%7D.w0%7Bwidth:calc(100%25 - 0px)%7D.w2%7Bwidth:calc(100%25 - 4px)%7D.w4%7Bwidth:calc(100%25 - 8px)%7D.h0%7Bheight:calc(100%25 - 0px)%7D.h1%7Bheight:calc(100%25 - 2px)%7D.h3%7Bheight:calc(100%25 - 6px)%7D.h2%7Bheight:calc(100%25 - 4px)%7D.h4%7Bheight:calc(100%25 - 8px)%7D%3C/style%3E%3Cdefs%3E%3Cpattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'/%3E%3Cpattern id='p0' href='%23p'%3E%3Crect x='0' y='0'/%3E%3C/pattern%3E%3Cpattern id='p1' href='%23p'%3E%3Crect x='4' y='4'/%3E%3C/pattern%3E%3Cpattern id='p2' href='%23p'%3E%3Crect x='4' y='0'/%3E%3C/pattern%3E%3Cpattern id='p3' href='%23p'%3E%3Crect x='0' y='4'/%3E%3C/pattern%3E%3Cpattern id='p4' href='%23p'%3E%3Crect x='2' y='2'/%3E%3C/pattern%3E%3Cpattern id='p5' href='%23p'%3E%3Crect x='6' y='6'/%3E%3C/pattern%3E%3Cpattern id='p6' href='%23p'%3E%3Crect x='6' y='2'/%3E%3C/pattern%3E%3Cpattern id='p7' href='%23p'%3E%3Crect x='2' y='6'/%3E%3C/pattern%3E%3Cpattern id='p8' href='%23p'%3E%3Crect x='2' y='0'/%3E%3C/pattern%3E%3Cpattern id='p9' href='%23p'%3E%3Crect x='6' y='4'/%3E%3C/pattern%3E%3Cpattern id='p10' href='%23p'%3E%3Crect x='6' y='0'/%3E%3C/pattern%3E%3Cpattern id='p11' href='%23p'%3E%3Crect x='2' y='4'/%3E%3C/pattern%3E%3Cpattern id='p12' href='%23p'%3E%3Crect x='0' y='2'/%3E%3C/pattern%3E%3Cpattern id='p13' href='%23p'%3E%3Crect x='4' y='6'/%3E%3C/pattern%3E%3Cpattern id='p14' href='%23p'%3E%3Crect x='4' y='2'/%3E%3C/pattern%3E%3Cpattern id='p15' href='%23p'%3E%3Crect x='0' y='6'/%3E%3C/pattern%3E%3Cpattern id='p16' href='%23p'%3E%3Crect x='1' y='1'/%3E%3C/pattern%3E%3Cpattern id='p17' href='%23p'%3E%3Crect x='5' y='5'/%3E%3C/pattern%3E%3Cpattern id='p18' href='%23p'%3E%3Crect x='5' y='1'/%3E%3C/pattern%3E%3Cpattern id='p19' href='%23p'%3E%3Crect x='1' y='5'/%3E%3C/pattern%3E%3Cpattern id='p20' href='%23p'%3E%3Crect x='3' y='3'/%3E%3C/pattern%3E%3Cpattern id='p21' href='%23p'%3E%3Crect x='7' y='7'/%3E%3C/pattern%3E%3Cpattern id='p22' href='%23p'%3E%3Crect x='7' y='3'/%3E%3C/pattern%3E%3Cpattern id='p23' href='%23p'%3E%3Crect x='3' y='7'/%3E%3C/pattern%3E%3Cpattern id='p24' href='%23p'%3E%3Crect x='3' y='1'/%3E%3C/pattern%3E%3Cpattern id='p25' href='%23p'%3E%3Crect x='7' y='5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='3' y='0' class='w3 h0' fill='url(%23p0)'/%3E%3Crect x='1' y='1' class='w1 h1' fill='url(%23p0)'/%3E%3Crect x='0' y='3' class='w0 h3' fill='url(%23p0)'/%3E%3Crect x='2' y='1' class='w2 h1' fill='url(%23p1)'/%3E%3Crect x='1' y='2' class='w1 h2' fill='url(%23p1)'/%3E%3Crect x='2' y='1' class='w2 h1' fill='url(%23p2)'/%3E%3Crect x='1' y='2' class='w1 h2' fill='url(%23p2)'/%3E%3Crect x='2' y='1' class='w2 h1' fill='url(%23p3)'/%3E%3Crect x='1' y='2' class='w1 h2' fill='url(%23p3)'/%3E%3Crect x='3' y='1' class='w3 h1' fill='url(%23p4)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p4)'/%3E%3Crect x='1' y='3' class='w1 h3' fill='url(%23p4)'/%3E%3Crect x='3' y='1' class='w3 h1' fill='url(%23p5)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p5)'/%3E%3Crect x='1' y='3' class='w1 h3' fill='url(%23p5)'/%3E%3Crect x='4' y='1' class='w4 h1' fill='url(%23p6)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p6)'/%3E%3Crect x='1' y='4' class='w1 h4' fill='url(%23p6)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p7)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p8)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p9)'/%3E%3Crect x='3' y='2' class='w3 h2' fill='url(%23p10)'/%3E%3Crect x='2' y='3' class='w2 h3' fill='url(%23p10)'/%3E%3Crect x='3' y='2' class='w3 h2' fill='url(%23p11)'/%3E%3Crect x='2' y='3' class='w2 h3' fill='url(%23p11)'/%3E%3Crect x='3' y='2' class='w3 h2' fill='url(%23p12)'/%3E%3Crect x='2' y='3' class='w2 h3' fill='url(%23p12)'/%3E%3Crect x='3' y='2' class='w3 h2' fill='url(%23p13)'/%3E%3Crect x='2' y='3' class='w2 h3' fill='url(%23p13)'/%3E%3Crect x='4' y='2' class='w4 h2' fill='url(%23p14)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p14)'/%3E%3Crect x='2' y='4' class='w2 h4' fill='url(%23p14)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p15)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p16)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p17)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p18)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p19)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p20)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p21)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p22)'/%3E%3Crect x='4' y='3' class='w4 h3' fill='url(%23p23)'/%3E%3Crect x='3' y='4' class='w3 h4' fill='url(%23p23)'/%3E%3Crect x='4' y='3' class='w4 h3' fill='url(%23p24)'/%3E%3Crect x='3' y='4' class='w3 h4' fill='url(%23p24)'/%3E%3Crect x='4' y='3' class='w4 h3' fill='url(%23p25)'/%3E%3Crect x='3' y='4' class='w3 h4' fill='url(%23p25)'/%3E%3C/svg%3E");
+  --led-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' shape-rendering='crispEdges'%3E%3Cpath fill='oklch(0.575 0.233 260.4)' d='M8 0h1v1h-1zM2 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h1v1h-1zM3 3h1v1h-1zM5 3h1v1h-1zM7 3h1v1h-1zM9 3h1v1h-1zM2 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM3 5h1v1h-1zM2 6h1v1h-1zM10 6h1v1h-1zM3 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM3 9h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM8 10h1v1h-1zM10 10h1v1h-1zM4 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM12 12h1v1h-1z'/%3E%3C/svg%3E");
+  --aura-focus-spread: 4;
+  --led-spread: 4;
+  --ramp-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' shape-rendering='crispEdges'%3E%3Cstyle%3Erect%7Bheight:100%25%7Dpattern rect%7Bwidth:1px%3Bheight:1px%7D%3C/style%3E%3Cdefs%3E%3Cpattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'/%3E%3Cpattern id='p0' href='%23p'%3E%3Crect x='0' y='0'/%3E%3Crect x='4' y='4'/%3E%3Crect x='4' y='0'/%3E%3Crect x='0' y='4'/%3E%3Crect x='2' y='2'/%3E%3Crect x='6' y='6'/%3E%3Crect x='6' y='2'/%3E%3Crect x='2' y='6'/%3E%3Crect x='2' y='0'/%3E%3Crect x='6' y='4'/%3E%3Crect x='6' y='0'/%3E%3Crect x='2' y='4'/%3E%3Crect x='0' y='2'/%3E%3Crect x='4' y='6'/%3E%3Crect x='4' y='2'/%3E%3Crect x='0' y='6'/%3E%3Crect x='1' y='1'/%3E%3Crect x='5' y='5'/%3E%3Crect x='5' y='1'/%3E%3C/pattern%3E%3Cpattern id='p1' href='%23p'%3E%3Crect x='1' y='5'/%3E%3C/pattern%3E%3Cpattern id='p2' href='%23p'%3E%3Crect x='3' y='3'/%3E%3C/pattern%3E%3Cpattern id='p3' href='%23p'%3E%3Crect x='7' y='7'/%3E%3C/pattern%3E%3Cpattern id='p4' href='%23p'%3E%3Crect x='7' y='3'/%3E%3C/pattern%3E%3Cpattern id='p5' href='%23p'%3E%3Crect x='3' y='7'/%3E%3C/pattern%3E%3Cpattern id='p6' href='%23p'%3E%3Crect x='3' y='1'/%3E%3C/pattern%3E%3Cpattern id='p7' href='%23p'%3E%3Crect x='7' y='5'/%3E%3C/pattern%3E%3Cpattern id='p8' href='%23p'%3E%3Crect x='7' y='1'/%3E%3C/pattern%3E%3Cpattern id='p9' href='%23p'%3E%3Crect x='3' y='5'/%3E%3C/pattern%3E%3Cpattern id='p10' href='%23p'%3E%3Crect x='1' y='3'/%3E%3C/pattern%3E%3Cpattern id='p11' href='%23p'%3E%3Crect x='5' y='7'/%3E%3C/pattern%3E%3Cpattern id='p12' href='%23p'%3E%3Crect x='5' y='3'/%3E%3C/pattern%3E%3Cpattern id='p13' href='%23p'%3E%3Crect x='1' y='7'/%3E%3C/pattern%3E%3Cpattern id='p14' href='%23p'%3E%3Crect x='1' y='0'/%3E%3C/pattern%3E%3Cpattern id='p15' href='%23p'%3E%3Crect x='5' y='4'/%3E%3C/pattern%3E%3Cpattern id='p16' href='%23p'%3E%3Crect x='5' y='0'/%3E%3C/pattern%3E%3Cpattern id='p17' href='%23p'%3E%3Crect x='1' y='4'/%3E%3C/pattern%3E%3Cpattern id='p18' href='%23p'%3E%3Crect x='3' y='2'/%3E%3C/pattern%3E%3Cpattern id='p19' href='%23p'%3E%3Crect x='7' y='6'/%3E%3C/pattern%3E%3Cpattern id='p20' href='%23p'%3E%3Crect x='7' y='2'/%3E%3C/pattern%3E%3Cpattern id='p21' href='%23p'%3E%3Crect x='3' y='6'/%3E%3C/pattern%3E%3Cpattern id='p22' href='%23p'%3E%3Crect x='3' y='0'/%3E%3C/pattern%3E%3Cpattern id='p23' href='%23p'%3E%3Crect x='7' y='4'/%3E%3C/pattern%3E%3Cpattern id='p24' href='%23p'%3E%3Crect x='7' y='0'/%3E%3C/pattern%3E%3Cpattern id='p25' href='%23p'%3E%3Crect x='3' y='4'/%3E%3C/pattern%3E%3Cpattern id='p26' href='%23p'%3E%3Crect x='1' y='2'/%3E%3C/pattern%3E%3Cpattern id='p27' href='%23p'%3E%3Crect x='5' y='6'/%3E%3C/pattern%3E%3Cpattern id='p28' href='%23p'%3E%3Crect x='5' y='2'/%3E%3C/pattern%3E%3Cpattern id='p29' href='%23p'%3E%3Crect x='1' y='6'/%3E%3C/pattern%3E%3Cpattern id='p30' href='%23p'%3E%3Crect x='0' y='1'/%3E%3C/pattern%3E%3Cpattern id='p31' href='%23p'%3E%3Crect x='4' y='5'/%3E%3C/pattern%3E%3Cpattern id='p32' href='%23p'%3E%3Crect x='4' y='1'/%3E%3C/pattern%3E%3Cpattern id='p33' href='%23p'%3E%3Crect x='0' y='5'/%3E%3C/pattern%3E%3Cpattern id='p34' href='%23p'%3E%3Crect x='2' y='3'/%3E%3C/pattern%3E%3Cpattern id='p35' href='%23p'%3E%3Crect x='6' y='7'/%3E%3C/pattern%3E%3Cpattern id='p36' href='%23p'%3E%3Crect x='6' y='3'/%3E%3C/pattern%3E%3Cpattern id='p37' href='%23p'%3E%3Crect x='2' y='7'/%3E%3C/pattern%3E%3Cpattern id='p38' href='%23p'%3E%3Crect x='2' y='1'/%3E%3C/pattern%3E%3Cpattern id='p39' href='%23p'%3E%3Crect x='6' y='5'/%3E%3C/pattern%3E%3Cpattern id='p40' href='%23p'%3E%3Crect x='6' y='1'/%3E%3C/pattern%3E%3Cpattern id='p41' href='%23p'%3E%3Crect x='2' y='5'/%3E%3C/pattern%3E%3Cpattern id='p42' href='%23p'%3E%3Crect x='0' y='3'/%3E%3C/pattern%3E%3Cpattern id='p43' href='%23p'%3E%3Crect x='4' y='7'/%3E%3C/pattern%3E%3Cpattern id='p44' href='%23p'%3E%3Crect x='4' y='3'/%3E%3C/pattern%3E%3Cpattern id='p45' href='%23p'%3E%3Crect x='0' y='7'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='0%25' width='100%25' fill='url(%23p0)'/%3E%3Crect x='1.54%25' width='98.46%25' fill='url(%23p1)'/%3E%3Crect x='5.23%25' width='94.77%25' fill='url(%23p2)'/%3E%3Crect x='8.42%25' width='91.58%25' fill='url(%23p3)'/%3E%3Crect x='11.38%25' width='88.62%25' fill='url(%23p4)'/%3E%3Crect x='14.18%25' width='85.82%25' fill='url(%23p5)'/%3E%3Crect x='16.88%25' width='83.12%25' fill='url(%23p6)'/%3E%3Crect x='19.5%25' width='80.5%25' fill='url(%23p7)'/%3E%3Crect x='22.05%25' width='77.95%25' fill='url(%23p8)'/%3E%3Crect x='24.54%25' width='75.46%25' fill='url(%23p9)'/%3E%3Crect x='26.98%25' width='73.02%25' fill='url(%23p10)'/%3E%3Crect x='29.37%25' width='70.63%25' fill='url(%23p11)'/%3E%3Crect x='31.73%25' width='68.27%25' fill='url(%23p12)'/%3E%3Crect x='34.06%25' width='65.94%25' fill='url(%23p13)'/%3E%3Crect x='36.35%25' width='63.65%25' fill='url(%23p14)'/%3E%3Crect x='38.61%25' width='61.39%25' fill='url(%23p15)'/%3E%3Crect x='40.85%25' width='59.15%25' fill='url(%23p16)'/%3E%3Crect x='43.06%25' width='56.94%25' fill='url(%23p17)'/%3E%3Crect x='45.25%25' width='54.75%25' fill='url(%23p18)'/%3E%3Crect x='47.42%25' width='52.58%25' fill='url(%23p19)'/%3E%3Crect x='49.57%25' width='50.43%25' fill='url(%23p20)'/%3E%3Crect x='51.7%25' width='48.3%25' fill='url(%23p21)'/%3E%3Crect x='53.82%25' width='46.18%25' fill='url(%23p22)'/%3E%3Crect x='55.91%25' width='44.09%25' fill='url(%23p23)'/%3E%3Crect x='58%25' width='42%25' fill='url(%23p24)'/%3E%3Crect x='60.06%25' width='39.94%25' fill='url(%23p25)'/%3E%3Crect x='62.12%25' width='37.88%25' fill='url(%23p26)'/%3E%3Crect x='64.16%25' width='35.84%25' fill='url(%23p27)'/%3E%3Crect x='66.18%25' width='33.82%25' fill='url(%23p28)'/%3E%3Crect x='68.2%25' width='31.8%25' fill='url(%23p29)'/%3E%3Crect x='70.2%25' width='29.8%25' fill='url(%23p30)'/%3E%3Crect x='72.19%25' width='27.81%25' fill='url(%23p31)'/%3E%3Crect x='74.17%25' width='25.83%25' fill='url(%23p32)'/%3E%3Crect x='76.14%25' width='23.86%25' fill='url(%23p33)'/%3E%3Crect x='78.1%25' width='21.9%25' fill='url(%23p34)'/%3E%3Crect x='80.05%25' width='19.95%25' fill='url(%23p35)'/%3E%3Crect x='81.99%25' width='18.01%25' fill='url(%23p36)'/%3E%3Crect x='83.92%25' width='16.08%25' fill='url(%23p37)'/%3E%3Crect x='85.84%25' width='14.16%25' fill='url(%23p38)'/%3E%3Crect x='87.75%25' width='12.25%25' fill='url(%23p39)'/%3E%3Crect x='89.66%25' width='10.34%25' fill='url(%23p40)'/%3E%3Crect x='91.56%25' width='8.44%25' fill='url(%23p41)'/%3E%3Crect x='93.45%25' width='6.55%25' fill='url(%23p42)'/%3E%3Crect x='95.33%25' width='4.67%25' fill='url(%23p43)'/%3E%3Crect x='97.2%25' width='2.8%25' fill='url(%23p44)'/%3E%3Crect x='99.07%25' width='0.93%25' fill='url(%23p45)'/%3E%3C/svg%3E");
+  --beam-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' shape-rendering='crispEdges'%3E%3Cstyle%3Erect%7Bheight:100%25%7Dpattern rect%7Bwidth:1px%3Bheight:1px%7D%3C/style%3E%3Cdefs%3E%3Cpattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'/%3E%3Cpattern id='p0' href='%23p'%3E%3Crect x='0' y='0'/%3E%3C/pattern%3E%3Cpattern id='p1' href='%23p'%3E%3Crect x='4' y='4'/%3E%3C/pattern%3E%3Cpattern id='p2' href='%23p'%3E%3Crect x='4' y='0'/%3E%3C/pattern%3E%3Cpattern id='p3' href='%23p'%3E%3Crect x='0' y='4'/%3E%3C/pattern%3E%3Cpattern id='p4' href='%23p'%3E%3Crect x='2' y='2'/%3E%3C/pattern%3E%3Cpattern id='p5' href='%23p'%3E%3Crect x='6' y='6'/%3E%3C/pattern%3E%3Cpattern id='p6' href='%23p'%3E%3Crect x='6' y='2'/%3E%3C/pattern%3E%3Cpattern id='p7' href='%23p'%3E%3Crect x='2' y='6'/%3E%3C/pattern%3E%3Cpattern id='p8' href='%23p'%3E%3Crect x='2' y='0'/%3E%3C/pattern%3E%3Cpattern id='p9' href='%23p'%3E%3Crect x='6' y='4'/%3E%3C/pattern%3E%3Cpattern id='p10' href='%23p'%3E%3Crect x='6' y='0'/%3E%3C/pattern%3E%3Cpattern id='p11' href='%23p'%3E%3Crect x='2' y='4'/%3E%3C/pattern%3E%3Cpattern id='p12' href='%23p'%3E%3Crect x='0' y='2'/%3E%3C/pattern%3E%3Cpattern id='p13' href='%23p'%3E%3Crect x='4' y='6'/%3E%3C/pattern%3E%3Cpattern id='p14' href='%23p'%3E%3Crect x='4' y='2'/%3E%3C/pattern%3E%3Cpattern id='p15' href='%23p'%3E%3Crect x='0' y='6'/%3E%3C/pattern%3E%3Cpattern id='p16' href='%23p'%3E%3Crect x='1' y='1'/%3E%3C/pattern%3E%3Cpattern id='p17' href='%23p'%3E%3Crect x='5' y='5'/%3E%3C/pattern%3E%3Cpattern id='p18' href='%23p'%3E%3Crect x='5' y='1'/%3E%3C/pattern%3E%3Cpattern id='p19' href='%23p'%3E%3Crect x='1' y='5'/%3E%3C/pattern%3E%3Cpattern id='p20' href='%23p'%3E%3Crect x='3' y='3'/%3E%3C/pattern%3E%3Cpattern id='p21' href='%23p'%3E%3Crect x='7' y='7'/%3E%3C/pattern%3E%3Cpattern id='p22' href='%23p'%3E%3Crect x='7' y='3'/%3E%3C/pattern%3E%3Cpattern id='p23' href='%23p'%3E%3Crect x='3' y='7'/%3E%3C/pattern%3E%3Cpattern id='p24' href='%23p'%3E%3Crect x='3' y='1'/%3E%3C/pattern%3E%3Cpattern id='p25' href='%23p'%3E%3Crect x='7' y='5'/%3E%3C/pattern%3E%3Cpattern id='p26' href='%23p'%3E%3Crect x='7' y='1'/%3E%3C/pattern%3E%3Cpattern id='p27' href='%23p'%3E%3Crect x='3' y='5'/%3E%3C/pattern%3E%3Cpattern id='p28' href='%23p'%3E%3Crect x='1' y='3'/%3E%3C/pattern%3E%3Cpattern id='p29' href='%23p'%3E%3Crect x='5' y='7'/%3E%3C/pattern%3E%3Cpattern id='p30' href='%23p'%3E%3Crect x='5' y='3'/%3E%3C/pattern%3E%3Cpattern id='p31' href='%23p'%3E%3Crect x='1' y='7'/%3E%3C/pattern%3E%3Cpattern id='p32' href='%23p'%3E%3Crect x='1' y='0'/%3E%3C/pattern%3E%3Cpattern id='p33' href='%23p'%3E%3Crect x='5' y='4'/%3E%3C/pattern%3E%3Cpattern id='p34' href='%23p'%3E%3Crect x='5' y='0'/%3E%3C/pattern%3E%3Cpattern id='p35' href='%23p'%3E%3Crect x='1' y='4'/%3E%3C/pattern%3E%3Cpattern id='p36' href='%23p'%3E%3Crect x='3' y='2'/%3E%3C/pattern%3E%3Cpattern id='p37' href='%23p'%3E%3Crect x='7' y='6'/%3E%3C/pattern%3E%3Cpattern id='p38' href='%23p'%3E%3Crect x='7' y='2'/%3E%3C/pattern%3E%3Cpattern id='p39' href='%23p'%3E%3Crect x='3' y='6'/%3E%3C/pattern%3E%3Cpattern id='p40' href='%23p'%3E%3Crect x='3' y='0'/%3E%3C/pattern%3E%3Cpattern id='p41' href='%23p'%3E%3Crect x='7' y='4'/%3E%3C/pattern%3E%3Cpattern id='p42' href='%23p'%3E%3Crect x='7' y='0'/%3E%3C/pattern%3E%3Cpattern id='p43' href='%23p'%3E%3Crect x='3' y='4'/%3E%3C/pattern%3E%3Cpattern id='p44' href='%23p'%3E%3Crect x='1' y='2'/%3E%3C/pattern%3E%3Cpattern id='p45' href='%23p'%3E%3Crect x='5' y='6'/%3E%3C/pattern%3E%3Cpattern id='p46' href='%23p'%3E%3Crect x='5' y='2'/%3E%3C/pattern%3E%3Cpattern id='p47' href='%23p'%3E%3Crect x='1' y='6'/%3E%3C/pattern%3E%3Cpattern id='p48' href='%23p'%3E%3Crect x='0' y='1'/%3E%3C/pattern%3E%3Cpattern id='p49' href='%23p'%3E%3Crect x='4' y='5'/%3E%3C/pattern%3E%3Cpattern id='p50' href='%23p'%3E%3Crect x='4' y='1'/%3E%3C/pattern%3E%3Cpattern id='p51' href='%23p'%3E%3Crect x='0' y='5'/%3E%3C/pattern%3E%3Cpattern id='p52' href='%23p'%3E%3Crect x='2' y='3'/%3E%3C/pattern%3E%3Cpattern id='p53' href='%23p'%3E%3Crect x='6' y='7'/%3E%3C/pattern%3E%3Cpattern id='p54' href='%23p'%3E%3Crect x='6' y='3'/%3E%3C/pattern%3E%3Cpattern id='p55' href='%23p'%3E%3Crect x='2' y='7'/%3E%3C/pattern%3E%3Cpattern id='p56' href='%23p'%3E%3Crect x='2' y='1'/%3E%3C/pattern%3E%3Cpattern id='p57' href='%23p'%3E%3Crect x='6' y='5'/%3E%3C/pattern%3E%3Cpattern id='p58' href='%23p'%3E%3Crect x='6' y='1'/%3E%3C/pattern%3E%3Cpattern id='p59' href='%23p'%3E%3Crect x='2' y='5'/%3E%3C/pattern%3E%3Cpattern id='p60' href='%23p'%3E%3Crect x='0' y='3'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='0%25' width='98.83%25' fill='url(%23p0)'/%3E%3Crect x='0%25' width='96.49%25' fill='url(%23p1)'/%3E%3Crect x='0%25' width='94.18%25' fill='url(%23p2)'/%3E%3Crect x='0%25' width='91.88%25' fill='url(%23p3)'/%3E%3Crect x='0%25' width='89.6%25' fill='url(%23p4)'/%3E%3Crect x='0%25' width='87.33%25' fill='url(%23p5)'/%3E%3Crect x='0%25' width='85.08%25' fill='url(%23p6)'/%3E%3Crect x='0%25' width='82.86%25' fill='url(%23p7)'/%3E%3Crect x='0%25' width='80.64%25' fill='url(%23p8)'/%3E%3Crect x='0%25' width='78.45%25' fill='url(%23p9)'/%3E%3Crect x='0%25' width='76.27%25' fill='url(%23p10)'/%3E%3Crect x='0%25' width='74.12%25' fill='url(%23p11)'/%3E%3Crect x='0%25' width='71.98%25' fill='url(%23p12)'/%3E%3Crect x='0%25' width='69.86%25' fill='url(%23p13)'/%3E%3Crect x='0%25' width='67.76%25' fill='url(%23p14)'/%3E%3Crect x='0%25' width='65.68%25' fill='url(%23p15)'/%3E%3Crect x='0%25' width='63.62%25' fill='url(%23p16)'/%3E%3Crect x='0%25' width='61.58%25' fill='url(%23p17)'/%3E%3Crect x='0%25' width='59.55%25' fill='url(%23p18)'/%3E%3Crect x='0%25' width='57.55%25' fill='url(%23p19)'/%3E%3Crect x='0%25' width='55.57%25' fill='url(%23p20)'/%3E%3Crect x='0%25' width='53.61%25' fill='url(%23p21)'/%3E%3Crect x='0%25' width='51.67%25' fill='url(%23p22)'/%3E%3Crect x='0%25' width='49.76%25' fill='url(%23p23)'/%3E%3Crect x='0%25' width='47.86%25' fill='url(%23p24)'/%3E%3Crect x='0%25' width='45.99%25' fill='url(%23p25)'/%3E%3Crect x='0%25' width='44.14%25' fill='url(%23p26)'/%3E%3Crect x='0%25' width='42.31%25' fill='url(%23p27)'/%3E%3Crect x='0%25' width='40.51%25' fill='url(%23p28)'/%3E%3Crect x='0%25' width='38.73%25' fill='url(%23p29)'/%3E%3Crect x='0%25' width='36.98%25' fill='url(%23p30)'/%3E%3Crect x='0%25' width='35.24%25' fill='url(%23p31)'/%3E%3Crect x='0%25' width='33.54%25' fill='url(%23p32)'/%3E%3Crect x='0%25' width='31.86%25' fill='url(%23p33)'/%3E%3Crect x='0%25' width='30.2%25' fill='url(%23p34)'/%3E%3Crect x='0%25' width='28.58%25' fill='url(%23p35)'/%3E%3Crect x='0%25' width='26.98%25' fill='url(%23p36)'/%3E%3Crect x='0%25' width='25.41%25' fill='url(%23p37)'/%3E%3Crect x='0%25' width='23.86%25' fill='url(%23p38)'/%3E%3Crect x='0%25' width='22.35%25' fill='url(%23p39)'/%3E%3Crect x='0%25' width='20.86%25' fill='url(%23p40)'/%3E%3Crect x='0%25' width='19.41%25' fill='url(%23p41)'/%3E%3Crect x='0%25' width='17.99%25' fill='url(%23p42)'/%3E%3Crect x='0%25' width='16.6%25' fill='url(%23p43)'/%3E%3Crect x='0%25' width='15.25%25' fill='url(%23p44)'/%3E%3Crect x='0%25' width='13.93%25' fill='url(%23p45)'/%3E%3Crect x='0%25' width='12.65%25' fill='url(%23p46)'/%3E%3Crect x='0%25' width='11.4%25' fill='url(%23p47)'/%3E%3Crect x='0%25' width='10.2%25' fill='url(%23p48)'/%3E%3Crect x='0%25' width='9.04%25' fill='url(%23p49)'/%3E%3Crect x='0%25' width='7.92%25' fill='url(%23p50)'/%3E%3Crect x='0%25' width='6.84%25' fill='url(%23p51)'/%3E%3Crect x='0%25' width='5.81%25' fill='url(%23p52)'/%3E%3Crect x='0%25' width='4.84%25' fill='url(%23p53)'/%3E%3Crect x='0%25' width='3.92%25' fill='url(%23p54)'/%3E%3Crect x='0%25' width='3.06%25' fill='url(%23p55)'/%3E%3Crect x='0%25' width='2.27%25' fill='url(%23p56)'/%3E%3Crect x='0%25' width='1.56%25' fill='url(%23p57)'/%3E%3Crect x='0%25' width='0.93%25' fill='url(%23p58)'/%3E%3Crect x='0%25' width='0.41%25' fill='url(%23p59)'/%3E%3Crect x='0%25' width='0.05%25' fill='url(%23p60)'/%3E%3C/svg%3E");
+}
+.dark {
+  --aura-spread: 8;
+  --aura-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' shape-rendering='crispEdges' fill='oklch(0.6 0.14 143)'%3E%3Cstyle%3Epattern rect%7Bwidth:1px%3Bheight:1px%7D.w5%7Bwidth:calc(100%25 - 10px)%7D.w4%7Bwidth:calc(100%25 - 8px)%7D.w3%7Bwidth:calc(100%25 - 6px)%7D.w2%7Bwidth:calc(100%25 - 4px)%7D.w1%7Bwidth:calc(100%25 - 2px)%7D.w7%7Bwidth:calc(100%25 - 14px)%7D.w6%7Bwidth:calc(100%25 - 12px)%7D.w8%7Bwidth:calc(100%25 - 16px)%7D.h1%7Bheight:calc(100%25 - 2px)%7D.h2%7Bheight:calc(100%25 - 4px)%7D.h3%7Bheight:calc(100%25 - 6px)%7D.h4%7Bheight:calc(100%25 - 8px)%7D.h5%7Bheight:calc(100%25 - 10px)%7D.h7%7Bheight:calc(100%25 - 14px)%7D.h6%7Bheight:calc(100%25 - 12px)%7D.h8%7Bheight:calc(100%25 - 16px)%7D%3C/style%3E%3Cdefs%3E%3Cpattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'/%3E%3Cpattern id='p0' href='%23p'%3E%3Crect x='0' y='0'/%3E%3C/pattern%3E%3Cpattern id='p1' href='%23p'%3E%3Crect x='4' y='4'/%3E%3C/pattern%3E%3Cpattern id='p2' href='%23p'%3E%3Crect x='4' y='0'/%3E%3C/pattern%3E%3Cpattern id='p3' href='%23p'%3E%3Crect x='0' y='4'/%3E%3C/pattern%3E%3Cpattern id='p4' href='%23p'%3E%3Crect x='2' y='2'/%3E%3C/pattern%3E%3Cpattern id='p5' href='%23p'%3E%3Crect x='6' y='6'/%3E%3C/pattern%3E%3Cpattern id='p6' href='%23p'%3E%3Crect x='6' y='2'/%3E%3C/pattern%3E%3Cpattern id='p7' href='%23p'%3E%3Crect x='2' y='6'/%3E%3C/pattern%3E%3Cpattern id='p8' href='%23p'%3E%3Crect x='2' y='0'/%3E%3C/pattern%3E%3Cpattern id='p9' href='%23p'%3E%3Crect x='6' y='4'/%3E%3C/pattern%3E%3Cpattern id='p10' href='%23p'%3E%3Crect x='6' y='0'/%3E%3C/pattern%3E%3Cpattern id='p11' href='%23p'%3E%3Crect x='2' y='4'/%3E%3C/pattern%3E%3Cpattern id='p12' href='%23p'%3E%3Crect x='0' y='2'/%3E%3C/pattern%3E%3Cpattern id='p13' href='%23p'%3E%3Crect x='4' y='6'/%3E%3C/pattern%3E%3Cpattern id='p14' href='%23p'%3E%3Crect x='4' y='2'/%3E%3C/pattern%3E%3Cpattern id='p15' href='%23p'%3E%3Crect x='0' y='6'/%3E%3C/pattern%3E%3Cpattern id='p16' href='%23p'%3E%3Crect x='1' y='1'/%3E%3C/pattern%3E%3Cpattern id='p17' href='%23p'%3E%3Crect x='5' y='5'/%3E%3C/pattern%3E%3Cpattern id='p18' href='%23p'%3E%3Crect x='5' y='1'/%3E%3C/pattern%3E%3Cpattern id='p19' href='%23p'%3E%3Crect x='1' y='5'/%3E%3C/pattern%3E%3Cpattern id='p20' href='%23p'%3E%3Crect x='3' y='3'/%3E%3C/pattern%3E%3Cpattern id='p21' href='%23p'%3E%3Crect x='7' y='7'/%3E%3C/pattern%3E%3Cpattern id='p22' href='%23p'%3E%3Crect x='7' y='3'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='5' y='1' class='w5 h1' fill='url(%23p0)'/%3E%3Crect x='4' y='2' class='w4 h2' fill='url(%23p0)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p0)'/%3E%3Crect x='2' y='4' class='w2 h4' fill='url(%23p0)'/%3E%3Crect x='1' y='5' class='w1 h5' fill='url(%23p0)'/%3E%3Crect x='5' y='2' class='w5 h2' fill='url(%23p1)'/%3E%3Crect x='4' y='3' class='w4 h3' fill='url(%23p1)'/%3E%3Crect x='3' y='4' class='w3 h4' fill='url(%23p1)'/%3E%3Crect x='2' y='5' class='w2 h5' fill='url(%23p1)'/%3E%3Crect x='7' y='2' class='w7 h2' fill='url(%23p2)'/%3E%3Crect x='5' y='3' class='w5 h3' fill='url(%23p2)'/%3E%3Crect x='4' y='4' class='w4 h4' fill='url(%23p2)'/%3E%3Crect x='3' y='5' class='w3 h5' fill='url(%23p2)'/%3E%3Crect x='2' y='7' class='w2 h7' fill='url(%23p2)'/%3E%3Crect x='5' y='3' class='w5 h3' fill='url(%23p3)'/%3E%3Crect x='4' y='4' class='w4 h4' fill='url(%23p3)'/%3E%3Crect x='3' y='5' class='w3 h5' fill='url(%23p3)'/%3E%3Crect x='6' y='3' class='w6 h3' fill='url(%23p4)'/%3E%3Crect x='5' y='4' class='w5 h4' fill='url(%23p4)'/%3E%3Crect x='4' y='5' class='w4 h5' fill='url(%23p4)'/%3E%3Crect x='3' y='6' class='w3 h6' fill='url(%23p4)'/%3E%3Crect x='5' y='4' class='w5 h4' fill='url(%23p5)'/%3E%3Crect x='4' y='5' class='w4 h5' fill='url(%23p5)'/%3E%3Crect x='6' y='4' class='w6 h4' fill='url(%23p6)'/%3E%3Crect x='5' y='5' class='w5 h5' fill='url(%23p6)'/%3E%3Crect x='4' y='6' class='w4 h6' fill='url(%23p6)'/%3E%3Crect x='7' y='4' class='w7 h4' fill='url(%23p7)'/%3E%3Crect x='5' y='5' class='w5 h5' fill='url(%23p7)'/%3E%3Crect x='4' y='7' class='w4 h7' fill='url(%23p7)'/%3E%3Crect x='8' y='4' class='w8 h4' fill='url(%23p8)'/%3E%3Crect x='6' y='5' class='w6 h5' fill='url(%23p8)'/%3E%3Crect x='5' y='6' class='w5 h6' fill='url(%23p8)'/%3E%3Crect x='4' y='8' class='w4 h8' fill='url(%23p8)'/%3E%3Crect x='6' y='5' class='w6 h5' fill='url(%23p9)'/%3E%3Crect x='5' y='6' class='w5 h6' fill='url(%23p9)'/%3E%3Crect x='6' y='5' class='w6 h5' fill='url(%23p10)'/%3E%3Crect x='5' y='6' class='w5 h6' fill='url(%23p10)'/%3E%3Crect x='7' y='5' class='w7 h5' fill='url(%23p11)'/%3E%3Crect x='6' y='6' class='w6 h6' fill='url(%23p11)'/%3E%3Crect x='5' y='7' class='w5 h7' fill='url(%23p11)'/%3E%3Crect x='8' y='5' class='w8 h5' fill='url(%23p12)'/%3E%3Crect x='6' y='6' class='w6 h6' fill='url(%23p12)'/%3E%3Crect x='5' y='8' class='w5 h8' fill='url(%23p12)'/%3E%3Crect x='6' y='6' class='w6 h6' fill='url(%23p13)'/%3E%3Crect x='7' y='6' class='w7 h6' fill='url(%23p14)'/%3E%3Crect x='6' y='7' class='w6 h7' fill='url(%23p14)'/%3E%3Crect x='7' y='6' class='w7 h6' fill='url(%23p15)'/%3E%3Crect x='6' y='7' class='w6 h7' fill='url(%23p15)'/%3E%3Crect x='7' y='6' class='w7 h6' fill='url(%23p16)'/%3E%3Crect x='6' y='7' class='w6 h7' fill='url(%23p16)'/%3E%3Crect x='7' y='7' class='w7 h7' fill='url(%23p17)'/%3E%3Crect x='7' y='7' class='w7 h7' fill='url(%23p18)'/%3E%3Crect x='7' y='7' class='w7 h7' fill='url(%23p19)'/%3E%3Crect x='7' y='7' class='w7 h7' fill='url(%23p20)'/%3E%3Crect x='8' y='7' class='w8 h7' fill='url(%23p21)'/%3E%3Crect x='7' y='8' class='w7 h8' fill='url(%23p21)'/%3E%3Crect x='8' y='7' class='w8 h7' fill='url(%23p22)'/%3E%3Crect x='7' y='8' class='w7 h8' fill='url(%23p22)'/%3E%3C/svg%3E");
+  --aura-focus-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' shape-rendering='crispEdges' fill='oklch(0.6 0.14 143)'%3E%3Cstyle%3Epattern rect%7Bwidth:1px%3Bheight:1px%7D.w3%7Bwidth:calc(100%25 - 6px)%7D.w1%7Bwidth:calc(100%25 - 2px)%7D.w0%7Bwidth:calc(100%25 - 0px)%7D.w2%7Bwidth:calc(100%25 - 4px)%7D.w4%7Bwidth:calc(100%25 - 8px)%7D.h0%7Bheight:calc(100%25 - 0px)%7D.h1%7Bheight:calc(100%25 - 2px)%7D.h3%7Bheight:calc(100%25 - 6px)%7D.h2%7Bheight:calc(100%25 - 4px)%7D.h4%7Bheight:calc(100%25 - 8px)%7D%3C/style%3E%3Cdefs%3E%3Cpattern id='p' width='8' height='8' patternUnits='userSpaceOnUse'/%3E%3Cpattern id='p0' href='%23p'%3E%3Crect x='0' y='0'/%3E%3C/pattern%3E%3Cpattern id='p1' href='%23p'%3E%3Crect x='4' y='4'/%3E%3C/pattern%3E%3Cpattern id='p2' href='%23p'%3E%3Crect x='4' y='0'/%3E%3C/pattern%3E%3Cpattern id='p3' href='%23p'%3E%3Crect x='0' y='4'/%3E%3C/pattern%3E%3Cpattern id='p4' href='%23p'%3E%3Crect x='2' y='2'/%3E%3C/pattern%3E%3Cpattern id='p5' href='%23p'%3E%3Crect x='6' y='6'/%3E%3C/pattern%3E%3Cpattern id='p6' href='%23p'%3E%3Crect x='6' y='2'/%3E%3C/pattern%3E%3Cpattern id='p7' href='%23p'%3E%3Crect x='2' y='6'/%3E%3C/pattern%3E%3Cpattern id='p8' href='%23p'%3E%3Crect x='2' y='0'/%3E%3C/pattern%3E%3Cpattern id='p9' href='%23p'%3E%3Crect x='6' y='4'/%3E%3C/pattern%3E%3Cpattern id='p10' href='%23p'%3E%3Crect x='6' y='0'/%3E%3C/pattern%3E%3Cpattern id='p11' href='%23p'%3E%3Crect x='2' y='4'/%3E%3C/pattern%3E%3Cpattern id='p12' href='%23p'%3E%3Crect x='0' y='2'/%3E%3C/pattern%3E%3Cpattern id='p13' href='%23p'%3E%3Crect x='4' y='6'/%3E%3C/pattern%3E%3Cpattern id='p14' href='%23p'%3E%3Crect x='4' y='2'/%3E%3C/pattern%3E%3Cpattern id='p15' href='%23p'%3E%3Crect x='0' y='6'/%3E%3C/pattern%3E%3Cpattern id='p16' href='%23p'%3E%3Crect x='1' y='1'/%3E%3C/pattern%3E%3Cpattern id='p17' href='%23p'%3E%3Crect x='5' y='5'/%3E%3C/pattern%3E%3Cpattern id='p18' href='%23p'%3E%3Crect x='5' y='1'/%3E%3C/pattern%3E%3Cpattern id='p19' href='%23p'%3E%3Crect x='1' y='5'/%3E%3C/pattern%3E%3Cpattern id='p20' href='%23p'%3E%3Crect x='3' y='3'/%3E%3C/pattern%3E%3Cpattern id='p21' href='%23p'%3E%3Crect x='7' y='7'/%3E%3C/pattern%3E%3Cpattern id='p22' href='%23p'%3E%3Crect x='7' y='3'/%3E%3C/pattern%3E%3Cpattern id='p23' href='%23p'%3E%3Crect x='3' y='7'/%3E%3C/pattern%3E%3Cpattern id='p24' href='%23p'%3E%3Crect x='3' y='1'/%3E%3C/pattern%3E%3Cpattern id='p25' href='%23p'%3E%3Crect x='7' y='5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='3' y='0' class='w3 h0' fill='url(%23p0)'/%3E%3Crect x='1' y='1' class='w1 h1' fill='url(%23p0)'/%3E%3Crect x='0' y='3' class='w0 h3' fill='url(%23p0)'/%3E%3Crect x='2' y='1' class='w2 h1' fill='url(%23p1)'/%3E%3Crect x='1' y='2' class='w1 h2' fill='url(%23p1)'/%3E%3Crect x='2' y='1' class='w2 h1' fill='url(%23p2)'/%3E%3Crect x='1' y='2' class='w1 h2' fill='url(%23p2)'/%3E%3Crect x='2' y='1' class='w2 h1' fill='url(%23p3)'/%3E%3Crect x='1' y='2' class='w1 h2' fill='url(%23p3)'/%3E%3Crect x='3' y='1' class='w3 h1' fill='url(%23p4)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p4)'/%3E%3Crect x='1' y='3' class='w1 h3' fill='url(%23p4)'/%3E%3Crect x='3' y='1' class='w3 h1' fill='url(%23p5)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p5)'/%3E%3Crect x='1' y='3' class='w1 h3' fill='url(%23p5)'/%3E%3Crect x='4' y='1' class='w4 h1' fill='url(%23p6)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p6)'/%3E%3Crect x='1' y='4' class='w1 h4' fill='url(%23p6)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p7)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p8)'/%3E%3Crect x='2' y='2' class='w2 h2' fill='url(%23p9)'/%3E%3Crect x='3' y='2' class='w3 h2' fill='url(%23p10)'/%3E%3Crect x='2' y='3' class='w2 h3' fill='url(%23p10)'/%3E%3Crect x='3' y='2' class='w3 h2' fill='url(%23p11)'/%3E%3Crect x='2' y='3' class='w2 h3' fill='url(%23p11)'/%3E%3Crect x='3' y='2' class='w3 h2' fill='url(%23p12)'/%3E%3Crect x='2' y='3' class='w2 h3' fill='url(%23p12)'/%3E%3Crect x='3' y='2' class='w3 h2' fill='url(%23p13)'/%3E%3Crect x='2' y='3' class='w2 h3' fill='url(%23p13)'/%3E%3Crect x='4' y='2' class='w4 h2' fill='url(%23p14)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p14)'/%3E%3Crect x='2' y='4' class='w2 h4' fill='url(%23p14)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p15)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p16)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p17)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p18)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p19)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p20)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p21)'/%3E%3Crect x='3' y='3' class='w3 h3' fill='url(%23p22)'/%3E%3Crect x='4' y='3' class='w4 h3' fill='url(%23p23)'/%3E%3Crect x='3' y='4' class='w3 h4' fill='url(%23p23)'/%3E%3Crect x='4' y='3' class='w4 h3' fill='url(%23p24)'/%3E%3Crect x='3' y='4' class='w3 h4' fill='url(%23p24)'/%3E%3Crect x='4' y='3' class='w4 h3' fill='url(%23p25)'/%3E%3Crect x='3' y='4' class='w3 h4' fill='url(%23p25)'/%3E%3C/svg%3E");
+  --led-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' shape-rendering='crispEdges'%3E%3Cpath fill='oklch(0.88 0.15 146)' d='M8 0h1v1h-1zM2 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h1v1h-1zM3 3h1v1h-1zM5 3h1v1h-1zM7 3h1v1h-1zM9 3h1v1h-1zM2 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM3 5h1v1h-1zM2 6h1v1h-1zM10 6h1v1h-1zM3 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM3 9h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM8 10h1v1h-1zM10 10h1v1h-1zM4 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM12 12h1v1h-1z'/%3E%3C/svg%3E");
+}
+/* END generated by tools/aura.ts */
 
 /*
  * More contrast on request: edges step up to neutral-5 and faint ink to
@@ -457,199 +557,75 @@
 /*
  * Type roles that set family, size, line height, and tracking together.
  * They are utilities rather than --text-* keys so cn() never mistakes them
- * for text colors.
+ * for text colors. Each face has one job: Departure Mono is the machine's
+ * voice, ABC Areal the human's, Timeless Serif carries long-form text, and
+ * Paper Mono carries code. Line heights are unitless, each the role's whole
+ * pixel line over its size, rounded up at four places, because the
+ * minifier truncates a division and the line would land a fraction under.
  */
 
 /*
- * Paper Mono page titles, each page's h1, in caps at the regular weight.
- * Ranks separate by size and color, not weight or tracking. A two-line
- * title balances.
+ * The machine's voice. Departure Mono is drawn on an 11px grid, so its sizes
+ * are px multiples of 11 and never follow the root font size off the grid.
+ * The face has one weight, so it never fake-bolds. Names set caps with one
+ * font pixel of tracking, calc(1em / 11), which stays on the grid at every
+ * size. Values keep their case, so a unit such as kHz stays accurate, and
+ * take no tracking.
  */
+
+/* Each page's h1: 33/36, 44/48 from md. A two-line title balances. */
 @utility type-display {
-  font-family: var(--font-heading);
-  font-size: 2.25rem;
+  font-family: var(--font-pixel);
+  font-size: 33px;
   font-weight: 400;
-  line-height: 2.5rem;
-  letter-spacing: 0;
+  font-synthesis-weight: none;
+  line-height: 1.091;
+  letter-spacing: calc(1em / 11);
   text-transform: uppercase;
   text-wrap: balance;
 
   @variant md {
-    font-size: 2.75rem;
-    line-height: 3rem;
+    font-size: 44px;
   }
 }
 
-/*
- * The wordmark, the one font-brand role: Departure Mono at 22px, two grid
- * steps, with a 24px line so the baseline lands on a whole pixel.
- */
-@utility type-wordmark {
-  font-family: var(--font-brand);
+/* Section titles, 22/24, the page title's rank below. */
+@utility type-heading-1 {
+  font-family: var(--font-pixel);
   font-size: 22px;
   font-weight: 400;
   font-synthesis-weight: none;
-  line-height: 24px;
-  letter-spacing: 0;
-}
-
-/*
- * Paper Mono headings in caps at the regular weight, ranked by size rather
- * than HTML level, so any element can carry any rank: 1 for section titles,
- * 2 for dialog, sheet, and card titles, 3 for the small titles of alerts,
- * toasts, items, and empty states. The 11px Departure Mono labels sit under
- * rank 3 by size and color. Rank 1 balances; ranks 2 and 3 keep pretty from
- * the body. type-code resets the case, so an identifier keeps its spelling
- * inside a heading.
- */
-@utility type-heading-1 {
-  font-family: var(--font-heading);
-  font-size: 1.25rem;
-  font-weight: 400;
-  line-height: 1.5rem;
-  letter-spacing: 0;
+  line-height: 1.091;
+  letter-spacing: calc(1em / 11);
   text-transform: uppercase;
   text-wrap: balance;
 }
 
-@utility type-heading-2 {
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.25rem;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-@utility type-heading-3 {
-  font-family: var(--font-heading);
-  font-size: 0.875rem;
-  font-weight: 400;
-  line-height: 1.25rem;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
 /*
- * ABC Areal text blocks: running text, descriptions, and captions. Controls
- * keep text-sm and text-xs instead, because their size variants override a
- * base size through cn(), which merges Tailwind sizes but not these roles.
- */
-@utility type-body-lg {
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5rem;
-  letter-spacing: 0;
-}
-
-@utility type-body {
-  font-family: var(--font-sans);
-  font-size: 0.875rem;
-  font-weight: 400;
-  line-height: 1.25rem;
-  letter-spacing: 0;
-}
-
-@utility type-caption {
-  font-family: var(--font-sans);
-  font-size: 0.75rem;
-  font-weight: 400;
-  line-height: 1rem;
-  letter-spacing: 0;
-}
-
-/*
- * Timeless Serif editorial roles. STYL is the family's custom axis and has no
- * CSS property, so the roles set it with font-variation-settings: 0 is the
- * display cut for titles, 100 is the Text cut tuned for reading sizes. The
- * italic file has no STYL axis, so the setting is inert there. The lede and
- * prose set oldstyle proportional figures; a value that changes or lines up in a column
- * takes tabular-nums instead.
- */
-@utility type-serif-display {
-  font-family: var(--font-serif);
-  font-variation-settings: "STYL" 0;
-  font-size: 2.5rem;
-  font-weight: 400;
-  line-height: 2.75rem;
-  letter-spacing: -0.02em;
-  text-wrap: balance;
-
-  @variant md {
-    font-size: 3.5rem;
-    line-height: 3.75rem;
-  }
-}
-
-@utility type-serif-title {
-  font-family: var(--font-serif);
-  font-variation-settings: "STYL" 0;
-  font-size: 1.75rem;
-  font-weight: 500;
-  line-height: 2rem;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-}
-
-@utility type-lede {
-  font-family: var(--font-serif);
-  font-variation-settings: "STYL" 100;
-  font-size: 1.375rem;
-  font-weight: 400;
-  line-height: 1.875rem;
-  letter-spacing: 0;
-  font-variant-numeric: oldstyle-nums proportional-nums;
-}
-
-@utility type-prose {
-  font-family: var(--font-serif);
-  font-variation-settings: "STYL" 100;
-  font-size: 1.125rem;
-  font-weight: 400;
-  line-height: 1.75rem;
-  letter-spacing: 0;
-  font-variant-numeric: oldstyle-nums proportional-nums;
-}
-
-/*
- * Paper Mono identifiers and code in running text. It resets the case so an
- * identifier keeps its spelling inside a caps heading or label.
- */
-@utility type-code {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 400;
-  line-height: 1rem;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-/*
- * Departure Mono caps labels: group labels, table heads, legends. Zero
- * tracking keeps every glyph on the 11px grid, and the face has one weight.
+ * Every label: field, group, and menu labels, tabs, table heads, calendar
+ * weekdays, and machine report labels. A normal-case span keeps a unit's
+ * case inside one.
  */
 @utility type-label {
   font-family: var(--font-pixel);
   font-size: 11px;
   font-weight: 400;
   font-synthesis-weight: none;
-  line-height: 16px;
-  letter-spacing: 0;
+  line-height: 1.4546;
+  letter-spacing: calc(1em / 11);
   text-transform: uppercase;
 }
 
 /*
- * Departure Mono is drawn on an 11px grid and only renders crisply at
- * multiples of 11px. The face has one weight, so it never fake-bolds.
- * Values keep their case because they are data; labels set caps.
+ * Values: badges, keys, shortcuts, timestamps, readings, and segment and
+ * toggle group values.
  */
 @utility type-pixel {
   font-family: var(--font-pixel);
   font-size: 11px;
   font-weight: 400;
   font-synthesis-weight: none;
-  line-height: 16px;
+  line-height: 1.4546;
   letter-spacing: 0;
 }
 
@@ -658,8 +634,189 @@
   font-size: 22px;
   font-weight: 400;
   font-synthesis-weight: none;
-  line-height: 28px;
+  line-height: 1.2728;
   letter-spacing: 0;
+}
+
+/*
+ * The wordmark, the one font-brand role: Departure Mono at 22px, two grid
+ * steps, on a 24px line.
+ */
+@utility type-wordmark {
+  font-family: var(--font-brand);
+  font-size: 22px;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  line-height: 1.091;
+  letter-spacing: 0;
+}
+
+/*
+ * The human's voice. ABC Areal titles the components a person works in,
+ * dialog, sheet, drawer, card, and questionnaire titles at 16/20 and alert,
+ * toast, popover, item, and empty state titles at 14/20, in sentence case at
+ * 700, the weight Paper's static files share with the web. Titles keep
+ * pretty from the body. Controls are 500 and reading text 400. type-code
+ * keeps an identifier's spelling inside a title.
+ */
+@utility type-heading-2 {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+@utility type-heading-3 {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4286;
+  letter-spacing: 0;
+}
+
+/*
+ * Running text, descriptions, and captions. Controls keep text-sm and
+ * text-xs at 500 instead, because their size variants override a base size
+ * through cn(), which merges Tailwind sizes but not these roles.
+ */
+@utility type-body-lg {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+@utility type-body {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4286;
+  letter-spacing: 0;
+}
+
+@utility type-caption {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.3334;
+  letter-spacing: 0;
+}
+
+/*
+ * Long-form text in Timeless Serif, for articles and posts. Its ladder: Light
+ * for display titles, never below 28px, where its thin strokes still hold;
+ * Medium for section titles; Regular for reading; 600 for strong; and the
+ * italic file for emphasis, pull quotes, and captions. STYL is the family's custom axis
+ * and has no CSS property, so the roles set --styl and join it with --drkm
+ * as the base layer does: 0 is the display cut for titles, 100 is the Text
+ * cut tuned for reading sizes. The italic file has no STYL axis. The lede, prose, and captions set
+ * oldstyle proportional figures; a value that changes or lines up in a
+ * column takes tabular-nums instead.
+ */
+@utility type-serif-display {
+  font-family: var(--font-serif);
+  --styl: 0;
+  font-variation-settings:
+    "STYL" var(--styl),
+    "DRKM" var(--drkm);
+  font-size: 2.5rem;
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+
+  @variant md {
+    font-size: 3.5rem;
+    line-height: 1.0715;
+  }
+}
+
+@utility type-serif-title {
+  font-family: var(--font-serif);
+  --styl: 0;
+  font-variation-settings:
+    "STYL" var(--styl),
+    "DRKM" var(--drkm);
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.1429;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+@utility type-lede {
+  font-family: var(--font-serif);
+  --styl: 100;
+  font-variation-settings:
+    "STYL" var(--styl),
+    "DRKM" var(--drkm);
+  font-size: 1.375rem;
+  font-weight: 400;
+  line-height: 1.4546;
+  letter-spacing: 0;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+
+  & :where(strong, b) {
+    font-weight: 600;
+  }
+}
+
+@utility type-prose {
+  font-family: var(--font-serif);
+  --styl: 100;
+  font-variation-settings:
+    "STYL" var(--styl),
+    "DRKM" var(--drkm);
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1.5556;
+  letter-spacing: 0;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+
+  & :where(strong, b) {
+    font-weight: 600;
+  }
+}
+
+/*
+ * A line lifted from the article, set apart in the italic at 28/40. It can
+ * run three lines, so it keeps a reading line height rather than a title's.
+ */
+@utility type-pull-quote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1.4286;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Figure and image captions inside an article, in the italic at 14/20. */
+@utility type-serif-caption {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4286;
+  letter-spacing: 0;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+/*
+ * Paper Mono, code only: identifiers and code in running text. It resets
+ * the case and tracking, so an identifier keeps its spelling inside a caps
+ * label or title.
+ */
+@utility type-code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.3334;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /*
@@ -673,20 +830,24 @@
 
 /*
  * Machined surfaces ride on Tailwind's shadow slots so they compose with
- * ring-* edges and focus rings. The key line sits in --tw-shadow, the last
- * layer, so a 2px focus ring covers it, shadow-none drops it, and a
- * shadow-* utility replaces it. The shade sits in --tw-inset-shadow and
- * composes with shadow-* elevation as well.
+ * ring-* edges and focus rings. The key line and the drop sit in
+ * --tw-shadow, the last layer, so a 2px focus ring covers the line,
+ * shadow-none drops both, and a shadow-* utility replaces them. The
+ * highlight and the shade sit in --tw-inset-shadow and compose with
+ * shadow-* elevation as well. The sheen is the background image over the
+ * bg-* fill, so a raised control takes no dither utility.
  */
 
 /*
- * Raised action: filled buttons. The key line below, dropped while pressed
- * so the button lands on it with its 1px move. Popup triggers keep their
- * place on press, as active:not-aria-[haspopup] in button.tsx says, so
- * they keep the line too.
+ * Raised action: filled buttons. The key line and drop, dropped while
+ * pressed so the button lands on the line with its 1px move. Popup
+ * triggers keep their place on press, as active:not-aria-[haspopup] in
+ * button.tsx says, so they keep the line too.
  */
 @utility alloy-action {
-  --tw-shadow: var(--alloy-line);
+  --tw-inset-shadow: var(--alloy-highlight);
+  --tw-shadow: var(--alloy-line), var(--alloy-drop);
+  background-image: var(--alloy-sheen);
   box-shadow:
     var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
     var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -699,13 +860,15 @@
 }
 
 /*
- * Raised control: checkbox, radio, select trigger, native select, and the
- * questionnaire choice. The same key line as alloy-action. Switch and
- * slider thumbs add shadow-none, where the line would hide under the
- * track or the ring.
+ * Raised control: checkbox, radio, switch and slider thumbs, select
+ * trigger, native select, and the questionnaire choice. The same sheen,
+ * highlight, line, and drop as alloy-action. Switch and slider thumbs add
+ * shadow-none, where the line would hide under the track or the ring.
  */
 @utility alloy-raised {
-  --tw-shadow: var(--alloy-line);
+  --tw-inset-shadow: var(--alloy-highlight);
+  --tw-shadow: var(--alloy-line), var(--alloy-drop);
+  background-image: var(--alloy-sheen);
   box-shadow:
     var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
     var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -715,7 +878,20 @@
   }
 }
 
-/* Recessed field: one inset shade along the top edge. */
+/*
+ * Raised key: the active sidebar item and the highlighted item in a menu or
+ * list. alloy-raised on the secondary fill, edged inside with a 1px outline
+ * in the border role. The outline needs no border, so the label lines up
+ * with the labels around it, and forced colors still draw the edge.
+ */
+@utility alloy-key {
+  @apply alloy-raised;
+  background-color: var(--secondary);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+/* Recessed field: a soft inset shade along the top edge. */
 @utility alloy-recessed {
   --tw-inset-shadow: var(--alloy-shade);
   box-shadow:
@@ -766,6 +942,88 @@
 }
 
 /*
+ * A dithered ramp across the element in the current color, sparse at the
+ * start and solid at the leading edge, like the progress fill. The mask
+ * from tools/aura.ts stretches to any width and keeps the dither phase at
+ * the element's origin. It masks the whole element, so a text-* class sets
+ * the color and a bg-* fill under it would be masked too.
+ */
+@utility dither-ramp {
+  background-color: currentColor;
+  mask: var(--ramp-mask) 0 0 / 100% 100% no-repeat;
+}
+
+/*
+ * The beam under a page title: a 12px dithered gradient in the current
+ * color, nearly solid at the start and fading to nothing at the end, so
+ * text-signal beam is a signal accent. Like dither-ramp it masks the whole
+ * element.
+ */
+@utility beam {
+  height: 12px;
+  background-color: currentColor;
+  mask: var(--beam-mask) 0 0 / 100% 100% no-repeat;
+}
+
+/*
+ * Aura: a sparse ordered-dither falloff in signal-dim, a few px outside a
+ * floating surface. It is an accent, not a shadow. The surface's shadow
+ * stays smooth, so shaders can sit behind surfaces later.
+ * border-image paints it outside the border box, where the element's own
+ * overflow never clips it, so a scrolling popup keeps it. tools/aura.ts
+ * writes the images, one per theme in that theme's color. border-image
+ * stops the border from painting, so an inset outline draws the edge in
+ * --aura-edge without a border or a layout shift. Under forced colors the
+ * dither goes and the outline stays, in the system's edge color.
+ */
+@utility aura {
+  outline: 1px solid var(--aura-edge);
+  outline-offset: -1px;
+
+  @media not (forced-colors: active) {
+    border-image: var(--aura-image) var(--aura-spread) /
+      calc(var(--aura-spread) * 1px) / calc(var(--aura-spread) * 1px) stretch;
+  }
+}
+
+/*
+ * A 6px signal LED with a sparse dither glow, the active sidebar item's
+ * light. The glow is a fixed image from tools/aura.ts, signal-dim in light
+ * and the signal in dark, drawn outside the LED with border-image. Forced
+ * colors drop the glow.
+ */
+@utility led {
+  width: 6px;
+  height: 6px;
+  background-color: var(--signal);
+
+  @media not (forced-colors: active) {
+    border-image: var(--led-image) var(--led-spread) /
+      calc(var(--led-spread) * 1px) / calc(var(--led-spread) * 1px);
+  }
+}
+
+/*
+ * The focused field's aura: tighter, starting 2px out so it sits outside
+ * the 2px focus ring. Its border-image hides the field's border, so the
+ * inset outline redraws it in the ring color. Forced colors keep the plain
+ * ring and border. A popover already carries its own aura, and its 10px of
+ * padding leaves a field's ring and aura nearly touching its edge, so a
+ * field inside one keeps only the ring.
+ */
+@utility aura-focus {
+  @media not (forced-colors: active) {
+    &:not(:where([data-slot="popover-content"] *)) {
+      border-image: var(--aura-focus-image) var(--aura-focus-spread) /
+        calc(var(--aura-focus-spread) * 1px) /
+        calc(var(--aura-focus-spread) * 1px + 2px) stretch;
+      outline: 1px solid var(--ring);
+      outline-offset: -1px;
+    }
+  }
+}
+
+/*
  * Instrument details from the KKB machine reports: a tick ruler and a
  * phosphor glow.
  */
@@ -813,6 +1071,21 @@
 
   html {
     @apply font-sans;
+  }
+
+  /*
+   * Each variable axis is its own inherited value. --styl is Timeless
+   * Serif's cut, which its roles and Typeset set, and --drkm is ABC Areal's
+   * dark-mode axis, which thins light strokes on the dark canvas. A rule
+   * that changes an axis joins both into one font-variation-settings list,
+   * as here and in those roles, so neither axis drops the other. Elements
+   * in between inherit the joined list. Faces without an axis ignore it.
+   */
+  :root,
+  .dark {
+    font-variation-settings:
+      "STYL" var(--styl, 0),
+      "DRKM" var(--drkm);
   }
 
   body {

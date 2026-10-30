@@ -6,15 +6,14 @@ import { shadcn } from "@clerk/ui/themes";
 import { preload } from "react-dom";
 import ConvexClerkProvider from "@/components/providers/convex-clerk-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import { PlayerProvider } from "@/components/wave-player";
 import { SiteShell } from "@/components/site/shell";
 import "./globals.css";
 
 const fonts = [
   "/fonts/abc-areal/ABCArealVariable.woff2",
   "/fonts/departure-mono/DepartureMono-Regular.woff2",
-  "/fonts/paper-mono/PaperMono-Variable.woff2",
   "/fonts/timeless-serif/TimelessSerifVF.woff2",
+  "/fonts/tx-02/TX-02-Variable.woff2",
 ];
 
 export const metadata: Metadata = {
@@ -43,9 +42,7 @@ export default function RootLayout({
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClerkProvider>
             <ThemeProvider>
-              <PlayerProvider>
-                <SiteShell>{children}</SiteShell>
-              </PlayerProvider>
+              <SiteShell>{children}</SiteShell>
             </ThemeProvider>
             <Analytics />
             <SpeedInsights />

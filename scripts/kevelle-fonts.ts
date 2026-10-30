@@ -1,7 +1,9 @@
 /**
  * Fetches restricted fonts and their licenses from private kkb into public/fonts.
+ * repo-facts-disable-next-line paths -- The next line names the path a consumer installs this script at. (expires 2027-04-23, approved: Kalyn)
  * Run from the consumer root with `bun scripts/kevelle-fonts.ts` in predev and
- * prebuild. Ignore public/fonts/abc-areal/ and public/fonts/timeless-serif/ in git.
+ * prebuild. Ignore public/fonts/abc-areal/, public/fonts/timeless-serif/, and
+ * public/fonts/tx-02/ in git.
  * Install through @kkb/kevelle/fonts. Maintain this file in kkb, then reinstall.
  * Node built-ins and fetch keep consumer type checks independent of @types/bun.
  */
@@ -14,11 +16,11 @@ import { pathToFileURL } from "node:url";
 // Update the commit and hashes together when replacing any font or license.
 export const SOURCE = {
   repo: "kalynbeach/kkb",
-  commit: "2c2da9673211e9f0e8c8f2c95e7a65598316fedc",
+  commit: "0bdf3b38204502b044699621c49749a3eb2fa02f",
   dir: "apps/registry/public/fonts",
 } as const;
 
-type Family = "abc-areal" | "timeless-serif";
+type Family = "abc-areal" | "timeless-serif" | "tx-02";
 
 type FontFile = {
   readonly path: `${Family}/${string}`;
@@ -45,6 +47,10 @@ export const FONT_FILES = [
   {
     path: "timeless-serif/LICENSE.pdf",
     sha256: "fecd6c8ed71071df69300fdc4dabcce0c74563d8747fc3f7e83d00acde1b029a",
+  },
+  {
+    path: "tx-02/TX-02-Variable.woff2",
+    sha256: "012d1ff3fce9401588350842b7b8e0abc59e33068c355d5d896fb33181a5c1cc",
   },
 ] as const satisfies readonly FontFile[];
 
