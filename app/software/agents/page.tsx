@@ -1,4 +1,5 @@
 import { pageMetadata } from "@/lib/site";
+import { PageHeader } from "@/components/site/page-header";
 import { cn } from "@/lib/utils";
 import { SectionHead } from "@/components/site/section-head";
 
@@ -76,6 +77,7 @@ const timeline: readonly [Year, ...Year[]] = [
 export default function Agents() {
   return (
     <>
+      <PageHeader {...metadata} />
       <Stats />
       <Timeline />
     </>

@@ -14,9 +14,9 @@ import { desktopMedia } from "@/lib/layout";
 import { Waveform } from "@/components/waveform";
 
 /**
- * "Kalyn Beach" and the mark. `row` is section 2's 52px header row, with the
- * mark in the same column as the active dot. `inline` sits in the mobile top
- * bar and the sheet header. `atRest` shows the 3x3 beam (Home).
+ * "Kalyn Beach" and the mark. `row` is section 2's 52px header row. `inline`
+ * sits in the mobile top bar and the sheet header. `atRest` shows the 3x3
+ * beam (Home).
  */
 export function Identity({
   layout,
@@ -44,16 +44,17 @@ export function Identity({
   );
 }
 
+/**
+ * Text color alone marks the active row. Idle text clears 4.5:1 on the
+ * background and 3:1 against the active text, in both themes. A group
+ * holding the active page stays idle-colored, so one row reads as active.
+ */
 const rowColor = {
-  idle: "text-ramp-7 hover:text-ramp-9",
+  idle: "text-nav-idle hover:text-ramp-9",
   active: "text-ramp-10",
-  ancestor: "text-ramp-9",
+  ancestor: "text-nav-idle hover:text-ramp-9",
 } as const satisfies Record<NavRow["state"], string>;
 
-/**
- * Every row is a 32px link with the dot at its right end, 12 in from the
- * edge, so on desktop the dot lines up with the mark at both depths.
- */
 export function NavTree({
   rows,
   onNavigate,
@@ -83,19 +84,9 @@ function NavItem({
         href={row.href}
         onClick={onNavigate}
         aria-current={row.state === "active" ? "page" : undefined}
-        className={cn(
-          "role-nav flex h-row items-center justify-between pr-3",
-          rowColor[row.state]
-        )}
+        className={cn("role-nav flex h-row items-center", rowColor[row.state])}
       >
         {row.label}
-        {row.state === "active" && (
-          <span
-            data-slot="nav-dot"
-            aria-hidden
-            className="bg-signal shadow-lit-dot size-1.25"
-          />
-        )}
       </Link>
       {row.rows.length > 0 && (
         <ul className="pl-3">

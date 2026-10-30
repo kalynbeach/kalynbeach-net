@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { pageMetadata } from "@/lib/site";
+import { PageHeader } from "@/components/site/page-header";
 import { SectionHead } from "@/components/site/section-head";
 
 /**
@@ -17,6 +18,7 @@ const flow = [
 export default function KkbAudio() {
   return (
     <>
+      <PageHeader {...metadata} />
       <section className="flex flex-col gap-3">
         <p className="role-body text-ramp-8">
           Each host handles its own files, devices, and lifecycle outside the

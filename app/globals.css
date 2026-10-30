@@ -37,7 +37,6 @@
   --spacing-inset: 3.25rem; /* 52: section 1 padding at 1100px and up */
   --spacing-edge: 0.75rem; /* 12: below 1100px, section 1, the sheet and the bar sit this far in */
   --spacing-sheet: 18.75rem;
-  --spacing-glow: 79.75rem;
   --spacing-stage: min(40.5rem, calc(100vw - 1.5rem), calc(100dvh - 1.5rem));
   --spacing-safe-top: env(safe-area-inset-top);
   --spacing-safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
@@ -75,11 +74,17 @@
   --color-ramp-9: var(--neutral-9);
   --color-ramp-10: var(--neutral-10);
 
-  /* Waveform light: the glow, and the bloom layers of the Home stage. */
+  /*
+   * Idle nav text, halfway between ramp 6 and ramp 7. Ramp 7 sits under 3:1
+   * against the active row's ramp 10, and ramp 6 under 4.5:1 on the
+   * background; the midpoint clears both in light and dark.
+   */
+  --color-nav-idle: color-mix(in oklab, var(--neutral-6), var(--neutral-7));
+
+  /* Waveform light: the bloom layers of the Home stage. */
   --color-bloom: var(--bloom);
 
-  /* Halos on lit signal elements: the active dot, the Home beam, timeline markers, the bar's progress. */
-  --shadow-lit-dot: var(--lit-dot);
+  /* Halos on lit signal elements: the Home beam, timeline markers, the bar's progress. */
   --shadow-lit-beam: var(--lit-beam);
   --shadow-lit-marker: var(--lit-marker);
   --shadow-lit-progress: var(--lit-progress);
@@ -88,15 +93,14 @@
 :root {
   /* Paper's astral. Kevelle's light --astral is a different, deeper value. */
   --bloom: oklch(0.64 0.192 262);
-  --lit-dot: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
-  --lit-beam: var(--lit-dot);
-  --lit-marker: var(--lit-dot);
-  --lit-progress: var(--lit-dot);
+  /* In light mode every lit element takes the beam's soft halo. */
+  --lit-beam: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
+  --lit-marker: var(--lit-beam);
+  --lit-progress: var(--lit-beam);
 }
 
 .dark {
   --bloom: var(--signal);
-  --lit-dot: 0 0 6px 1px color-mix(in oklab, var(--signal) 55%, transparent);
   --lit-beam: 0 0 5px 1px color-mix(in oklab, var(--signal) 70%, transparent);
   --lit-marker: 0 0 6px 0 color-mix(in oklab, var(--signal) 50%, transparent);
   --lit-progress: 0 0 4px 0 color-mix(in oklab, var(--signal) 60%, transparent);
@@ -128,7 +132,7 @@
   letter-spacing: 0;
 }
 
-/* Breadcrumb parts, section heads, "TIMELINE". */
+/* Section heads, "TIMELINE". */
 @utility role-caps {
   font-family: var(--font-ui);
   font-size: 11px;
@@ -195,7 +199,7 @@
   letter-spacing: 0;
 }
 
-/* "inferred", repo tags, durations. The breadcrumb "/" adds font-medium. */
+/* "inferred", repo tags, durations. */
 @utility role-mono-sm {
   font-family: var(--font-ui);
   font-size: 11px;

@@ -1,4 +1,5 @@
 import { pageMetadata } from "@/lib/site";
+import { PageHeader } from "@/components/site/page-header";
 import { SectionHead } from "@/components/site/section-head";
 
 export const metadata = pageMetadata("/about");
@@ -6,6 +7,7 @@ export const metadata = pageMetadata("/about");
 export default function About() {
   return (
     <>
+      <PageHeader {...metadata} />
       <section>
         <SectionHead title="Who I am" />
         <div className="flex flex-col gap-3 pt-3">
