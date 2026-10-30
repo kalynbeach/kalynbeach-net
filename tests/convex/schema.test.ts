@@ -102,7 +102,7 @@ describe("schema", () => {
     expect(conforms(tracks, storedTrack)).toBe(true);
   });
 
-  it.fails("accepts a stored track that names a look", () => {
+  it("accepts a stored track that names a look", () => {
     expect(
       conforms(tracks, {
         ...storedTrack,
