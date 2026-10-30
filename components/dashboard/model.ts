@@ -116,7 +116,9 @@ export type LookOption = {
   readonly label: string;
 };
 
-/** What a track's look select shows. */
+/** looks.list as useQueries gives it: undefined while it loads, an Error when it fails. */
+export type LooksResult = readonly AdminLook[] | Error | undefined;
+
 export type TrackLookView =
   | { readonly kind: "loading" }
   | { readonly kind: "failed" }
@@ -128,15 +130,13 @@ export type TrackLookView =
     };
 
 /**
- * `chosen` is the track's look, or the pick in flight. `looks` is
- * looks.list as useQueries gives it: undefined while it loads, an Error
- * when it fails. Player default comes first, then every look in list
- * order. A look id the list lacks reads as MISSING_LOOK, and Player default
+ * `chosen` is the track's look, or the pick in flight. Player default
+ * comes first, then every look in list order. A look id the list lacks reads as MISSING_LOOK, and Player default
  * still clears it.
  */
 export function trackLookView(
   chosen: LookId | null,
-  looks: readonly AdminLook[] | Error | undefined
+  looks: LooksResult
 ): TrackLookView {
   if (looks === undefined) return { kind: "loading" };
   if (looks instanceof Error) return { kind: "failed" };
