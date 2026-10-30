@@ -144,8 +144,8 @@ export const attachAudio = mutation({
 
     const plan = planAttach(track, args.audio, Date.now());
 
-    if (plan.kind === "replace") {
-      await ctx.db.replace("tracks", track._id, plan.next);
+    if (plan.kind === "patch") {
+      await ctx.db.patch("tracks", track._id, plan.patch);
 
       if (plan.deleteBlob) {
         await deleteBlob(ctx, plan.deleteBlob);

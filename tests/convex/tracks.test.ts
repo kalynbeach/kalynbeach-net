@@ -10,6 +10,7 @@ import {
   trackMetadataProblems,
   type LegacyTrack,
   type StoredTrack,
+  type Track,
   type TrackAudio,
 } from "@/convex/lib/tracks";
 import { repositorySeedData } from "@/convex/lib/migration";
@@ -20,6 +21,24 @@ function storageId(value: string): Id<"_storage"> {
 
 function audio(id: string): TrackAudio {
   return { storageId: storageId(id), duration: 8, peaks: [0.1, 0.5, 1] };
+}
+
+/** Applies a patch the way db.patch does: a shallow merge where undefined removes the field. */
+function patched(doc: object, patch: object): object {
+  return Object.fromEntries(
+    Object.entries({ ...doc, ...patch }).filter(
+      ([, value]) => value !== undefined
+    )
+  );
+}
+
+/** The track attachAudio leaves behind and the blob it deletes, or the plan when it writes nothing. */
+function attached(track: Track, blob: TrackAudio) {
+  const plan = planAttach(track, blob, 500);
+
+  return plan.kind === "patch"
+    ? { next: patched(track, plan.patch), deleteBlob: plan.deleteBlob }
+    : plan;
 }
 
 const legacyTrack: LegacyTrack = repositorySeedData.tracks[0];
@@ -132,10 +151,7 @@ describe("trackMetadataProblems", () => {
 
 describe("planAttach", () => {
   it("turns a legacy track into a stored track and keeps its identity", () => {
-    const plan = planAttach(legacyTrack, audio("blob-new"), 500);
-
-    expect(plan).toEqual({
-      kind: "replace",
+    expect(attached(legacyTrack, audio("blob-new"))).toStrictEqual({
       next: {
         publicId: 1,
         title: "0_initializer",
@@ -150,17 +166,14 @@ describe("planAttach", () => {
   });
 
   it("replaces a stored track's audio and deletes the old blob", () => {
-    const plan = planAttach(storedTrack, audio("blob-new"), 500);
-
-    expect(plan).toEqual({
-      kind: "replace",
+    expect(attached(storedTrack, audio("blob-new"))).toStrictEqual({
       next: { ...storedTrack, updatedAt: 500, audio: audio("blob-new") },
       deleteBlob: storageId("blob-old"),
     });
   });
 
   it("treats the same blob again as a retry", () => {
-    expect(planAttach(storedTrack, audio("blob-old"), 500)).toEqual({
+    expect(attached(storedTrack, audio("blob-old"))).toEqual({
       kind: "unchanged",
     });
   });
