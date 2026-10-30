@@ -1,10 +1,10 @@
 /**
- * The site map: the nav, Cmd+K, each page's title and lede, and the layout
- * each route takes.
+ * The site map: the nav, Cmd+K, and the layout each route takes.
  *
  * The shell in the root layout resolves the entry for the current pathname
  * and draws the sidebar, Home's stage and Music's player views from it. Pages
- * render section 1's content, their header first.
+ * render section 1's content, their header first. A content page's title and
+ * lede live in its file in content/, with the rest of its copy.
  */
 export const siteName = "Kalyn Beach";
 
@@ -17,11 +17,9 @@ export type PlayerRole = "full" | "follow";
 
 type PageNode = {
   kind: "page";
-  /** The nav row, h1, document title and Cmd+K item. */
+  /** The nav row and Cmd+K item. */
   label: string;
   route: `/${string}`;
-  /** Plain text under the h1. Also the meta description. */
-  lede?: string;
   player: PlayerRole;
 };
 
@@ -42,13 +40,7 @@ type GroupNode = {
 /** The nav tree, top to bottom. Two levels at most. */
 const nav = [
   { kind: "stage", label: "Home", route: "/" },
-  {
-    kind: "page",
-    label: "About",
-    route: "/about",
-    lede: "I love learning, creating and building. I like making complex things as simple as possible.",
-    player: "follow",
-  },
+  { kind: "page", label: "About", route: "/about", player: "follow" },
   {
     kind: "group",
     label: "Software",
@@ -58,7 +50,6 @@ const nav = [
         kind: "page",
         label: "Agents",
         route: "/software/agents",
-        lede: "Three and a half years of building with AI agents, from a LangChain tool for music makers to the setup that builds this site.",
         player: "follow",
       },
       {
@@ -71,7 +62,6 @@ const nav = [
         kind: "page",
         label: "kkb-audio",
         route: "/software/kkb-audio",
-        lede: "A Rust foundation for my sound, audio, and music software. One real-time render engine runs in the browser through WebAssembly and natively on macOS.",
         player: "follow",
       },
       {
@@ -82,13 +72,7 @@ const nav = [
       },
     ],
   },
-  {
-    kind: "page",
-    label: "Music",
-    route: "/music",
-    lede: "Tracks and playlists, played through WavePlayer. Every track here is a sample for now.",
-    player: "full",
-  },
+  { kind: "page", label: "Music", route: "/music", player: "full" },
 ] as const satisfies readonly (StageNode | PageNode | GroupNode)[];
 
 type Labeled = { label: string; route: `/${string}` };
@@ -189,10 +173,7 @@ for (const node of nav) {
   for (const page of pages) {
     index.set(page.route, {
       layout: { kind: "page", player: page.player, title: null },
-      meta: {
-        title: page.label,
-        description: "lede" in page ? page.lede : undefined,
-      },
+      meta: { title: page.label },
       command: {
         label:
           node.kind === "group" ? `${node.label} / ${page.label}` : page.label,
@@ -252,8 +233,9 @@ export const commandItems: readonly CommandItem[] = [...index.values()].flatMap(
 );
 
 /**
- * Every page's `metadata` export. Pages also render it as their header,
- * `<PageHeader {...metadata} />`. Home keeps the root layout's title.
+ * The `metadata` export of a page with no content file: its title. Content
+ * pages export their file's metadata instead. Home keeps the root layout's
+ * title.
  */
 export function pageMetadata(route: Exclude<Route, "/">): PageMeta {
   const page = index.get(route);

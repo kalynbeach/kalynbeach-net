@@ -2,9 +2,10 @@ import type { PageMeta } from "@/lib/site";
 
 /**
  * A page's title and lede. It is section 1's first element on every page but
- * Home, so the title's cap top sits on the top line beside the name's. Pages
- * render it from their metadata, `<PageHeader {...metadata} />`. The prop is
- * `description` because the lede is the meta description.
+ * Home, so the title's cap top sits on the top line beside the name's. Each
+ * content file renders it first, from its metadata: `<PageHeader
+ * {...metadata} />`. The shell renders it for system and not-found pages.
+ * The prop is `description` because the lede is the meta description.
  */
 export function PageHeader({ title, description }: PageMeta) {
   return (

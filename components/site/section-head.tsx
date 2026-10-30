@@ -2,10 +2,9 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * A 32px head row with a hairline under it: About's "WHO I AM" and the
- * Agents "TIMELINE" header. `children` sit at the right end. Spread props
- * come after the default slot, so the timeline can pass
- * data-slot="timeline-header".
+ * A 32px head row with a hairline under it: the timeline's "TIMELINE"
+ * header. `children` sit at the right end. Spread props come after the
+ * default slot, so the timeline can pass data-slot="timeline-header".
  */
 export function SectionHead({
   title,

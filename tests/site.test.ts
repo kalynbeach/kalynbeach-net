@@ -33,14 +33,17 @@ describe("site map and page files", () => {
     expect(new Set(pages.map((page) => page.route))).toEqual(new Set(routes));
   });
 
-  it("has each page name its own route in its metadata", () => {
+  it("has each page take its metadata from its own route's source", () => {
     // Home keeps the root layout title. /software only redirects.
     const exempt = new Set(["/", "/software"]);
     for (const { file, route } of pages) {
       if (exempt.has(route)) continue;
-      expect(readFileSync(file, "utf8"), file).toContain(
-        `pageMetadata("${route}")`
-      );
+      const source = readFileSync(file, "utf8");
+      const own = [`pageMetadata("${route}")`, `"@/content${route}.mdx"`];
+      expect(
+        own.some((name) => source.includes(name)),
+        `${file} names ${own.join(" or ")}`
+      ).toBe(true);
     }
   });
 
@@ -104,13 +107,9 @@ describe("site map", () => {
     }
   );
 
-  it("titles a page by its label and describes it by its lede", () => {
-    expect(pageMetadata("/music")).toEqual({
-      title: "Music",
-      description:
-        "Tracks and playlists, played through WavePlayer. Every track here is a sample for now.",
-    });
-    expect(pageMetadata("/software/kevelle")).toEqual({ title: "Kevelle" });
+  it("titles a page with no content file by its label", () => {
+    expect(pageMetadata("/login")).toEqual({ title: "Sign in" });
+    expect(pageMetadata("/dashboard")).toEqual({ title: "Dashboard" });
   });
 
   it("lands the Software group on its first page", () => {

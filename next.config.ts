@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["three"],
@@ -15,4 +16,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/** Compiles content/*.mdx with the components in mdx-components.tsx. No remark or rehype plugins. */
+export default createMDX()(nextConfig);
