@@ -108,9 +108,8 @@ function NavItem({
  * Below 1100px: the menu button and the sheet it slides in from the left.
  * Escape, a backdrop click, a link click and any navigation close it.
  *
- * Built on Base UI's Drawer directly. The registry's DrawerContent renders a
- * dithered, blurred overlay whenever it is modal; R7 wants a plain backdrop
- * of --background at 72%.
+ * Built on Base UI's Drawer directly, for the sheet's inset and width. It
+ * takes Kevelle's floating surface, as the registry's dialog does.
  */
 export function NavSheet({
   layout,
@@ -157,11 +156,14 @@ function Sheet({
         <span className="bg-ramp-9 h-px w-3" />
       </Drawer.Trigger>
       <Drawer.Portal>
-        <Drawer.Backdrop className="bg-background/72 fixed inset-0 transition-opacity duration-(--duration-large) ease-out data-ending-style:opacity-0 data-starting-style:opacity-0" />
+        <Drawer.Backdrop
+          data-slot="nav-sheet-backdrop"
+          className="bg-backdrop dither-50 text-backdrop fixed inset-0 transition-opacity duration-(--duration-large) ease-out data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs"
+        />
         <Drawer.Viewport className="fixed inset-0">
           <Drawer.Popup
             data-slot="nav-sheet"
-            className="top-safe-top bottom-safe-bottom left-edge w-sidebar bg-background fixed flex translate-x-(--drawer-swipe-movement-x) flex-col transition-transform duration-(--duration-large) ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full data-swiping:duration-0"
+            className="top-safe-top bottom-safe-bottom left-edge w-sidebar bg-popover shadow-float aura fixed flex translate-x-(--drawer-swipe-movement-x) flex-col transition-transform duration-(--duration-large) ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full data-swiping:duration-0"
           >
             <Drawer.Title className="sr-only">Navigation</Drawer.Title>
             <div
