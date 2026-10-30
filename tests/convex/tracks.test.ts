@@ -5,10 +5,12 @@ import {
   MAX_AUDIO_BYTES,
   MAX_PEAKS,
   planAttach,
+  planSetLook,
   toPublicTrack,
   trackAudioProblem,
   trackMetadataProblems,
   type LegacyTrack,
+  type RequestedLook,
   type StoredTrack,
   type Track,
   type TrackAudio,
@@ -43,6 +45,13 @@ function attached(track: Track, blob: TrackAudio) {
   return plan.kind === "patch"
     ? { next: patched(track, plan.patch), deleteBlob: plan.deleteBlob }
     : plan;
+}
+
+/** The track setLook leaves behind, or the plan when it writes nothing. */
+function setTo(track: Track, requested: RequestedLook) {
+  const plan = planSetLook(track, requested, 500);
+
+  return plan.kind === "patch" ? patched(track, plan.patch) : plan;
 }
 
 const legacyTrack: LegacyTrack = repositorySeedData.tracks[0];
@@ -206,6 +215,59 @@ describe("planAttach", () => {
   it("treats the same blob again as a retry", () => {
     expect(attached(storedTrack, audio("blob-old"))).toEqual({
       kind: "unchanged",
+    });
+  });
+});
+
+describe("planSetLook", () => {
+  const dusk = { ...storedTrack, look: lookId("dusk") };
+
+  function found(id: string): RequestedLook {
+    return { kind: "found", id: lookId(id) };
+  }
+
+  it("points a track at a look and stamps updatedAt", () => {
+    expect(setTo(storedTrack, found("dusk"))).toStrictEqual({
+      ...storedTrack,
+      look: lookId("dusk"),
+      updatedAt: 500,
+    });
+  });
+
+  it("moves a track from one look to another", () => {
+    expect(setTo(dusk, found("dawn"))).toStrictEqual({
+      ...storedTrack,
+      look: lookId("dawn"),
+      updatedAt: 500,
+    });
+  });
+
+  it("gives a legacy track a look", () => {
+    expect(setTo(legacyTrack, found("dusk"))).toStrictEqual({
+      ...legacyTrack,
+      look: lookId("dusk"),
+      updatedAt: 500,
+    });
+  });
+
+  it("clears a look by removing the field", () => {
+    expect(setTo(dusk, { kind: "none" })).toStrictEqual({
+      ...storedTrack,
+      updatedAt: 500,
+    });
+  });
+
+  it("writes nothing when the track already holds what was asked, so a retry converges", () => {
+    expect(setTo(dusk, found("dusk"))).toEqual({ kind: "unchanged" });
+    expect(setTo(storedTrack, { kind: "none" })).toEqual({
+      kind: "unchanged",
+    });
+  });
+
+  it("refuses a look that is gone with the message the dashboard shows", () => {
+    expect(setTo(storedTrack, { kind: "gone", id: lookId("dusk") })).toEqual({
+      kind: "refuse",
+      message: "Look not found",
     });
   });
 });
