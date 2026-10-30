@@ -30,6 +30,9 @@ import Link from "next/link";
 import {
   ViewTransition,
   useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -103,6 +106,8 @@ function Sections({ children }: { children: ReactNode }) {
     placement.live === "screen" ? (
       <Waveform form="screen" className="size-full" />
     ) : undefined;
+
+  useScrollToTop(pathname);
 
   return (
     // .root (Kevelle) isolates the page, so Base UI portals stack predictably.
@@ -244,4 +249,34 @@ function subscribeReducedMotion(onChange: () => void) {
   const query = window.matchMedia(reducedMotionMedia);
   query.addEventListener("change", onChange);
   return () => query.removeEventListener("change", onChange);
+}
+
+/**
+ * Opens a page at its top after a forward navigation. Next.js scrolls only
+ * when the page segment's top is out of view, and section 1 starts the lead
+ * below the window's top, so a page opened from one scrolled less than the
+ * lead opened partway down. Back and Forward keep the position the browser
+ * restores.
+ */
+function useScrollToTop(pathname: string) {
+  const traversedTo = useRef<string | null>(null);
+  const shown = useRef(pathname);
+
+  useEffect(() => {
+    const note = () => {
+      traversedTo.current = window.location.pathname;
+    };
+    // Capture, so the note lands before Next.js's own listener renders the page.
+    window.addEventListener("popstate", note, { capture: true });
+    return () =>
+      window.removeEventListener("popstate", note, { capture: true });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (pathname === shown.current) return;
+    shown.current = pathname;
+    const traversal = traversedTo.current === pathname;
+    traversedTo.current = null;
+    if (!traversal) window.scrollTo(0, 0);
+  }, [pathname]);
 }
