@@ -148,9 +148,10 @@ function TrackTable() {
   }
 
   // At 1100px and up the frame's height ends here, so the table scrolls
-  // inside it. The negative margin keeps focus rings clear of the clip.
+  // inside it. The negative margin keeps focus rings clear of the clip, and
+  // `relative` keeps the absolute sr-only header inside it too.
   return (
-    <div className="-m-1 min-h-0 overflow-auto p-1">
+    <div className="relative -m-1 min-h-0 overflow-auto p-1">
       <table className="w-full">
         {/* Placeholder copy for Kalyn to write: the column headers. */}
         <thead>
