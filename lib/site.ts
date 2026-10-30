@@ -189,7 +189,10 @@ for (const node of nav) {
   for (const page of pages) {
     index.set(page.route, {
       layout: { kind: "page", player: page.player, title: null },
-      meta: { title: page.label, description: "lede" in page ? page.lede : undefined },
+      meta: {
+        title: page.label,
+        description: "lede" in page ? page.lede : undefined,
+      },
       command: {
         label:
           node.kind === "group" ? `${node.label} / ${page.label}` : page.label,

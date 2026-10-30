@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Section 2's parts and the nav sheet. The shell passes the rows it resolved,
- * so the nav never reads the pathname to decide active state.
+ * The sidebar's parts and the nav sheet. The shell passes the rows it
+ * resolved, so the nav never reads the pathname to decide active state.
  */
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
@@ -14,26 +14,12 @@ import { desktopMedia } from "@/lib/layout";
 import { Waveform } from "@/components/waveform";
 
 /**
- * "Kalyn Beach" and the mark. `row` is section 2's 52px header row. `inline`
- * sits in the mobile top bar and the sheet header. `atRest` shows the 3x3
- * beam (Home).
+ * "Kalyn Beach" with the mark right of it, at the top of the sidebar, in the
+ * mobile top bar and in the sheet header. `atRest` shows the 3x3 beam (Home).
  */
-export function Identity({
-  layout,
-  atRest,
-}: {
-  layout: "row" | "inline";
-  atRest: boolean;
-}) {
+export function Identity({ atRest }: { atRest: boolean }) {
   return (
-    <div
-      data-slot="site-identity"
-      className={
-        layout === "row"
-          ? "h-header flex items-center justify-between gap-3 pr-6 pl-5"
-          : "flex items-center gap-3"
-      }
-    >
+    <div data-slot="site-identity" className="flex items-center gap-3">
       <Link href="/" data-slot="site-name" className="role-name text-ramp-10">
         {siteName}
       </Link>
@@ -63,7 +49,7 @@ export function NavTree({
   onNavigate?: () => void;
 }) {
   return (
-    <ul className="px-5 pt-3 pb-5">
+    <ul>
       {rows.map((row) => (
         <NavItem key={row.label} row={row} onNavigate={onNavigate} />
       ))}
@@ -148,14 +134,14 @@ function Sheet({ rows, atRest }: { rows: readonly NavRow[]; atRest: boolean }) {
         <Drawer.Viewport className="fixed inset-0">
           <Drawer.Popup
             data-slot="nav-sheet"
-            className="top-safe-top bottom-safe-bottom left-edge w-sheet bg-background fixed flex translate-x-(--drawer-swipe-movement-x) flex-col transition-transform duration-(--duration-large) ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full data-swiping:duration-0"
+            className="top-safe-top bottom-safe-bottom left-edge w-sidebar bg-background fixed flex translate-x-(--drawer-swipe-movement-x) flex-col transition-transform duration-(--duration-large) ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full data-swiping:duration-0"
           >
             <Drawer.Title className="sr-only">Navigation</Drawer.Title>
             <div
               data-slot="sheet-header"
               className="h-header flex shrink-0 items-center justify-between pr-3 pl-5"
             >
-              <Identity layout="inline" atRest={atRest} />
+              <Identity atRest={atRest} />
               <Drawer.Close
                 aria-label="Close navigation"
                 className="text-ramp-9 grid size-10 place-items-center"
@@ -173,7 +159,7 @@ function Sheet({ rows, atRest }: { rows: readonly NavRow[]; atRest: boolean }) {
             <nav
               data-slot="site-nav"
               aria-label="Site"
-              className="min-h-0 overflow-y-auto"
+              className="min-h-0 overflow-y-auto px-5 pt-3 pb-5"
             >
               <NavTree rows={rows} onNavigate={() => setOpen(false)} />
             </nav>

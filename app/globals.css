@@ -3,7 +3,7 @@
 @import "@clerk/ui/themes/shadcn.css";
 
 /*
- * Site tokens for the three-section shell. Kevelle (app/kevelle,
+ * Site tokens for the two-section shell. Kevelle (app/kevelle,
  * registry-owned) supplies the neutral ramp, the signal colors and the font
  * files. This file names the site's font roles, layout geometry, type roles
  * and the few colors Kevelle lacks. Each value is set once here; components
@@ -11,7 +11,7 @@
  */
 
 @theme {
-  /* Three sections side by side at 1100px and up. Below it: top bar, nav sheet, player bar. */
+  /* The sidebar and section 1 side by side at 1100px and up. Below it: top bar, nav sheet, player bar. */
   --breakpoint-desktop: 68.75rem;
 
   /*
@@ -27,34 +27,29 @@
   --font-long: var(--font-serif);
   --font-mono: var(--font-ui);
 
-  --spacing-side: 12.5rem; /* 200: sections 2 and 3 */
-  --spacing-side-min: 12rem; /* 192: the narrowest a side section gets */
-  --spacing-main: 40.5rem; /* 648: section 1 */
-  --spacing-gutter: 1.25rem; /* 20: between sections */
+  --spacing-sidebar: 18.75rem; /* 300: the sidebar and the nav sheet */
+  --spacing-primary: 40.5rem; /* 648: section 1, and the widest the Home stage gets */
+  --spacing-gutter: 1.25rem; /* 20: between the sidebar and section 1 */
+  --spacing-margin: 2rem; /* 32: the window's side margins at 1100px and up */
   --spacing-lead: 5.25rem; /* 84: above and below the sections, and the sticky top */
-  --spacing-header: 3.25rem; /* 52: the header row of every section */
+  --spacing-header: 3.25rem; /* 52: the mobile top bar, the sheet header, the player's header rows */
   --spacing-row: 2rem; /* 32: nav, list, section-head and timeline rows */
-  --spacing-inset: 3.25rem; /* 52: section 1 padding at 1100px and up */
   --spacing-edge: 0.75rem; /* 12: below 1100px, section 1, the sheet and the bar sit this far in */
-  --spacing-sheet: 18.75rem;
-  --spacing-stage: min(40.5rem, calc(100vw - 1.5rem), calc(100dvh - 1.5rem));
+  /* Home's stage: section 1's width, short enough to leave the lead below it as well as above. */
+  --spacing-stage: min(100%, calc(100dvh - 2 * var(--spacing-lead)));
   --spacing-safe-top: env(safe-area-inset-top);
   --spacing-safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
-  /* Room under section 1 for the fixed player bar: the bar (57), its inset, and 12. */
-  --spacing-clear-bar: calc(
-    3.5625rem + max(0.75rem, env(safe-area-inset-bottom)) + 0.75rem
-  );
 
   /*
-   * Equal side tracks keep section 1 centered at every width. Free space fills
-   * the sides to 200 first; section 1 gives way before a side drops under 192.
+   * Section 1 keeps its width and stays centered while the side tracks can
+   * hold the sidebar (1352px and up). Narrower, the left track stops at the
+   * sidebar's width and section 1 slides right of center instead of
+   * shrinking.
    */
-  --grid-template-columns-shell: minmax(
-      var(--spacing-side-min),
-      var(--spacing-side)
-    )
-    minmax(0, var(--spacing-main))
-    minmax(var(--spacing-side-min), var(--spacing-side));
+  --grid-template-columns-column: minmax(var(--spacing-sidebar), 1fr)
+    minmax(0, var(--spacing-primary)) minmax(0, 1fr);
+  /* Admin: the sidebar, then one section that takes the rest. */
+  --grid-template-columns-wide: var(--spacing-sidebar) minmax(0, 1fr);
 }
 
 @theme inline {
