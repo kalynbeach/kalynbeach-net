@@ -1,12 +1,13 @@
 /**
  * The dashboard's decisions, with no I/O: the upload machine, what the UI
- * draws for an upload, the fields an edit sends, and the line a failure
- * shows. The rules are the server's own, from convex/lib/tracks.ts:
- * audioFileProblem on pick, trackAudioProblem after the read, and
- * trackMetadataProblems before create and update.
+ * draws for an upload, the fields an edit sends, what a track's look select
+ * shows, and the line a failure shows. The rules are the server's own, from
+ * convex/lib/tracks.ts: audioFileProblem on pick, trackAudioProblem after
+ * the read, and trackMetadataProblems before create and update.
  */
 import { ConvexError } from "convex/values";
 import type { Id } from "@/convex/_generated/dataModel";
+import type { AdminLook, LookId } from "@/convex/lib/looks";
 import {
   AUDIO_CONTENT_TYPES,
   audioFileProblem,
@@ -103,6 +104,51 @@ export function errorMessage(error: unknown): string {
   console.error(error);
 
   return REQUEST_FAILED;
+}
+
+// Placeholder copy for Kalyn to write.
+export const PLAYER_DEFAULT = "Player default";
+export const MISSING_LOOK = "Missing look";
+
+/** A choice in a track's look select. null is Player default, which clears the track's look. */
+export type LookOption = {
+  readonly value: LookId | null;
+  readonly label: string;
+};
+
+/** What a track's look select shows. */
+export type TrackLookView =
+  | { readonly kind: "loading" }
+  | { readonly kind: "failed" }
+  | {
+      readonly kind: "ready";
+      readonly value: LookId | null;
+      readonly label: string;
+      readonly options: readonly LookOption[];
+    };
+
+/**
+ * `chosen` is the track's look, or the pick in flight. `looks` is
+ * looks.list as useQueries gives it: undefined while it loads, an Error
+ * when it fails. Player default comes first, then every look in list
+ * order. A look id the list lacks reads as MISSING_LOOK, and Player default
+ * still clears it.
+ */
+export function trackLookView(
+  chosen: LookId | null,
+  looks: readonly AdminLook[] | Error | undefined
+): TrackLookView {
+  if (looks === undefined) return { kind: "loading" };
+  if (looks instanceof Error) return { kind: "failed" };
+
+  const options: readonly LookOption[] = [
+    { value: null, label: PLAYER_DEFAULT },
+    ...looks.map((look) => ({ value: look.id, label: look.name })),
+  ];
+  const label =
+    options.find((option) => option.value === chosen)?.label ?? MISSING_LOOK;
+
+  return { kind: "ready", value: chosen, label, options };
 }
 
 /**
