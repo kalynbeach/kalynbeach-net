@@ -30,7 +30,7 @@
   --spacing-sidebar: 15rem; /* 240: the sidebar, and the rail that mirrors it */
   --spacing-sheet: 18.75rem; /* 300: the nav sheet below 1200px */
   --spacing-top: 6rem; /* 96: the top line, the sections' top and bottom padding, the sticky top */
-  --spacing-header: 3.25rem; /* 52: the mobile top bar, the sheet header, the player's header rows */
+  --spacing-header: 3.25rem; /* 52: the mobile top bar and the sheet header */
   --spacing-row: 1.75rem; /* 28: nav, list and timeline rows */
   --spacing-opening: 4rem; /* 64: a page's header to its content, on every page */
   --spacing-edge: 0.75rem; /* 12: below 1200px, section 1, the sheet and the bar sit this far in */
@@ -106,18 +106,11 @@
 
   --color-nav-idle: var(--nav-idle);
 
-  /* Waveform light: the bloom layers of the Home stage. */
-  --color-bloom: var(--bloom);
-
-  /* Halos on lit signal elements: the Home beam, timeline markers, the bar's progress. */
-  --shadow-lit-beam: var(--lit-beam);
+  /* The halo on a lit timeline marker. */
   --shadow-lit-marker: var(--lit-marker);
-  --shadow-lit-progress: var(--lit-progress);
 }
 
 :root {
-  /* Paper's astral. Kevelle's light --astral is a different, deeper value. */
-  --bloom: oklch(0.64 0.192 262);
   /*
    * Idle nav rows: the lowest-contrast mix of ramps 6 and 7 that still reads
    * 4.5:1 on the background, so the current row (ramp 10) stands apart as far
@@ -125,17 +118,13 @@
    * row; dark 4.56:1 and 4.33:1.
    */
   --nav-idle: color-mix(in oklab, var(--neutral-6) 75%, var(--neutral-7));
-  --lit-beam: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
-  --lit-marker: var(--lit-beam);
-  --lit-progress: var(--lit-beam);
+  --lit-marker: 0 0 4px 0
+    color-mix(in oklab, var(--signal-dim) 45%, transparent);
 }
 
 .dark {
-  --bloom: var(--signal);
   --nav-idle: color-mix(in oklab, var(--neutral-6) 90%, var(--neutral-7));
-  --lit-beam: 0 0 5px 1px color-mix(in oklab, var(--signal) 70%, transparent);
   --lit-marker: 0 0 6px 0 color-mix(in oklab, var(--signal) 50%, transparent);
-  --lit-progress: 0 0 4px 0 color-mix(in oklab, var(--signal) 60%, transparent);
 }
 
 /*
@@ -185,8 +174,7 @@
  *   lede        ABC Areal 19/28 (18/26)         7    the paragraph under the title
  *   heading     ABC Areal 22/28 500 (20/28)     10   section headings
  *   body        ABC Areal 17/28                 8    prose; 9 for timeline entries
- *   nav         TX-02 14/28                     7    step names; nav rows take
- *                                                    nav-idle (10 current)
+ *   nav         TX-02 14/28                     7    nav rows (10 current), step names
  *   stat-value  TX-02 24/32 (16/20)             10   figures in a stat row
  *   meta        ABC Areal 12/16                 7    captions
  *   mono-sm     TX-02 12/16                     7    labels: stat labels, dates, tags
@@ -335,43 +323,4 @@
       margin-block-start: var(--spacing-opening);
     }
   }
-}
-
-/*
- * WavePlayer placeholder roles. They go with components/wave-player.tsx's
- * placeholder bodies when the Kevelle block lands.
- */
-
-@utility role-track {
-  font-family: var(--font-text);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  letter-spacing: 0;
-}
-
-@utility role-tag {
-  font-family: var(--font-ui);
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 16px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-@utility role-card-title {
-  font-family: var(--font-text);
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 20px;
-  letter-spacing: 0;
-}
-
-/* Library rows. The loaded track adds font-medium. */
-@utility role-library {
-  font-family: var(--font-text);
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 20px;
-  letter-spacing: 0;
 }
