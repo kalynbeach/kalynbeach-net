@@ -5,15 +5,16 @@ type Stat = {
   value: string;
 };
 
-/** A row of figures whose cells' top borders join into one hairline. */
+/** A cell in a row whose cells' top borders join into one hairline. Steps' cells use it too. */
+export const hairlineCell =
+  "border-ramp-4 desktop:not-first:pl-5 flex flex-1 flex-col gap-2 border-t pt-2.75 pb-2 not-first:pl-3";
+
+/** A row of figures in hairline cells. */
 export function Stats({ items }: { items: readonly Stat[] }) {
   return (
     <dl data-slot="stats" className="flex">
       {items.map((stat) => (
-        <div
-          key={stat.label}
-          className="border-ramp-4 desktop:not-first:pl-5 flex flex-1 flex-col gap-2 border-t pt-2.75 pb-2 not-first:pl-3"
-        >
+        <div key={stat.label} className={hairlineCell}>
           <dt className="role-mono-sm text-ramp-6">
             {stat.short ? (
               <>
