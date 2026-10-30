@@ -226,7 +226,7 @@ describe("viewEditor selection", () => {
       run(listed([adminLook("b", rosette, { usedBy: [lowTide, highTide] }), a]))
     ).rows;
 
-    expect(rows.map((row) => [row.id, row.uses])).toEqual([
+    expect(rows.map((row) => [row.id, row.trackCount])).toEqual([
       ["b", 2],
       ["a", 0],
     ]);
