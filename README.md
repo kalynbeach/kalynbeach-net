@@ -69,6 +69,7 @@ are compatible; recheck this boundary when changing these tools or their modes.
 - **3D:** Located in `components/r3f/`.
 - **Auth:** Clerk establishes identity; sensitive Convex functions enforce app roles.
 - **Data:** Convex schema/functions live in `convex/`; server adapters live in `lib/convex/`.
+- **Tracks:** Track audio lives in Convex file storage. The root layout reads `tracks.list` through `fetchPublicQuery` (`lib/convex/server.ts`) on every document request, so every route renders per request. When Convex fails or takes longer than 1 s, the page renders with an empty list. After hydration, the shell subscribes to `tracks.list` (`components/site/live-tracks.ts`), so an open page follows each upload, replacement, and removal. Kalyn uploads and manages tracks on `/dashboard` (`components/dashboard/`), where the browser reads each file's duration and 256 peaks before it uploads.
 
 ## Linting and formatting
 

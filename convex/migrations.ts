@@ -1,7 +1,12 @@
 import { v } from "convex/values";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation } from "./_generated/server";
-import { repositorySeedData, validateMigrationData } from "./lib/migration";
+import {
+  previewSamples,
+  renderSampleWav,
+  repositorySeedData,
+  validateMigrationData,
+} from "./lib/migration";
 
 const migrationResultValidator = v.object({
   tracks: v.number(),
@@ -31,6 +36,21 @@ async function assertNoPositionConflicts(ctx: MutationCtx): Promise<void> {
   }
 }
 
+async function hasTrack(ctx: MutationCtx, publicId: number): Promise<boolean> {
+  const track = await ctx.db
+    .query("tracks")
+    .withIndex("by_public_id", (query) => query.eq("publicId", publicId))
+    .unique();
+
+  return track !== null;
+}
+
+/**
+ * Gives a preview the production catalog (legacy S3 tracks, a playlist) and
+ * stored sample tracks it can play. Inserts only the rows that are missing,
+ * so a rerun converges any preview, and one transaction, so a failure stores
+ * nothing. Returns the rows it inserted.
+ */
 export const seedPreview = internalMutation({
   args: {},
   returns: migrationResultValidator,
@@ -38,19 +58,36 @@ export const seedPreview = internalMutation({
     validateMigrationData(repositorySeedData);
     await assertNoPositionConflicts(ctx);
 
-    for (const track of repositorySeedData.tracks) {
-      const existing = await ctx.db
-        .query("tracks")
-        .withIndex("by_public_id", (query) =>
-          query.eq("publicId", track.publicId)
-        )
-        .unique();
+    const inserted = { tracks: 0, playlists: 0, playlistTracks: 0 };
 
-      if (existing) {
-        await ctx.db.patch("tracks", existing._id, track);
-      } else {
+    for (const track of repositorySeedData.tracks) {
+      if (!(await hasTrack(ctx, track.publicId))) {
         await ctx.db.insert("tracks", track);
+        inserted.tracks += 1;
       }
+    }
+
+    for (const sample of previewSamples) {
+      if (await hasTrack(ctx, sample.publicId)) {
+        continue;
+      }
+
+      const { wav, duration, peaks } = renderSampleWav(sample);
+      const storageId = await ctx.storage.store(
+        new Blob([wav], { type: "audio/wav" })
+      );
+      const now = Date.now();
+
+      await ctx.db.insert("tracks", {
+        publicId: sample.publicId,
+        title: sample.title,
+        artist: sample.artist,
+        record: sample.record,
+        audio: { storageId, duration, peaks },
+        createdAt: now,
+        updatedAt: now,
+      });
+      inserted.tracks += 1;
     }
 
     for (const playlist of repositorySeedData.playlists) {
@@ -61,10 +98,9 @@ export const seedPreview = internalMutation({
         )
         .unique();
 
-      if (existing) {
-        await ctx.db.patch("playlists", existing._id, playlist);
-      } else {
+      if (!existing) {
         await ctx.db.insert("playlists", playlist);
+        inserted.playlists += 1;
       }
     }
 
@@ -78,17 +114,12 @@ export const seedPreview = internalMutation({
         )
         .unique();
 
-      if (existing) {
-        await ctx.db.patch("playlistTracks", existing._id, playlistTrack);
-      } else {
+      if (!existing) {
         await ctx.db.insert("playlistTracks", playlistTrack);
+        inserted.playlistTracks += 1;
       }
     }
 
-    return {
-      tracks: repositorySeedData.tracks.length,
-      playlists: repositorySeedData.playlists.length,
-      playlistTracks: repositorySeedData.playlistTracks.length,
-    };
+    return inserted;
   },
 });

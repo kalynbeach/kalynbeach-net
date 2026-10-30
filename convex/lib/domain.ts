@@ -1,5 +1,3 @@
-import type { Doc } from "../_generated/dataModel";
-
 type PlaylistUpdate = {
   title?: string;
   description?: string | null;
@@ -27,32 +25,6 @@ export function assertNonEmpty(value: string, label: string): void {
   if (value.trim().length === 0) {
     throw new Error(`${label} must not be empty`);
   }
-}
-
-export function assertHttpsUrl(value: string, label: string): void {
-  let url: URL;
-
-  try {
-    url = new URL(value);
-  } catch {
-    throw new Error(`${label} must be a valid URL`);
-  }
-
-  if (url.protocol !== "https:") {
-    throw new Error(`${label} must use HTTPS`);
-  }
-}
-
-export function toTrackView(track: Doc<"tracks">) {
-  return {
-    id: track.publicId,
-    title: track.title,
-    artist: track.artist,
-    record: track.record,
-    src: track.src,
-    image: track.image,
-    isLoop: track.isLoop,
-  };
 }
 
 export function buildPlaylistPatch(
