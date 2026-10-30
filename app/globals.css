@@ -102,6 +102,36 @@
 }
 
 /*
+ * kevelle/waveform names its live canvas waveform (or lends the name to the
+ * mark); kevelle/wave-player names the player's frame wave-player. The root
+ * skips its old image and runs no animation, so the new page shows at once,
+ * as a navigation without a transition does. Only the waveform and the
+ * player's frame move.
+ */
+::view-transition-old(root) {
+  display: none;
+}
+
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* kevelle/waveform's contract: the figure rides above the frames it crosses. */
+::view-transition-group(waveform) {
+  z-index: 1;
+}
+
+/* Kevelle's reduced-motion rule matches *, ::before and ::after, not these pseudo-elements. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/*
  * The type scale. Each role sets family, size, weight, line height and
  * tracking together, and steps down below 1100px where the phone needs it,
  * so call sites never repeat a breakpoint. Sizes are rem so the reader's
