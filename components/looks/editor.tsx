@@ -50,6 +50,10 @@ import {
 /** Module scope, so the request never changes and the subscription never restarts. */
 const LIST = { list: { query: api.looks.list, args: {} } };
 
+// Placeholder copy for Kalyn to write: a look's usage count and its Used by line.
+const usage = (uses: number) => (uses === 1 ? "1 track" : `${uses} tracks`);
+const USED_BY = "Used by";
+
 /**
  * Until Convex holds the Clerk token, an admin query is refused as
  * unauthenticated, so the list waits for it and shows its spinner.
@@ -290,6 +294,11 @@ function LookList({
             {row.unsaved && (
               <span className="role-mono-sm text-ramp-6">Unsaved</span>
             )}
+            {row.uses > 0 && (
+              <span className="role-mono-sm text-ramp-6">
+                {usage(row.uses)}
+              </span>
+            )}
             {row.live && <Badge variant="success">Live</Badge>}
             <span
               aria-hidden
@@ -405,7 +414,7 @@ function LookControls({
       </div>
       {look.usedBy.length > 0 && (
         <p className="role-mono-sm text-ramp-6">
-          Used by {look.usedBy.map((track) => track.title).join(", ")}
+          {USED_BY} {look.usedBy.map((track) => track.title).join(", ")}
         </p>
       )}
       {remove.kind === "held" ? (
