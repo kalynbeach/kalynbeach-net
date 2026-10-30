@@ -257,24 +257,33 @@ function NewTrack() {
   );
 }
 
+/**
+ * New track's upload in one line while the dialog is closed: its step, or
+ * why it stopped. The status region stays mounted, so a change after the
+ * dialog closes is announced.
+ */
 function UploadLine({ view }: { view: UploadView }) {
-  const { file, progress, failure } = view;
-
-  if (file === null || (progress === null && failure === null)) return null;
+  const { file, progress } = view;
+  const problem = view.failure ?? view.rejection;
 
   return (
     <p
+      role="status"
       className={cn(
         "role-mono-sm flex min-w-0 gap-2",
-        failure === null ? "text-ramp-7" : "text-destructive"
+        problem === null ? "text-ramp-7" : "text-destructive"
       )}
     >
-      <span className="min-w-0 truncate">{file.name}</span>
-      <span className="shrink-0">
-        {progress === null
-          ? failure
-          : `${PROGRESS_LABELS[progress.step]}${progress.percent === null ? "" : ` ${progress.percent}%`}`}
-      </span>
+      {file !== null && (progress !== null || problem !== null) && (
+        <>
+          <span className="min-w-0 truncate">{file.name}</span>
+          <span className="shrink-0">
+            {progress === null
+              ? problem
+              : `${PROGRESS_LABELS[progress.step]}${progress.percent === null ? "" : ` ${progress.percent}%`}`}
+          </span>
+        </>
+      )}
     </p>
   );
 }
