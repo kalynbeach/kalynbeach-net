@@ -9,7 +9,9 @@
  * At 1100px and up it fills the frame's height in three columns: the looks
  * with the selected look's name and commands, its preview as large as the
  * column allows, and WaveformPanel. The first and last scroll on their own,
- * so the preview stays in view. Below 1100px they stack in that order.
+ * so the preview stays in view. Where the frame is too narrow for a useful
+ * middle column, the preview moves to the top of the panel's column, still
+ * in view above the controls. Below 1100px they stack in that order.
  *
  * The preview and the panel share the editor's own WaveformProvider with
  * no audio. It takes viewTransitionName={null}: on /dashboard the shell's
@@ -165,9 +167,9 @@ export function LooksEditor() {
   };
 
   return (
-    <div className="desktop:grid desktop:min-h-0 desktop:flex-1 desktop:grid-cols-[13rem_minmax(0,1fr)_20rem] desktop:grid-rows-[minmax(0,1fr)] flex flex-col gap-6">
+    <div className="desktop:grid desktop:min-h-0 desktop:flex-1 desktop:grid-cols-[minmax(0,1fr)_20rem] desktop:grid-rows-[auto_minmax(0,1fr)] desktop:@min-[51rem]:grid-cols-[13rem_minmax(0,1fr)_20rem] desktop:@min-[51rem]:grid-rows-[minmax(0,1fr)] flex flex-col gap-6">
       {/* The negative margin keeps focus rings clear of the scroll clip. */}
-      <div className="desktop:-m-1 desktop:overflow-y-auto desktop:p-1 flex flex-col gap-6">
+      <div className="desktop:row-span-2 desktop:@min-[51rem]:row-span-1 desktop:-m-1 desktop:overflow-y-auto desktop:p-1 flex flex-col gap-6">
         <section aria-label="Looks" className="flex flex-col">
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="role-heading text-ramp-10">Looks</h2>
@@ -242,8 +244,8 @@ function SelectedLook({
       onConfigChange={(config) => onEdit(selection.look.id, config)}
       viewTransitionName={null}
     >
-      {/* A size container, so the square preview takes the column's shorter side. */}
-      <div className="desktop:min-h-0 desktop:[container-type:size]">
+      {/* A size container, so the square preview takes the column's shorter side. Square itself while it tops the panel's column. */}
+      <div className="desktop:min-h-0 desktop:aspect-square desktop:@min-[51rem]:aspect-auto desktop:[container-type:size]">
         <Waveform
           form={form}
           className="desktop:w-[min(100cqw,100cqh)] desktop:max-w-none mx-auto aspect-square w-full max-w-80"
