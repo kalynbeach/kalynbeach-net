@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import type { Id } from "@/convex/_generated/dataModel";
-import type { QueryCtx } from "@/convex/_generated/server";
 import type { LookConfig } from "@/convex/lib/looks";
 import {
   audioFileProblem,
@@ -13,6 +12,7 @@ import {
   trackAudioProblem,
   trackMetadataProblems,
   type LegacyTrack,
+  type PublicTrackReader,
   type RequestedLook,
   type StoredTrack,
   type Track,
@@ -310,8 +310,7 @@ describe("resolvePublicTracks", () => {
 
   function reader(blobs: readonly string[], looks: Record<string, LookConfig>) {
     const lookReads: string[] = [];
-    // oxlint-disable-next-line anti-slop/no-chained-type-assertions -- A fake with only the two reads the resolver may make, so any other read fails the test.
-    const ctx = {
+    const ctx: PublicTrackReader = {
       db: {
         get: async (table: string, id: string) => {
           if (table !== "looks") throw new Error(`Read ${table}`);
@@ -325,7 +324,7 @@ describe("resolvePublicTracks", () => {
         getUrl: async (id: string) =>
           blobs.includes(id) ? `https://example.test/${id}` : null,
       },
-    } as unknown as Pick<QueryCtx, "db" | "storage">;
+    };
 
     return { ctx, lookReads };
   }
