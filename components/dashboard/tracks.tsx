@@ -28,7 +28,7 @@ import {
   useQueries,
 } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import type { AdminLook, LookId } from "@/convex/lib/looks";
+import type { LookId } from "@/convex/lib/looks";
 import type {
   AdminTrack,
   MetadataProblem,
@@ -78,6 +78,7 @@ import {
   legacyFileName,
   metadataPatch,
   trackLookView,
+  type LooksResult,
   type UploadCommand,
   type UploadView,
   type WorkStep,
@@ -121,14 +122,11 @@ const DASHBOARD = {
   looks: { query: api.looks.list, args: {} },
 };
 
-/** looks.list as useQueries gives it: undefined while it loads, an Error when it fails. */
-type Looks = readonly AdminLook[] | Error | undefined;
-
 /** useQueries returns a failure as a value, where useQuery would throw it into the page. */
 function TrackTable() {
   const result = useQueries(DASHBOARD);
   const tracks: AdminTrack[] | Error | undefined = result.tracks;
-  const looks: Looks = result.looks;
+  const looks: LooksResult = result.looks;
   const lookHeader = useId();
 
   if (tracks === undefined) return <Spinner />;
@@ -259,7 +257,6 @@ function NewTrack() {
   );
 }
 
-/** New track's upload in one line, while it runs or after it fails. */
 function UploadLine({ view }: { view: UploadView }) {
   const { file, progress, failure } = view;
 
@@ -293,7 +290,7 @@ function TrackRow({
   lookHeader,
 }: {
   track: AdminTrack;
-  looks: Looks;
+  looks: LooksResult;
   /** The Look column header's id, half of the look select's name. */
   lookHeader: string;
 }) {
@@ -406,7 +403,7 @@ function TrackLook({
   labelledBy,
 }: {
   track: AdminTrack;
-  looks: Looks;
+  looks: LooksResult;
   labelledBy: string;
 }) {
   const setLook = useMutation(api.tracks.setLook);
