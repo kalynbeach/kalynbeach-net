@@ -12,5 +12,14 @@ export default async function Login() {
     redirect("/dashboard");
   }
 
-  return <SignIn routing="hash" fallbackRedirectUrl="/dashboard" />;
+  // The shell's "Sign in" is the page's h1, on the top line. Clerk's title is a
+  // second h1 and no option turns it off, so it is hidden. Its subtitle and
+  // the email preview with its edit link stay.
+  return (
+    <SignIn
+      routing="hash"
+      fallbackRedirectUrl="/dashboard"
+      appearance={{ elements: { headerTitle: { display: "none" } } }}
+    />
+  );
 }
