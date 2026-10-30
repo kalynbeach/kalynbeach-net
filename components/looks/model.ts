@@ -221,6 +221,8 @@ export type LookRow = {
   readonly live: boolean;
   readonly unsaved: boolean;
   readonly selected: boolean;
+  /** How many tracks use the look. */
+  readonly uses: number;
 };
 
 export type UseOnSite =
@@ -268,6 +270,7 @@ export function viewEditor(state: EditorState): EditorView {
       live: look.live,
       unsaved: state.drafts.has(look.id),
       selected: look.id === shown?.id,
+      uses: look.usedBy.length,
     })),
     selection: shown && select(shown, state.drafts.get(shown.id) ?? null),
     anyUnsaved: state.drafts.size > 0,
