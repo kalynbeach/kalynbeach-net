@@ -317,7 +317,7 @@ function TrackRow({
           </span>
         </th>
         <td className="py-3 pe-6">
-          <span className="flex items-center gap-2 whitespace-nowrap">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {audio.kind === "legacy" ? (
               <>
                 <Badge variant="outline">Legacy</Badge>
@@ -345,7 +345,8 @@ function TrackRow({
           />
         </td>
         <td className="py-3">
-          <div className="flex justify-end gap-2">
+          {/* Where the table is narrow the actions wrap, two to a line at most. */}
+          <div className="flex min-w-44 flex-wrap justify-end gap-2">
             <EditTrack track={track} disabled={view.busy} />
             <AudioPicker
               label={legacy ? "Attach audio" : "Replace audio"}
