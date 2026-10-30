@@ -1,7 +1,12 @@
 import { v, type Infer } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
-import { lookConfigValidator, type LookConfig, type LookId } from "./looks";
+import {
+  lookConfigValidator,
+  type Look,
+  type LookConfig,
+  type LookId,
+} from "./looks";
 
 const trackFields = {
   publicId: v.number(),
@@ -294,8 +299,18 @@ export function toPublicTrack(
  * once, however many tracks share it. A look row that is gone gives null,
  * since a throw here would reach every visitor. Never reads the site row.
  */
+/** The reads resolvePublicTracks makes: look rows and blob URLs. A QueryCtx is one. */
+export type PublicTrackReader = {
+  readonly db: {
+    get(table: "looks", id: LookId): Promise<Pick<Look, "config"> | null>;
+  };
+  readonly storage: {
+    getUrl(storageId: Id<"_storage">): Promise<string | null>;
+  };
+};
+
 export async function resolvePublicTracks(
-  ctx: Pick<QueryCtx, "db" | "storage">,
+  ctx: PublicTrackReader,
   tracks: readonly Track[]
 ): Promise<PublicTrack[]> {
   const stored = tracks.filter(isStored);
