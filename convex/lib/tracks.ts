@@ -1,6 +1,7 @@
 import { v, type Infer } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
+import type { LookId } from "./looks";
 
 const trackFields = {
   publicId: v.number(),
@@ -74,6 +75,7 @@ export const adminTrackValidator = v.object({
   title: v.string(),
   artist: v.string(),
   record: v.string(),
+  look: v.union(v.id("looks"), v.null()),
   audio: v.union(
     v.object({ kind: v.literal("legacy"), src: v.string() }),
     v.object({
@@ -222,6 +224,47 @@ export function planAttach(
   };
 }
 
+/** The look setLook was asked for, as the handler read it. A `gone` id has no look row behind it. */
+export type RequestedLook =
+  | { readonly kind: "none" }
+  | { readonly kind: "found"; readonly id: LookId }
+  | { readonly kind: "gone"; readonly id: LookId };
+
+export type SetLookPlan =
+  | { readonly kind: "unchanged" }
+  | {
+      readonly kind: "patch";
+      /** `look` is required even when undefined: db.patch removes a field only when its key is present. */
+      readonly patch: {
+        readonly look: LookId | undefined;
+        readonly updatedAt: number;
+      };
+    }
+  | { readonly kind: "refuse"; readonly message: string };
+
+/**
+ * What setLook does to `track`. A track that already holds the requested
+ * look, or none when cleared, writes nothing before any check, so a retry of
+ * a set that landed succeeds. A look that is gone is refused, so a track
+ * never names a deleted look.
+ */
+export function planSetLook(
+  track: Track,
+  requested: RequestedLook,
+  now: number
+): SetLookPlan {
+  const next = requested.kind === "none" ? null : requested.id;
+
+  if (next === (track.look ?? null)) {
+    return { kind: "unchanged" };
+  }
+  if (requested.kind === "gone") {
+    return { kind: "refuse", message: "Look not found" };
+  }
+
+  return { kind: "patch", patch: { look: next ?? undefined, updatedAt: now } };
+}
+
 export function toPublicTrack(track: StoredTrack, src: string): PublicTrack {
   return {
     id: String(track.publicId),
@@ -257,6 +300,7 @@ export async function toAdminTrack(
     title: track.title,
     artist: track.artist,
     record: track.record,
+    look: track.look ?? null,
     audio: isStored(track)
       ? {
           kind: "stored",
