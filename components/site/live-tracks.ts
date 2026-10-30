@@ -22,16 +22,23 @@ const TRACKS = { tracks: { query: api.tracks.list, args: {} } };
  * A query still subscribing, reconnecting, or failing is no news: useQueries
  * returns a failure as a value, and the hook keeps the last list it had, so
  * the player never falls back to an older one.
+ *
+ * Tracks reach the player without their look, so it draws its default.
  */
 export function useLiveTracks(
-  initial: readonly WavePlayerTrack[]
+  initial: readonly PublicTrack[]
 ): readonly WavePlayerTrack[] {
   const result: PublicTrack[] | Error | undefined = useQueries(TRACKS).tracks;
-  const [held, setHeld] = useState(initial);
-  const next = Array.isArray(result) ? result : held;
+  const [held, setHeld] = useState(() => forPlayer(initial));
+  const next =
+    Array.isArray(result) && result !== held.rows ? forPlayer(result) : held;
 
   // The client returns one array per answer, so this settles in one render.
   if (next !== held) setHeld(next);
 
-  return next;
+  return next.tracks;
+}
+
+function forPlayer(rows: readonly PublicTrack[]) {
+  return { rows, tracks: rows.map((row) => ({ ...row, look: null })) };
 }
