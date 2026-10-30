@@ -54,7 +54,7 @@ import {
 const LIST = { list: { query: api.looks.list, args: {} } };
 
 // Placeholder copy for Kalyn to write: a look's usage count and its Used by line.
-const usage = (uses: number) => (uses === 1 ? "1 track" : `${uses} tracks`);
+const usage = (count: number) => (count === 1 ? "1 track" : `${count} tracks`);
 const USED_BY = "Used by";
 
 /**
@@ -219,8 +219,7 @@ export function LooksEditor() {
 }
 
 /**
- * The preview and WaveformPanel, the middle and right columns, around the
- * editor's own WaveformProvider. It mounts with the first selection, so the
+ * The preview and WaveformPanel around the editor's own WaveformProvider. It mounts with the first selection, so the
  * preview starts from a real look.
  */
 function SelectedLook({
@@ -303,9 +302,9 @@ function LookList({
             {row.unsaved && (
               <span className="role-mono-sm text-ramp-6">Unsaved</span>
             )}
-            {row.uses > 0 && (
+            {row.trackCount > 0 && (
               <span className="role-mono-sm text-ramp-6">
-                {usage(row.uses)}
+                {usage(row.trackCount)}
               </span>
             )}
             {row.live && <Badge variant="success">Live</Badge>}
