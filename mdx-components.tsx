@@ -2,13 +2,14 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import type { MDXComponents } from "mdx/types";
 import Link from "next/link";
 import { PageHeader } from "@/components/site/page-header";
+import { Project } from "@/components/site/project";
 
 /**
  * Every content/*.mdx body renders in Kevelle's typeset at the body role.
  * Typeset styles markdown's elements and skips any subtree whose root has a
  * data-slot, so a component used in MDX keeps its own type by setting one.
- * Components every content file uses are registered here; the rest are
- * imported by the file that uses them.
+ * PageHeader (every content file) and Project (the Software index) are
+ * registered here; other components are imported by the file that uses them.
  */
 const components = {
   // Prose takes typeset's flow. The header and components keep section 1's
@@ -26,6 +27,7 @@ const components = {
       <a href={href} {...props} />
     ),
   PageHeader,
+  Project,
 } satisfies MDXComponents;
 
 export function useMDXComponents(): MDXComponents {

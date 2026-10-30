@@ -21,59 +21,42 @@ type PageNode = {
   label: string;
   route: `/${string}`;
   player: PlayerRole;
+  /**
+   * Child pages, which take this page's player role. The row expands while
+   * this page or one of them is active.
+   */
+  pages?: readonly { label: string; route: `/${string}` }[];
 };
 
 /** Home. Section 1 opens with the waveform stage. */
 type StageNode = { kind: "stage"; label: string; route: "/" };
 
 /**
- * A nav row that expands while one of its pages is active. The row links to
- * the first page, and the group's own route redirects there.
+ * Software projects with a page, in nav order. Each is
+ * content/software/<slug>.mdx, served by app/software/[slug]. A project
+ * without a page is a section of content/software.mdx and is not listed.
  */
-type GroupNode = {
-  kind: "group";
-  label: string;
-  route: `/${string}`;
-  pages: readonly [PageNode, ...PageNode[]];
-};
+const software = [
+  { slug: "agents", label: "Agents" },
+  { slug: "kkb-audio", label: "kkb-audio" },
+] as const;
 
 /** The nav tree, top to bottom. Two levels at most. */
 const nav = [
   { kind: "stage", label: "Home", route: "/" },
   { kind: "page", label: "About", route: "/about", player: "follow" },
   {
-    kind: "group",
+    kind: "page",
     label: "Software",
     route: "/software",
-    pages: [
-      {
-        kind: "page",
-        label: "Agents",
-        route: "/software/agents",
-        player: "follow",
-      },
-      {
-        kind: "page",
-        label: "Kevelle",
-        route: "/software/kevelle",
-        player: "follow",
-      },
-      {
-        kind: "page",
-        label: "kkb-audio",
-        route: "/software/kkb-audio",
-        player: "follow",
-      },
-      {
-        kind: "page",
-        label: "This site",
-        route: "/software/this-site",
-        player: "follow",
-      },
-    ],
+    player: "follow",
+    pages: software.map(({ slug, label }) => ({
+      label,
+      route: `/software/${slug}` as const,
+    })),
   },
   { kind: "page", label: "Music", route: "/music", player: "full" },
-] as const satisfies readonly (StageNode | PageNode | GroupNode)[];
+] as const satisfies readonly (StageNode | PageNode)[];
 
 type Labeled = { label: string; route: `/${string}` };
 
@@ -89,29 +72,26 @@ const system = [
   { label: "Unauthorized", route: "/auth/unauthorized" },
 ] as const satisfies readonly Labeled[];
 
-type Group = Extract<(typeof nav)[number], { kind: "group" }>;
-type Leaf =
-  | Exclude<(typeof nav)[number], Group>
-  | Group["pages"][number]
-  | (typeof admin)[number]
-  | (typeof system)[number];
+type Node = (typeof nav)[number];
+type Parent = Extract<Node, { pages: unknown }>;
 
-/**
- * Every route that renders a page in the shell. A typo in `pageMetadata()`
- * or in a Link built from these fails the typecheck.
- */
-export type Route = Leaf["route"];
-/** Routes that only redirect to their first page. */
-export type GroupRoute = Group["route"];
+/** Every route that renders a page in the shell. A typo in a Link built from these fails the typecheck. */
+export type Route =
+  | Node["route"]
+  | Parent["pages"][number]["route"]
+  | (typeof admin)[number]["route"]
+  | (typeof system)[number]["route"];
+
+/** Software project slugs: the static params of app/software/[slug]. */
+export const projects = software.map(({ slug }) => slug);
 
 /** One nav row as seen from the current page. */
 export type NavRow = {
   label: string;
-  /** A group links straight to its first page, skipping the redirect. */
   href: Route;
-  /** Text color alone tells active from idle. ancestor: a group holding the active page. */
+  /** Text color alone tells active from idle. ancestor: the parent of the active page. */
   state: "idle" | "active" | "ancestor";
-  /** A group's rows while it holds the active page. Empty for pages and collapsed groups. */
+  /** A page's child rows while it or one of them is active. Empty otherwise. */
   rows: readonly NavRow[];
 };
 
@@ -136,7 +116,7 @@ type Layout =
 export type SiteEntry = Layout & { nav: readonly NavRow[] };
 
 export type CommandItem = {
-  /** A group's page carries the group's label: "Software / Agents". */
+  /** A child page carries its parent's label: "Software / Agents". */
   label: string;
   href: Route;
   section: "Pages" | "Admin";
@@ -147,7 +127,6 @@ export type PageMeta = { title: string; description?: string };
 
 type Indexed = {
   layout: Layout;
-  meta: PageMeta;
   /** null for system pages, which Cmd+K leaves out. */
   command: CommandItem | null;
 };
@@ -155,28 +134,26 @@ type Indexed = {
 /** What an unknown pathname resolves to, so `app/not-found.tsx` renders inside the shell. */
 const notFound: Layout = { kind: "page", player: null, title: "Not found" };
 
-/**
- * Every page by route, in nav order, then admin, then system. Group routes
- * are not indexed: their page redirects before the shell would show them.
- */
+/** Every page by route: nav order with each page before its children, then admin, then system. */
 const index = new Map<string, Indexed>();
 for (const node of nav) {
   if (node.kind === "stage") {
     index.set(node.route, {
       layout: { kind: "stage" },
-      meta: { title: node.label },
       command: { label: node.label, href: node.route, section: "Pages" },
     });
     continue;
   }
-  const pages = node.kind === "group" ? node.pages : [node];
-  for (const page of pages) {
+  const layout: Layout = { kind: "page", player: node.player, title: null };
+  index.set(node.route, {
+    layout,
+    command: { label: node.label, href: node.route, section: "Pages" },
+  });
+  for (const page of "pages" in node ? node.pages : []) {
     index.set(page.route, {
-      layout: { kind: "page", player: page.player, title: null },
-      meta: { title: page.label },
+      layout,
       command: {
-        label:
-          node.kind === "group" ? `${node.label} / ${page.label}` : page.label,
+        label: `${node.label} / ${page.label}`,
         href: page.route,
         section: "Pages",
       },
@@ -186,14 +163,12 @@ for (const node of nav) {
 for (const page of admin) {
   index.set(page.route, {
     layout: { kind: "wide" },
-    meta: { title: page.label },
     command: { label: page.label, href: page.route, section: "Admin" },
   });
 }
 for (const page of system) {
   index.set(page.route, {
     layout: { kind: "page", player: null, title: page.label },
-    meta: { title: page.label },
     command: null,
   });
 }
@@ -216,14 +191,13 @@ function navFor(active: string | null): readonly NavRow[] {
     rows: [],
   });
   return nav.map((node) => {
-    if (node.kind !== "group") return row(node.label, node.route);
-    const holds = node.pages.some((page) => page.route === active);
-    return {
-      label: node.label,
-      href: node.pages[0].route,
-      state: holds ? "ancestor" : "idle",
-      rows: holds ? node.pages.map((page) => row(page.label, page.route)) : [],
-    };
+    const self = row(node.label, node.route);
+    if (!("pages" in node)) return self;
+    const rows = node.pages.map((page) => row(page.label, page.route));
+    if (self.state === "active") return { ...self, rows };
+    return rows.some((page) => page.state === "active")
+      ? { ...self, state: "ancestor", rows }
+      : self;
   });
 }
 
@@ -233,33 +207,17 @@ export const commandItems: readonly CommandItem[] = [...index.values()].flatMap(
 );
 
 /**
- * The `metadata` export of a page with no content file: its title. Content
- * pages export their file's metadata instead. Home keeps the root layout's
- * title.
+ * The `metadata` export of an admin or system page: its title. Content pages
+ * export their content file's metadata instead, and Home keeps the root
+ * layout's title.
  */
-export function pageMetadata(route: Exclude<Route, "/">): PageMeta {
-  const page = index.get(route);
+export function pageMetadata(
+  route: (typeof admin)[number]["route"] | (typeof system)[number]["route"]
+): PageMeta {
+  const page = [...admin, ...system].find((page) => page.route === route);
   if (!page) throw new Error(`No page at ${route}`);
-  return page.meta;
+  return { title: page.label };
 }
 
-/** Where a group's route redirects: its first page. */
-export function landing(group: GroupRoute): Route {
-  for (const node of nav) {
-    if (node.kind === "group" && node.route === group) {
-      return node.pages[0].route;
-    }
-  }
-  throw new Error(`No nav group at ${group}`);
-}
-
-/** Every page route and group route, for the agreement test against `app/**\/page.tsx`. */
-export const routes: readonly (Route | GroupRoute)[] = [
-  ...nav.flatMap((node) =>
-    node.kind === "group"
-      ? [node.route, ...node.pages.map((page) => page.route)]
-      : [node.route]
-  ),
-  ...admin.map((page) => page.route),
-  ...system.map((page) => page.route),
-];
+/** Every route a page file serves, for the agreement test against `app/**\/page.tsx`. */
+export const routes: readonly string[] = [...index.keys()];

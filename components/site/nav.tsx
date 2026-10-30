@@ -36,8 +36,8 @@ export function Identity({ atRest }: { atRest: boolean }) {
 
 /**
  * Text color alone marks the active row. Idle text clears 4.5:1 on the
- * background and 3:1 against the active text, in both themes. A group
- * holding the active page stays idle-colored, so one row reads as active.
+ * background and 3:1 against the active text, in both themes. The parent of
+ * the active page stays idle-colored, so one row reads as active.
  */
 const rowColor = {
   idle: "text-nav-idle hover:text-ramp-9",
