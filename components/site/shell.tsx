@@ -60,7 +60,6 @@ import {
   WavePlayerProvider,
   WavePlayerTracks,
   useWavePlayer,
-  type WavePlayerTrack,
 } from "@/components/wave-player/wave-player";
 import { Identity, NavSheet, NavTree } from "@/components/site/nav";
 import { PageHeader } from "@/components/site/page-header";
@@ -72,6 +71,7 @@ import {
   useWaveformControls,
 } from "@/components/site/waveform-controls";
 import { useLiveTracks } from "@/components/site/live-tracks";
+import type { PublicTrack } from "@/convex/lib/tracks";
 
 const columns = {
   stage: "desktop:grid-cols-three",
@@ -84,7 +84,7 @@ export function SiteShell({
   children,
 }: {
   /** The root layout's read of tracks.list, or [] when Convex failed or was slow. First paint draws it. */
-  tracks: readonly WavePlayerTrack[];
+  tracks: readonly PublicTrack[];
   children: ReactNode;
 }) {
   return (
