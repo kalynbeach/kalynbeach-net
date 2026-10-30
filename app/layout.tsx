@@ -6,7 +6,6 @@ import { shadcn } from "@clerk/ui/themes";
 import { preload } from "react-dom";
 import ConvexClerkProvider from "@/components/providers/convex-clerk-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import { PlayerProvider } from "@/components/wave-player";
 import { SiteShell } from "@/components/site/shell";
 import "./globals.css";
 
@@ -42,9 +41,7 @@ export default function RootLayout({
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClerkProvider>
             <ThemeProvider>
-              <PlayerProvider>
-                <SiteShell>{children}</SiteShell>
-              </PlayerProvider>
+              <SiteShell>{children}</SiteShell>
             </ThemeProvider>
             <Analytics />
             <SpeedInsights />
