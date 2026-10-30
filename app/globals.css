@@ -32,7 +32,7 @@
   --spacing-gutter: 1.25rem; /* 20: between the sidebar and section 1 */
   --spacing-margin: 2rem; /* 32: the window's side margins at 1100px and up */
   --spacing-lead: 5.25rem; /* 84: above and below the sections, and the sticky top */
-  --spacing-header: 3.25rem; /* 52: the mobile top bar, the sheet header, the player's header rows */
+  --spacing-header: 3.25rem; /* 52: the mobile top bar and the sheet header */
   --spacing-row: 2rem; /* 32: nav, list and timeline rows */
   --spacing-edge: 0.75rem; /* 12: below 1100px, section 1, the sheet and the bar sit this far in */
   /* Home's stage: section 1's width, short enough to leave the lead below it as well as above. */
@@ -77,28 +77,17 @@
    */
   --color-nav-idle: color-mix(in oklab, var(--neutral-6), var(--neutral-7));
 
-  /* Waveform light: the bloom layers of the Home stage. */
-  --color-bloom: var(--bloom);
-
-  /* Halos on lit signal elements: the Home beam, timeline markers, the bar's progress. */
-  --shadow-lit-beam: var(--lit-beam);
+  /* The halo on a lit timeline marker. */
   --shadow-lit-marker: var(--lit-marker);
-  --shadow-lit-progress: var(--lit-progress);
 }
 
 :root {
-  /* Paper's astral. Kevelle's light --astral is a different, deeper value. */
-  --bloom: oklch(0.64 0.192 262);
-  --lit-beam: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
-  --lit-marker: var(--lit-beam);
-  --lit-progress: var(--lit-beam);
+  --lit-marker: 0 0 4px 0
+    color-mix(in oklab, var(--signal-dim) 45%, transparent);
 }
 
 .dark {
-  --bloom: var(--signal);
-  --lit-beam: 0 0 5px 1px color-mix(in oklab, var(--signal) 70%, transparent);
   --lit-marker: 0 0 6px 0 color-mix(in oklab, var(--signal) 50%, transparent);
-  --lit-progress: 0 0 4px 0 color-mix(in oklab, var(--signal) 60%, transparent);
 }
 
 /*
@@ -299,43 +288,4 @@
       margin-block-start: 0.75rem;
     }
   }
-}
-
-/*
- * WavePlayer placeholder roles. They go with components/wave-player.tsx's
- * placeholder bodies when the Kevelle block lands.
- */
-
-@utility role-track {
-  font-family: var(--font-text);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  letter-spacing: 0;
-}
-
-@utility role-tag {
-  font-family: var(--font-ui);
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 16px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-@utility role-card-title {
-  font-family: var(--font-text);
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 20px;
-  letter-spacing: 0;
-}
-
-/* Library rows. The loaded track adds font-medium. */
-@utility role-library {
-  font-family: var(--font-text);
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 20px;
-  letter-spacing: 0;
 }
