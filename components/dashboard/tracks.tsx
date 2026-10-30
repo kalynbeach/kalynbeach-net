@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * The dashboard's track manager: a New track form, then every track with
- * Edit, Attach audio or Replace audio, and Remove.
+ * The dashboard's track manager: a New track form, then a table of every
+ * track with its audio, its look, and Edit, Attach audio or Replace audio,
+ * and Remove.
  *
  * Rules and derivations live in model.ts and work in flight in upload.ts;
  * these components draw a view and send commands. The form and each row own
@@ -11,6 +12,8 @@
  */
 import {
   useEffect,
+  useId,
+  useOptimistic,
   useRef,
   useState,
   useSyncExternalStore,
@@ -25,6 +28,7 @@ import {
   useQueries,
 } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import type { AdminLook, LookId } from "@/convex/lib/looks";
 import type {
   AdminTrack,
   MetadataProblem,
@@ -36,6 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogTitle,
@@ -55,6 +60,13 @@ import {
   ProgressLabel,
   ProgressValue,
 } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
   AUDIO_ACCEPT,
@@ -63,6 +75,7 @@ import {
   errorMessage,
   legacyFileName,
   metadataPatch,
+  trackLookView,
   type UploadCommand,
   type UploadView,
   type WorkStep,
@@ -89,22 +102,34 @@ export function TracksDashboard() {
           <h2 className="role-heading text-ramp-10">New track</h2>
           <NewTrack />
         </section>
-        <section>
+        <section className="flex min-h-0 flex-1 flex-col">
           <h2 className="role-heading text-ramp-10">Tracks</h2>
-          <TrackList />
+          <TrackTable />
         </section>
       </Authenticated>
     </>
   );
 }
 
-/** Module scope, so useQueries sees one request object and subscribes once. */
-const ADMIN_LIST = { tracks: { query: api.tracks.adminList, args: {} } };
+/**
+ * Module scope, so useQueries sees one request object and subscribes once.
+ * The looks editor asks for looks.list too, and Convex shares the
+ * subscription.
+ */
+const DASHBOARD = {
+  tracks: { query: api.tracks.adminList, args: {} },
+  looks: { query: api.looks.list, args: {} },
+};
+
+/** looks.list as useQueries gives it: undefined while it loads, an Error when it fails. */
+type Looks = readonly AdminLook[] | Error | undefined;
 
 /** useQueries returns a failure as a value, where useQuery would throw it into the page. */
-function TrackList() {
-  const tracks: AdminTrack[] | Error | undefined =
-    useQueries(ADMIN_LIST).tracks;
+function TrackTable() {
+  const result = useQueries(DASHBOARD);
+  const tracks: AdminTrack[] | Error | undefined = result.tracks;
+  const looks: Looks = result.looks;
+  const lookHeader = useId();
 
   if (tracks === undefined) return <Spinner />;
   if (tracks instanceof Error) {
@@ -122,12 +147,45 @@ function TrackList() {
     );
   }
 
+  // At 1100px and up the frame's height ends here, so the table scrolls
+  // inside it. The negative margin keeps focus rings clear of the clip.
   return (
-    <ol>
-      {tracks.map((track) => (
-        <TrackRow key={track.id} track={track} />
-      ))}
-    </ol>
+    <div className="-m-1 min-h-0 overflow-auto p-1">
+      <table className="w-full">
+        {/* Placeholder copy for Kalyn to write: the column headers. */}
+        <thead>
+          <tr className="role-mono-sm text-ramp-6 h-row">
+            <th scope="col" className="w-10 pe-4 text-start font-normal">
+              #
+            </th>
+            <th scope="col" className="pe-6 text-start font-normal">
+              Track
+            </th>
+            <th scope="col" className="pe-6 text-start font-normal">
+              Audio
+            </th>
+            <th
+              scope="col"
+              id={lookHeader}
+              className="pe-6 text-start font-normal"
+            >
+              Look
+            </th>
+            <th scope="col" className="font-normal">
+              <span className="sr-only">Actions</span>
+            </th>
+          </tr>
+        </thead>
+        {tracks.map((track) => (
+          <TrackRow
+            key={track.id}
+            track={track}
+            looks={looks}
+            lookHeader={lookHeader}
+          />
+        ))}
+      </table>
+    </div>
   );
 }
 
@@ -171,73 +229,180 @@ function NewTrack() {
 }
 
 /**
- * While the row's upload is busy, Edit and Remove are off, so Remove can't
- * race the row's own attach.
+ * One tbody per track: its row, then its upload's status and confirm step
+ * in a full-width row while the upload holds a file. While the upload is
+ * busy, Edit and Remove are off, so Remove can't race the row's own attach.
  */
-function TrackRow({ track }: { track: AdminTrack }) {
+function TrackRow({
+  track,
+  looks,
+  lookHeader,
+}: {
+  track: AdminTrack;
+  looks: Looks;
+  /** The Look column header's id, half of the look select's name. */
+  lookHeader: string;
+}) {
   const [view, send] = useAudioUpload();
+  const title = useId();
   const { audio } = track;
   const legacy = audio.kind === "legacy";
 
   return (
-    <li className="border-ramp-4 flex flex-col gap-3 border-b py-3">
-      <div className="flex items-start gap-3">
-        <span className="role-readout text-ramp-6 pt-0.5">
+    <tbody>
+      <tr className="border-ramp-4 border-t">
+        <td className="role-readout text-ramp-6 py-3 pe-4 align-top">
           {formatCount(track.id)}
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="role-entry text-ramp-9">{track.title}</span>
-          <span className="role-meta text-ramp-6">
+        </td>
+        <th scope="row" className="py-3 pe-6 text-start font-normal">
+          <span id={title} className="role-entry text-ramp-9 block">
+            {track.title}
+          </span>
+          <span className="role-meta text-ramp-6 block">
             {[track.artist, track.record].filter(Boolean).join(" · ")}
           </span>
-        </div>
-        <span className="flex shrink-0 items-center gap-2">
-          {audio.kind === "legacy" ? (
-            <>
-              <Badge variant="outline">Legacy</Badge>
-              <span className="role-mono-sm text-ramp-6">
-                {legacyFileName(audio.src)}
-              </span>
-            </>
-          ) : (
-            <>
-              {audio.src === null && (
-                <Badge variant="destructive">Missing</Badge>
+        </th>
+        <td className="py-3 pe-6">
+          <span className="flex items-center gap-2 whitespace-nowrap">
+            {audio.kind === "legacy" ? (
+              <>
+                <Badge variant="outline">Legacy</Badge>
+                <span className="role-mono-sm text-ramp-6">
+                  {legacyFileName(audio.src)}
+                </span>
+              </>
+            ) : (
+              <>
+                {audio.src === null && (
+                  <Badge variant="destructive">Missing</Badge>
+                )}
+                <span className="role-readout text-ramp-7">
+                  {formatClock(audio.duration)}
+                </span>
+              </>
+            )}
+          </span>
+        </td>
+        <td className="py-3 pe-6">
+          <TrackLook
+            track={track}
+            looks={looks}
+            labelledBy={`${lookHeader} ${title}`}
+          />
+        </td>
+        <td className="py-3">
+          <div className="flex justify-end gap-2">
+            <EditTrack track={track} disabled={view.busy} />
+            <AudioPicker
+              label={legacy ? "Attach audio" : "Replace audio"}
+              disabled={view.busy}
+              send={send}
+            />
+            <RemoveTrack track={track} disabled={view.busy} />
+          </div>
+        </td>
+      </tr>
+      {view.file !== null && (
+        <tr>
+          <td colSpan={5} className="ps-10 pb-3">
+            <div className="flex flex-col gap-3">
+              <UploadStatus view={view} send={send} />
+              {view.canStart && (
+                // The confirm step: the row shows the picked file and its
+                // length before attachAudio drops the legacy src or deletes
+                // the old blob.
+                <div className="flex gap-2">
+                  <Button
+                    className="pointer-coarse:h-11"
+                    onClick={() =>
+                      send({
+                        type: "start",
+                        save: { kind: "attach", id: track.id },
+                      })
+                    }
+                  >
+                    {legacy ? "Attach" : "Replace"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="pointer-coarse:h-11"
+                    onClick={() => send({ type: "clear" })}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               )}
-              <span className="role-readout text-ramp-7">
-                {formatClock(audio.duration)}
-              </span>
-            </>
-          )}
-        </span>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <EditTrack track={track} disabled={view.busy} />
-        <AudioPicker
-          label={legacy ? "Attach audio" : "Replace audio"}
-          disabled={view.busy}
-          send={send}
-        />
-        <RemoveTrack track={track} disabled={view.busy} />
-      </div>
-      <UploadStatus view={view} send={send} />
-      {view.canStart && (
-        // The confirm step: the row shows the picked file and its length
-        // before attachAudio drops the legacy src or deletes the old blob.
-        <div className="flex gap-2">
-          <Button
-            onClick={() =>
-              send({ type: "start", save: { kind: "attach", id: track.id } })
-            }
-          >
-            {legacy ? "Attach" : "Replace"}
-          </Button>
-          <Button variant="ghost" onClick={() => send({ type: "clear" })}>
-            Cancel
-          </Button>
-        </div>
+            </div>
+          </td>
+        </tr>
       )}
-    </li>
+    </tbody>
+  );
+}
+
+/**
+ * The pick shows while setLook runs. Convex resolves a mutation only after
+ * adminList reflects it, so when the transition ends the stored look is
+ * the pick, and after a refusal it is the look from before.
+ */
+function TrackLook({
+  track,
+  looks,
+  labelledBy,
+}: {
+  track: AdminTrack;
+  looks: Looks;
+  labelledBy: string;
+}) {
+  const setLook = useMutation(api.tracks.setLook);
+  const [chosen, setChosen] = useOptimistic(track.look);
+  const [, startPicking] = useTransition();
+  const [failure, setFailure] = useState<string | null>(null);
+  const view = trackLookView(chosen, looks);
+
+  if (view.kind === "failed") {
+    return <p className="role-body text-destructive">{"Looks didn't load."}</p>;
+  }
+
+  function pick(look: LookId | null) {
+    setFailure(null);
+    startPicking(async () => {
+      setChosen(look);
+      try {
+        await setLook({ id: track.id, look });
+      } catch (error) {
+        setFailure(errorMessage(error));
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Select
+        value={view.kind === "ready" ? view.value : null}
+        disabled={view.kind === "loading"}
+        onValueChange={pick}
+      >
+        <SelectTrigger
+          aria-labelledby={labelledBy}
+          className="w-44 pointer-coarse:h-11"
+        >
+          <SelectValue>
+            {view.kind === "ready" ? view.label : <Spinner />}
+          </SelectValue>
+        </SelectTrigger>
+        {view.kind === "ready" && (
+          <SelectContent>
+            {view.options.map((option) => (
+              <SelectItem key={option.value ?? "default"} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        )}
+      </Select>
+      <FieldError>{failure}</FieldError>
+    </div>
   );
 }
 
@@ -272,8 +437,9 @@ function AudioPicker({
         }}
       />
       <Button
-        variant="outline"
+        variant="secondary"
         disabled={disabled}
+        className="pointer-coarse:h-11"
         onClick={() => input.current?.click()}
       >
         {label}
@@ -316,7 +482,8 @@ function UploadStatus({ view, send }: { view: UploadView; send: Send }) {
           {view.cancellable && (
             <Button
               size="xs"
-              variant="ghost"
+              variant="secondary"
+              className="pointer-coarse:h-11"
               onClick={() => send({ type: "clear" })}
             >
               Cancel
@@ -328,12 +495,17 @@ function UploadStatus({ view, send }: { view: UploadView; send: Send }) {
         <Alert variant="destructive">
           <AlertDescription>{view.failure}</AlertDescription>
           <div className="flex gap-2 pt-1.5">
-            <Button size="xs" onClick={() => send({ type: "retry" })}>
+            <Button
+              size="xs"
+              className="pointer-coarse:h-11"
+              onClick={() => send({ type: "retry" })}
+            >
               Retry
             </Button>
             <Button
               size="xs"
-              variant="ghost"
+              variant="secondary"
+              className="pointer-coarse:h-11"
               onClick={() => send({ type: "clear" })}
             >
               Dismiss
@@ -404,7 +576,15 @@ function EditTrack({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="ghost" disabled={disabled} />}>
+      <DialogTrigger
+        render={
+          <Button
+            variant="secondary"
+            disabled={disabled}
+            className="pointer-coarse:h-11"
+          />
+        }
+      >
         Edit
       </DialogTrigger>
       <DialogContent>
@@ -464,7 +644,10 @@ function EditForm({
             <AlertDescription>{failure}</AlertDescription>
           </Alert>
         )}
-        <DialogFooter showCloseButton>
+        <DialogFooter>
+          <DialogClose render={<Button variant="secondary" />}>
+            Close
+          </DialogClose>
           <Button type="submit">{saving ? <Spinner /> : "Save"}</Button>
         </DialogFooter>
       </FieldSet>
@@ -507,7 +690,15 @@ function RemoveTrack({
         setFailure(null);
       }}
     >
-      <DialogTrigger render={<Button variant="ghost" disabled={disabled} />}>
+      <DialogTrigger
+        render={
+          <Button
+            variant="secondary"
+            disabled={disabled}
+            className="pointer-coarse:h-11"
+          />
+        }
+      >
         Remove
       </DialogTrigger>
       <DialogContent>
@@ -517,7 +708,10 @@ function RemoveTrack({
             <AlertDescription>{failure}</AlertDescription>
           </Alert>
         )}
-        <DialogFooter showCloseButton>
+        <DialogFooter>
+          <DialogClose render={<Button variant="secondary" />}>
+            Close
+          </DialogClose>
           <Button variant="destructive" disabled={removing} onClick={confirm}>
             {removing ? <Spinner /> : "Remove"}
           </Button>
