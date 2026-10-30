@@ -40,18 +40,28 @@ describe("site map and page files", () => {
     );
   });
 
-  it("has each page take its metadata from its own route's source", () => {
+  it("has each page export its metadata from its own route's source", () => {
+    const escape = (text: string) =>
+      text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     for (const { file, route } of pages) {
       // Home keeps the root layout title.
       if (route === "/") continue;
       const source = readFileSync(file, "utf8");
-      const own = [
-        `pageMetadata("${route}")`,
-        `@/content${route.replace("[slug]", "${slug}")}.mdx`,
+      const content = escape(
+        `@/content${route.replace("[slug]", "${slug}")}.mdx`
+      );
+      const exports = [
+        new RegExp(
+          `export const metadata = pageMetadata\\("${escape(route)}"\\)`
+        ),
+        new RegExp(`export \\{[^}]*\\bmetadata\\b[^}]*\\} from "${content}"`),
+        new RegExp(
+          `export async function generateMetadata[\\s\\S]*${content}|${content}[\\s\\S]*export async function generateMetadata`
+        ),
       ];
       expect(
-        own.some((name) => source.includes(name)),
-        `${file} names ${own.join(" or ")}`
+        exports.some((pattern) => pattern.test(source)),
+        `${file} exports metadata from pageMetadata("${route}") or its content file`
       ).toBe(true);
     }
   });
