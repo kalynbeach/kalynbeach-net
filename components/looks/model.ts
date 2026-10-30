@@ -27,6 +27,7 @@ import {
   isLookRefusal,
   lookNameProblem,
   MAX_NAME_LENGTH,
+  removeProblem,
   type AdminLook,
   type LookId,
   type LookRefusalCode,
@@ -227,9 +228,10 @@ export type UseOnSite =
   | { readonly kind: "live" }
   | { readonly kind: "unsaved" };
 
+/** Delete's state. `held` carries the code remove() would refuse with, so its label is REFUSAL_LABELS[code]. */
 export type Remove =
   | { readonly kind: "ready"; readonly id: LookId }
-  | { readonly kind: "live" };
+  | { readonly kind: "held"; readonly code: "live" | "used" };
 
 export type Selection = {
   readonly look: AdminLook;
@@ -277,6 +279,7 @@ function select(look: AdminLook, draft: Draft | null): Selection {
   // staleness waits for the Save to end, and so do Save, Keep, and Discard.
   const idle = draft !== null && draft.saving === null;
   const stale = idle && draft.baseVersion < look.version;
+  const held = removeProblem(look);
 
   return {
     look,
@@ -292,7 +295,9 @@ function select(look: AdminLook, draft: Draft | null): Selection {
       : draft
         ? { kind: "unsaved" }
         : { kind: "ready", id: look.id },
-    remove: look.live ? { kind: "live" } : { kind: "ready", id: look.id },
+    remove: held
+      ? { kind: "held", code: held }
+      : { kind: "ready", id: look.id },
   };
 }
 
