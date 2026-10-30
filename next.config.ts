@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["three"],
@@ -7,12 +8,12 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/sound/wave-player",
-        destination: "/tech/audio",
-        // The case-study destination may change in the planned site refresh.
+        // tests/site.test.ts checks every destination here is a site map route.
+        destination: "/software/kkb-audio",
         permanent: false,
       },
     ];
   },
 };
 
-export default nextConfig;
+export default createMDX()(nextConfig);

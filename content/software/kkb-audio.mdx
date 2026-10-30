@@ -1,0 +1,43 @@
+import { Screenshot } from "@/components/site/screenshot";
+import { Steps } from "@/components/site/steps";
+
+export const metadata = {
+  title: "kkb-audio",
+  description:
+    "A Rust foundation for my sound, audio, and music software. One real-time render engine runs in the browser through WebAssembly and natively on macOS.",
+};
+
+<PageHeader {...metadata} />
+
+Each host handles its own files, devices, and lifecycle outside the engine.
+
+<p className="role-mono-sm text-ramp-6">Rust / WebAssembly / TypeScript</p>
+
+## WavePlayer
+
+A local audio player built on the kkb-audio engine. It plays WAV and MP3 files, converts between 44.1 and 48 kHz, and supports seeking and A/B loops.
+
+Audio can't wait on a file read or a UI update. A worker decodes files and hands PCM to the Rust engine in an AudioWorklet, so file and interface work stay out of the render callback. A WebGPU oscilloscope draws the left and right channels as an XY trace.
+
+<Steps
+  label="How WavePlayer handles audio"
+  steps={[
+    { step: "Prepare", detail: "A worker decodes the file" },
+    { step: "Render", detail: "Rust/Wasm in an AudioWorklet" },
+    { step: "Observe", detail: "WebGPU draws the rendered signal" },
+  ]}
+/>
+
+<Screenshot
+  width={364}
+  height={638}
+  light={{
+    src: "/images/software/kkb-audio/waveplayer-light.jpg",
+    alt: "WavePlayer paused on a stereo WAV, with a green XY trace above the waveform and transport controls.",
+  }}
+  dark={{
+    src: "/images/software/kkb-audio/waveplayer-dark.jpg",
+    alt: "WavePlayer playing a stereo WAV, with a live green XY trace above the waveform and transport controls.",
+  }}
+  caption="WavePlayer with a synthetic stereo test file."
+/>

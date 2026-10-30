@@ -2,36 +2,310 @@
 @import "./kevelle/kevelle.css";
 @import "@clerk/ui/themes/shadcn.css";
 
+/*
+ * Site tokens for the two-section shell. Kevelle (app/kevelle,
+ * registry-owned) supplies the neutral ramp, the signal colors and the font
+ * files. This file names the site's font roles, layout geometry, type roles
+ * and the few colors Kevelle lacks. Each value is set once here; components
+ * use the utility.
+ */
+
+@theme {
+  /* The sidebar and section 1 side by side at 1100px and up. Below it: top bar, nav sheet, player bar. */
+  --breakpoint-desktop: 68.75rem;
+
+  /*
+   * Font roles. ui: titles, headings, nav, labels, values, dates and code.
+   * text: the name and body. readout: years, times, counts and keys. long:
+   * long-form writing. Paper Mono stands in for TX-02 until kkb's font
+   * pipeline ships it; when it does, --font-ui is the one line to change.
+   * --font-mono follows it, so code and Kevelle's heading role switch too.
+   */
+  --font-ui: "TX-02", "Paper Mono", ui-monospace, monospace;
+  --font-text: var(--font-sans);
+  --font-readout: var(--font-pixel);
+  --font-long: var(--font-serif);
+  --font-mono: var(--font-ui);
+
+  --spacing-sidebar: 18.75rem; /* 300: the sidebar and the nav sheet */
+  --spacing-primary: 40.5rem; /* 648: section 1, and the widest the Home stage gets */
+  --spacing-gutter: 1.25rem; /* 20: between the sidebar and section 1 */
+  --spacing-margin: 2rem; /* 32: the window's side margins at 1100px and up */
+  --spacing-lead: 5.25rem; /* 84: above and below the sections, and the sticky top */
+  --spacing-header: 3.25rem; /* 52: the mobile top bar, the sheet header, the player's header rows */
+  --spacing-row: 2rem; /* 32: nav, list and timeline rows */
+  --spacing-edge: 0.75rem; /* 12: below 1100px, section 1, the sheet and the bar sit this far in */
+  /* Home's stage: section 1's width, short enough to leave the lead below it as well as above. */
+  --spacing-stage: min(100%, calc(100dvh - 2 * var(--spacing-lead)));
+  --spacing-safe-top: env(safe-area-inset-top);
+  --spacing-safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  /* Prose's line length: about 70 characters at any size, since em is the text's own. */
+  --container-measure: 32em;
+
+  /*
+   * Section 1 keeps its width and stays centered while the side tracks can
+   * hold the sidebar (1352px and up). Narrower, the left track stops at the
+   * sidebar's width and section 1 slides right of center instead of
+   * shrinking.
+   */
+  --grid-template-columns-column: minmax(var(--spacing-sidebar), 1fr)
+    minmax(0, var(--spacing-primary)) minmax(0, 1fr);
+  --grid-template-columns-wide: var(--spacing-sidebar) minmax(0, 1fr);
+}
+
 @theme inline {
-  --grid-template-rows-layout-root: 80px minmax(320px, 1fr) 80px;
-  --grid-template-rows-layout-root-md: 96px minmax(512px, 1fr) 96px;
+  /*
+   * The neutral ramp by step. The frames name colors dark-N and light-N at
+   * the same N, so text-ramp-7 is dark-7 in dark and light-7 in light.
+   * Section and page backgrounds use bg-background (ramp 1).
+   */
+  --color-ramp-1: var(--neutral-1);
+  --color-ramp-2: var(--neutral-2);
+  --color-ramp-3: var(--neutral-3);
+  --color-ramp-4: var(--neutral-4);
+  --color-ramp-5: var(--neutral-5);
+  --color-ramp-6: var(--neutral-6);
+  --color-ramp-7: var(--neutral-7);
+  --color-ramp-8: var(--neutral-8);
+  --color-ramp-9: var(--neutral-9);
+  --color-ramp-10: var(--neutral-10);
+
+  /*
+   * Idle nav text, halfway between ramp 6 and ramp 7. Ramp 7 sits under 3:1
+   * against the active row's ramp 10, and ramp 6 under 4.5:1 on the
+   * background; the midpoint clears both in light and dark.
+   */
+  --color-nav-idle: color-mix(in oklab, var(--neutral-6), var(--neutral-7));
+
+  /* Waveform light: the bloom layers of the Home stage. */
+  --color-bloom: var(--bloom);
+
+  /* Halos on lit signal elements: the Home beam, timeline markers, the bar's progress. */
+  --shadow-lit-beam: var(--lit-beam);
+  --shadow-lit-marker: var(--lit-marker);
+  --shadow-lit-progress: var(--lit-progress);
 }
 
-@utility container {
-  margin-inline: auto;
-  padding-inline: 1rem;
-  @media (width >= --theme(--breakpoint-sm)) {
-    max-width: none;
-  }
-  @media (width >= 640px) {
-    max-width: 640px;
-  }
-  @media (width >= 768px) {
-    max-width: 768px;
-  }
-  @media (width >= 1024px) {
-    max-width: 1024px;
+:root {
+  /* Paper's astral. Kevelle's light --astral is a different, deeper value. */
+  --bloom: oklch(0.64 0.192 262);
+  --lit-beam: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
+  --lit-marker: var(--lit-beam);
+  --lit-progress: var(--lit-beam);
+}
+
+.dark {
+  --bloom: var(--signal);
+  --lit-beam: 0 0 5px 1px color-mix(in oklab, var(--signal) 70%, transparent);
+  --lit-marker: 0 0 6px 0 color-mix(in oklab, var(--signal) 50%, transparent);
+  --lit-progress: 0 0 4px 0 color-mix(in oklab, var(--signal) 60%, transparent);
+}
+
+/*
+ * The type scale. Each role sets family, size, weight, line height and
+ * tracking together, and steps down below 1100px where the phone needs it,
+ * so call sites never repeat a breakpoint. Sizes are rem so the reader's
+ * browser size applies; Departure Mono stays in px on its 11px grid. Line
+ * heights are unitless, each the role's whole-pixel line over its size,
+ * rounded up at four places. The role- prefix keeps them apart from
+ * Kevelle's type- utilities.
+ *
+ *   role        face and size (below 1100px)   for
+ *   name        ABC Areal 18/20                 the name in the sidebar
+ *   title       TX-02 44/48 (32/36)             each page's h1
+ *   lede        ABC Areal 20/28 (18/26)         the paragraph under the title
+ *   heading     TX-02 20/24 (18/24)             section headings
+ *   body        ABC Areal 16/26                 prose
+ *   entry       ABC Areal 14/20                 list rows: the timeline
+ *   nav         TX-02 14/20                     nav rows, step names
+ *   stat-value  TX-02 20/24 (16/20)             figures in a stat row
+ *   meta        ABC Areal 12/16                 captions
+ *   mono-sm     TX-02 11/16                     labels: stat labels, dates, tags
+ *   readout     Departure Mono 11/16            years, times, counts and keys
+ */
+
+/*
+ * role-name and role-title trim to the cap top and the baseline, so the
+ * name and a page's title align by their caps on the top line.
+ */
+@utility role-name {
+  font-family: var(--font-text);
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.1112;
+  letter-spacing: -0.005em;
+  text-box: trim-both cap alphabetic;
+  @variant max-desktop {
+    letter-spacing: 0;
   }
 }
 
-::view-transition-group(*) {
-  animation-duration: 150ms;
+@utility role-title {
+  font-family: var(--font-ui);
+  font-size: 2.75rem;
+  font-weight: 500;
+  line-height: 1.091;
+  letter-spacing: -0.02em;
+  text-box: trim-both cap alphabetic;
+  text-wrap: balance;
+  @variant max-desktop {
+    font-size: 2rem;
+    line-height: 1.125;
+  }
 }
 
-::view-transition-old(.quick-out) {
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+@utility role-lede {
+  font-family: var(--font-text);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-wrap: pretty;
+  @variant max-desktop {
+    font-size: 1.125rem;
+    line-height: 1.4445;
+  }
 }
 
-::view-transition-new(.quick-out) {
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+@utility role-heading {
+  font-family: var(--font-ui);
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-wrap: balance;
+  @variant max-desktop {
+    font-size: 1.125rem;
+    line-height: 1.3334;
+  }
+}
+
+@utility role-body {
+  font-family: var(--font-text);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.625;
+  letter-spacing: 0;
+}
+
+@utility role-entry {
+  font-family: var(--font-text);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4286;
+  letter-spacing: 0;
+}
+
+@utility role-nav {
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4286;
+  letter-spacing: 0;
+}
+
+@utility role-stat-value {
+  font-family: var(--font-ui);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  @variant max-desktop {
+    font-size: 1rem;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+}
+
+@utility role-meta {
+  font-family: var(--font-text);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.3334;
+  letter-spacing: 0;
+}
+
+@utility role-mono-sm {
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  line-height: 1.4546;
+  letter-spacing: 0;
+}
+
+/* Readouts: years, times, counts and keys. Departure Mono renders crisply only at multiples of 11px. */
+@utility role-readout {
+  font-family: var(--font-readout);
+  font-size: 11px;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  line-height: 1.4546;
+  letter-spacing: 0;
+}
+
+/*
+ * The site preset for Kevelle's typeset: content/*.mdx renders in
+ * `typeset typeset-site` (mdx-components.tsx), so markdown takes the scale
+ * with no per-page classes. A component (anything with a data-slot) keeps
+ * its own type and sits a block gap from its neighbors. It lives here rather
+ * than in typeset.css, which the registry installs and would overwrite.
+ */
+@layer components {
+  .typeset-site {
+    @apply role-body;
+    color: var(--color-ramp-8);
+
+    & > :where(p, ul, ol, h2, h3, blockquote):not(:where([data-slot])) {
+      max-inline-size: var(--container-measure);
+    }
+    & > :where(* + [data-slot], [data-slot] + *) {
+      margin-block-start: 2.5rem;
+    }
+    & :where(h2):not(:where(.typeset-site [data-slot] *)) {
+      @apply role-heading;
+      margin-block-start: 3rem;
+    }
+    & :where(h2 + *):not(:where(.typeset-site [data-slot] *)) {
+      margin-block-start: 0.75rem;
+    }
+  }
+}
+
+/*
+ * WavePlayer placeholder roles. They go with components/wave-player.tsx's
+ * placeholder bodies when the Kevelle block lands.
+ */
+
+@utility role-track {
+  font-family: var(--font-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+@utility role-tag {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@utility role-card-title {
+  font-family: var(--font-text);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* Library rows. The loaded track adds font-medium. */
+@utility role-library {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
 }

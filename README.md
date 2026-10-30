@@ -65,7 +65,7 @@ are compatible; recheck this boundary when changing these tools or their modes.
 
 ## Key Architectures
 
-- **Audio:** The sound pages, SoundCard, and Wave-Lab are archived at tag `archive/sound-2026-10`. The legacy WavePlayer is archived at tag `archive/legacy-wave-player-2026-10-04`. `/sound/wave-player` temporarily redirects to `/tech/audio`.
+- **Audio:** The sound pages, SoundCard, and Wave-Lab are archived at tag `archive/sound-2026-10`. The legacy WavePlayer is archived at tag `archive/legacy-wave-player-2026-10-04`. `/sound/wave-player` temporarily redirects to `/software/kkb-audio`.
 - **3D:** Located in `components/r3f/`.
 - **Auth:** Clerk establishes identity; sensitive Convex functions enforce app roles.
 - **Data:** Convex schema/functions live in `convex/`; server adapters live in `lib/convex/`.
