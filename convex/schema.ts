@@ -14,7 +14,8 @@ export default defineSchema({
 
   tracks: defineTable(trackValidator)
     .index("by_public_id", ["publicId"])
-    .index("by_audio_storage_id", ["audio.storageId"]),
+    .index("by_audio_storage_id", ["audio.storageId"])
+    .index("by_look", ["look", "publicId"]),
 
   /**
    * At most one row: the highest publicId a removed track had. tracks.create
