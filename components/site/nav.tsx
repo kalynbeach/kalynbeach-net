@@ -19,12 +19,18 @@ import { Waveform } from "@/components/waveform";
  *
  * role-name trims the name to its caps, so the row's top is the name's cap
  * top: the top line in the sidebar. The mark's negative block margins keep
- * it from setting the row's height, and it centers on the caps.
+ * it from setting the row's height, and it centers on the caps. The trimmed
+ * box ends at the baseline, so the name's focus ring sits 4px out to clear
+ * the descender of the y.
  */
 export function Identity({ atRest }: { atRest: boolean }) {
   return (
     <div data-slot="site-identity" className="flex items-center gap-3">
-      <Link href="/" data-slot="site-name" className="role-name text-ramp-10">
+      <Link
+        href="/"
+        data-slot="site-name"
+        className="role-name text-ramp-10 focus-visible:outline-2 focus-visible:outline-offset-4"
+      >
         {siteName}
       </Link>
       <span className="-my-2 size-5.25">
@@ -74,7 +80,12 @@ function NavItem({
         href={row.href}
         onClick={onNavigate}
         aria-current={row.state === "active" ? "page" : undefined}
-        className={cn("role-nav flex h-row items-center", rowColor[row.state])}
+        // Typeset's keyboard ring for links in prose, 2px of the ring color
+        // 2px out, so it clears the row's first letter.
+        className={cn(
+          "role-nav flex h-row items-center focus-visible:outline-2 focus-visible:outline-offset-2",
+          rowColor[row.state]
+        )}
       >
         {row.label}
       </Link>
