@@ -155,7 +155,11 @@ function lookId(value: string): Id<"looks"> {
 function adminLook(
   id: string,
   config: WaveformConfig,
-  { live = false, version = 0 } = {}
+  {
+    live = false,
+    version = 0,
+    usedBy = [],
+  }: Partial<Pick<AdminLook, "live" | "version" | "usedBy">> = {}
 ): AdminLook {
   return {
     id: lookId(id),
@@ -163,6 +167,7 @@ function adminLook(
     config: JSON.parse(JSON.stringify(config)),
     version,
     live,
+    usedBy,
   };
 }
 
@@ -773,6 +778,9 @@ describe("failureLabel", () => {
   it("labels each refusal by its code, and anything else with one fallback", () => {
     expect(failureLabel(new ConvexError({ code: "live" }))).toBe(
       REFUSAL_LABELS.live
+    );
+    expect(failureLabel(new ConvexError({ code: "used" }))).toBe(
+      REFUSAL_LABELS.used
     );
     expect(failureLabel(new ConvexError({ code: "other" }))).toBe(
       FAILURE_LABEL
