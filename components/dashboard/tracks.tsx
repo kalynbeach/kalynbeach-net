@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * The dashboard's track manager: a New track form, then a table of every
- * track with its audio, its look, and Edit, Attach audio or Replace audio,
- * and Remove.
+ * The dashboard's track manager: New track, then a table of every track
+ * with its audio, its look, and Edit, Attach audio or Replace audio, and
+ * Remove.
  *
  * Rules and derivations live in model.ts and work in flight in upload.ts;
- * these components draw a view and send commands. The form and each row own
+ * these components draw a view and send commands. New track and each row own
  * one upload each, so no two writers share one. The site shell subscribes to
  * tracks.list, so every open tab's player follows each write.
  */
@@ -34,6 +34,7 @@ import type {
   MetadataProblem,
   TrackMetadata,
 } from "@/convex/lib/tracks";
+import { cn } from "@/lib/utils";
 import { formatClock, formatCount } from "@/components/wave-player/format";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -98,12 +99,11 @@ export function TracksDashboard() {
         <Spinner />
       </AuthLoading>
       <Authenticated>
-        <section>
-          <h2 className="role-heading text-ramp-10">New track</h2>
-          <NewTrack />
-        </section>
         <section className="flex min-h-0 flex-1 flex-col">
-          <h2 className="role-heading text-ramp-10">Tracks</h2>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="role-heading text-ramp-10">Tracks</h2>
+            <NewTrack />
+          </div>
           <TrackTable />
         </section>
       </Authenticated>
@@ -192,13 +192,17 @@ function TrackTable() {
 const EMPTY_DRAFT: TrackMetadata = { title: "", artist: "", record: "" };
 
 /**
- * After a save the fields keep their values, since the next track usually
- * shares the artist and record, and Upload needs a new file.
+ * The New track button and its dialog. The upload and the fields live here,
+ * not in the dialog, so closing it never aborts an upload, and a line
+ * beside the button follows the upload while the dialog is closed. After a
+ * save the fields keep their values, since the next track usually shares
+ * the artist and record, and Upload needs a new file.
  */
 function NewTrack() {
   const [view, send] = useAudioUpload();
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [problems, setProblems] = useState<readonly MetadataProblem[]>([]);
+  const [open, setOpen] = useState(false);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -212,19 +216,68 @@ function NewTrack() {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-4 pt-3">
-      <FieldSet disabled={view.locked}>
-        <MetadataFields draft={draft} problems={problems} onChange={setDraft} />
-        <div className="flex gap-2">
-          <AudioPicker label="Choose file" disabled={view.busy} send={send} />
-          <Button type="submit" disabled={!view.canStart}>
-            Upload
-          </Button>
-        </div>
-      </FieldSet>
-      {/* Outside the fieldset, so Cancel, Retry, and Dismiss stay on while it is disabled. */}
-      <UploadStatus view={view} send={send} />
-    </form>
+    <div className="flex min-w-0 items-center gap-3">
+      {!open && <UploadLine view={view} />}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger
+          render={<Button size="sm" className="pointer-coarse:h-11" />}
+        >
+          New track
+        </DialogTrigger>
+        <DialogContent>
+          <DialogTitle>New track</DialogTitle>
+          <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+            <FieldSet disabled={view.locked}>
+              <MetadataFields
+                draft={draft}
+                problems={problems}
+                onChange={setDraft}
+              />
+              <div className="flex">
+                <AudioPicker
+                  label="Choose file"
+                  disabled={view.busy}
+                  send={send}
+                />
+              </div>
+            </FieldSet>
+            {/* Outside the fieldset, so Cancel, Retry, and Dismiss stay on while it is disabled. */}
+            <UploadStatus view={view} send={send} />
+            <DialogFooter>
+              <DialogClose render={<Button variant="secondary" />}>
+                Close
+              </DialogClose>
+              <Button type="submit" disabled={!view.canStart}>
+                Upload
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/** New track's upload in one line, while it runs or after it fails. */
+function UploadLine({ view }: { view: UploadView }) {
+  const { file, progress, failure } = view;
+
+  if (file === null || (progress === null && failure === null)) return null;
+
+  return (
+    <p
+      className={cn(
+        "role-mono-sm flex min-w-0 gap-2",
+        failure === null ? "text-ramp-7" : "text-destructive"
+      )}
+    >
+      <span className="min-w-0 truncate">{file.name}</span>
+      <span className="shrink-0">
+        {progress === null
+          ? failure
+          : `${PROGRESS_LABELS[progress.step]}${progress.percent === null ? "" : ` ${progress.percent}%`}`}
+      </span>
+    </p>
   );
 }
 
