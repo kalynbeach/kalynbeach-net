@@ -16,6 +16,10 @@ import { Waveform } from "@/components/waveform";
 /**
  * "Kalyn Beach" with the mark right of it, at the top of the sidebar, in the
  * mobile top bar and in the sheet header. `atRest` shows the 3x3 beam (Home).
+ *
+ * role-name trims the name to its caps, so the row's top is the name's cap
+ * top: the top line in the sidebar. The mark's negative block margins keep
+ * it from setting the row's height, and it centers on the caps.
  */
 export function Identity({ atRest }: { atRest: boolean }) {
   return (
@@ -23,7 +27,7 @@ export function Identity({ atRest }: { atRest: boolean }) {
       <Link href="/" data-slot="site-name" className="role-name text-ramp-10">
         {siteName}
       </Link>
-      <span className="size-5.25">
+      <span className="-my-2 size-5.25">
         <Waveform form="mark" atRest={atRest} />
       </span>
     </div>

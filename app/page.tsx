@@ -1,8 +1,6 @@
-/**
- * Home's look is its site map entry (`kind: "stage"` in lib/site.ts): the
- * shell draws the waveform stage in the window and no section 1 box. Content
- * returned here renders in section 1's column, under the stage.
- */
+import { siteName } from "@/lib/site";
+
+/** Home. The shell draws the waveform stage above this; the page adds its title for screen readers. */
 export default function Home() {
-  return null;
+  return <h1 className="sr-only">{siteName}</h1>;
 }

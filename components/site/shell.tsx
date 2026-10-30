@@ -14,6 +14,12 @@
  * outlives a page: Home's stage, Music's player views, and the header of a
  * page with none of its own.
  *
+ * The top line: on desktop the sidebar and section 1 start on one grid row,
+ * the lead below the window's top. The name and a page's title trim to their
+ * cap tops (role-name, role-title), and nothing sits above section 1's first
+ * child, so the name's caps, the title's caps and Home's stage share one line
+ * on every page, and the sidebar never moves between pages.
+ *
  * A client component because the pathname is only readable on the client.
  * It still renders on the server for the first request. Nothing here sits
  * inside a ViewTransition: the stage and the player views persist across
@@ -22,7 +28,7 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { resolve, siteName, type SiteEntry } from "@/lib/site";
+import { resolve, type SiteEntry } from "@/lib/site";
 import { Waveform } from "@/components/waveform";
 import {
   WavePlayerBar,
@@ -72,17 +78,18 @@ export function SiteShell({ children }: { children: ReactNode }) {
           {/* The mini player's slot. Empty until #38 mounts the player here. */}
           <div data-slot="sidebar-player" />
         </div>
-        <main className="max-desktop:mx-edge max-desktop:p-5 flex min-w-0 flex-1 flex-col gap-8">
+        <main
+          data-slot="site-primary"
+          className="max-desktop:mx-edge max-desktop:p-5 flex min-w-0 flex-1 flex-col gap-8"
+        >
           {home && (
-            <>
-              <div
-                aria-hidden
-                className="w-stage max-desktop:my-auto mx-auto aspect-square"
-              >
-                <Waveform form="stage" />
-              </div>
-              <h1 className="sr-only">{siteName}</h1>
-            </>
+            <div
+              data-slot="waveform-stage"
+              aria-hidden
+              className="w-stage max-desktop:my-auto mx-auto aspect-square"
+            >
+              <Waveform form="stage" />
+            </div>
           )}
           {page?.title && <PageHeader title={page.title} />}
           {children}

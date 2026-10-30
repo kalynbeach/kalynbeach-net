@@ -108,12 +108,17 @@
  * with Kevelle's type- utilities (Kevelle's type-lede is a serif 22px role).
  */
 
+/*
+ * role-name and role-title trim to the cap top and the baseline, so the
+ * name and a page's title align by their caps on the top line.
+ */
 @utility role-name {
   font-family: var(--font-text);
   font-size: 18px;
   font-weight: 500;
   line-height: 20px;
   letter-spacing: -0.005em;
+  text-box: trim-both cap alphabetic;
   @variant max-desktop {
     letter-spacing: 0;
   }
@@ -143,6 +148,7 @@
   font-weight: 500;
   line-height: 44px;
   letter-spacing: -0.03em;
+  text-box: trim-both cap alphabetic;
   @variant max-desktop {
     font-size: 29px;
     line-height: 36px;
