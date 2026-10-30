@@ -1,20 +1,20 @@
 import { Suspense } from "react";
 import { pageMetadata } from "@/lib/site";
 import SiteAuth from "@/components/site/site-auth";
-import { TracksDashboard } from "@/components/dashboard/tracks";
-import { LooksEditor } from "@/components/looks/editor";
+import { DashboardFrame } from "@/components/dashboard/frame";
 
 export const metadata = pageMetadata("/dashboard");
 
 export default function Dashboard() {
   return (
-    <>
-      <Suspense fallback={<div className="font-mono text-sm">loading...</div>}>
-        <SiteAuth />
-      </Suspense>
-      <p className="font-mono text-sm">Convex admin access verified.</p>
-      <TracksDashboard />
-      <LooksEditor />
-    </>
+    <DashboardFrame
+      account={
+        <Suspense
+          fallback={<div className="font-mono text-sm">loading...</div>}
+        >
+          <SiteAuth />
+        </Suspense>
+      }
+    />
   );
 }
