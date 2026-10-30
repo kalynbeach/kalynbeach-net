@@ -50,7 +50,6 @@
    */
   --grid-template-columns-column: minmax(var(--spacing-sidebar), 1fr)
     minmax(0, var(--spacing-primary)) minmax(0, 1fr);
-  /* Admin: the sidebar, then one section that takes the rest. */
   --grid-template-columns-wide: var(--spacing-sidebar) minmax(0, 1fr);
 }
 
@@ -90,7 +89,6 @@
 :root {
   /* Paper's astral. Kevelle's light --astral is a different, deeper value. */
   --bloom: oklch(0.64 0.192 262);
-  /* In light mode every lit element takes the beam's soft halo. */
   --lit-beam: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
   --lit-marker: var(--lit-beam);
   --lit-progress: var(--lit-beam);
@@ -124,9 +122,6 @@
  *   meta        ABC Areal 12/16                 captions
  *   mono-sm     TX-02 11/16                     labels: stat labels, dates, tags
  *   readout     Departure Mono 11/16            years, times, counts and keys
- *
- * Content pages render in typeset with the typeset-site preset below, which
- * applies these roles to markdown's elements.
  */
 
 /*
@@ -222,7 +217,6 @@
   }
 }
 
-/* Captions: the screenshot's, the player's artist line. */
 @utility role-meta {
   font-family: var(--font-text);
   font-size: 0.75rem;
@@ -231,7 +225,6 @@
   letter-spacing: 0;
 }
 
-/* Labels: stat labels and step details, dates, tags, durations. */
 @utility role-mono-sm {
   font-family: var(--font-ui);
   font-size: 0.6875rem;
@@ -253,9 +246,8 @@
 /*
  * The site preset for Kevelle's typeset: content/*.mdx renders in
  * `typeset typeset-site` (mdx-components.tsx), so markdown takes the scale
- * with no per-page classes. Prose keeps a 32em measure, about 70
- * characters at any size. A component (anything with a data-slot) keeps its
- * own type and sits a block gap from its neighbors. It lives here rather
+ * with no per-page classes. A component (anything with a data-slot) keeps
+ * its own type and sits a block gap from its neighbors. It lives here rather
  * than in typeset.css, which the registry installs and would overwrite.
  */
 @layer components {

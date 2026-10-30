@@ -16,5 +16,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-/** Compiles content/*.mdx with the components in mdx-components.tsx. No remark or rehype plugins. */
 export default createMDX()(nextConfig);

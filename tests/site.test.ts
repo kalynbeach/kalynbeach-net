@@ -25,13 +25,11 @@ const pages = globSync("app/**/page.tsx").map((file) => ({
   route: routeOf(file),
 }));
 
-/** The routes a page file serves: the project route serves one per project. */
 const served = (route: string) =>
   route === "/software/[slug]"
     ? projects.map((slug) => `/software/${slug}`)
     : [route];
 
-/** Every nav row and its child rows, flattened. */
 const rows = (path: string) =>
   resolve(path).nav.flatMap((row) => [row, ...row.rows]);
 

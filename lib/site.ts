@@ -2,9 +2,9 @@
  * The site map: the nav, Cmd+K, and the layout each route takes.
  *
  * The shell in the root layout resolves the entry for the current pathname
- * and draws the sidebar, Home's stage and Music's player views from it. Pages
- * render section 1's content, their header first. A content page's title and
- * lede live in its file in content/, with the rest of its copy.
+ * and draws the sidebar, Home's stage and Music's player views from it. A
+ * content page's title and lede live in its file in content/, with the rest
+ * of its copy.
  */
 export const siteName = "Kalyn Beach";
 
@@ -21,14 +21,10 @@ type PageNode = {
   label: string;
   route: `/${string}`;
   player: PlayerRole;
-  /**
-   * Child pages, which take this page's player role. The row expands while
-   * this page or one of them is active.
-   */
+  /** Child pages, which take this page's player role. */
   pages?: readonly { label: string; route: `/${string}` }[];
 };
 
-/** Home. Section 1 opens with the waveform stage. */
 type StageNode = { kind: "stage"; label: string; route: "/" };
 
 /**
@@ -89,20 +85,20 @@ export const projects = software.map(({ slug }) => slug);
 export type NavRow = {
   label: string;
   href: Route;
-  /** Text color alone tells active from idle. ancestor: the parent of the active page. */
+  /** ancestor: the parent of the active page. */
   state: "idle" | "active" | "ancestor";
   /** A page's child rows while it or one of them is active. Empty otherwise. */
   rows: readonly NavRow[];
 };
 
 /**
- * The layout the shell draws for a route, `kind` first. Only a page has a
- * player role or a header, so Home and admin pages can't be given one.
+ * The layout the shell draws for a route. Only a page has a player role or a
+ * header, so Home and admin pages can't be given one.
  */
 type Layout =
   /** Home. Section 1 opens with the waveform stage, its top on the top line. */
   | { kind: "stage" }
-  /** Public, system and unknown paths. Section 1 is the column, centered in the window. */
+  /** Public, system and unknown paths. Section 1 is the column. */
   | {
       kind: "page";
       player: PlayerRole | null;

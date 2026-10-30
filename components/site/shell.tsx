@@ -5,10 +5,10 @@
  *
  * At 1100px and up there are two sections: the sidebar (the name, the nav
  * and the mini player's slot) and section 1. The site map entry for the
- * pathname picks the layout: Home's stage, a page's column centered in the
- * window, or an admin page's wide section. Below 1100px the top bar, the nav
- * sheet and the player bar stand in for the sidebar. No section has a
- * border, shadow or fill of its own.
+ * pathname picks the layout: Home's stage, a page's column, or an admin
+ * page's wide section. Below 1100px the top bar, the nav sheet and the
+ * player bar stand in for the sidebar. No section has a border, shadow or
+ * fill of its own.
  *
  * Pages render section 1's content, their header first. The shell adds what
  * outlives a page: Home's stage, Music's player views, and the header of a
@@ -39,7 +39,6 @@ import { Identity, NavSheet, NavTree } from "@/components/site/nav";
 import { PageHeader } from "@/components/site/page-header";
 import { CommandMenu } from "@/components/site/command-menu";
 
-/** Desktop tracks for each layout, from globals.css. */
 const columns = {
   stage: "desktop:grid-cols-column",
   page: "desktop:grid-cols-column",
