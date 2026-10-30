@@ -9,13 +9,15 @@ import {
   audioFileProblem,
   isStored,
   planAttach,
+  planSetLook,
   publicTrackValidator,
-  resolvePublicTrack,
+  resolvePublicTracks,
   toAdminTrack,
   trackAudioProblem,
   trackAudioValidator,
   trackMetadataProblems,
   trackMetadataValidator,
+  type RequestedLook,
   type TrackAudio,
 } from "./lib/tracks";
 
@@ -26,7 +28,7 @@ import {
  * such as a non-integer id, stay plain Errors.
  */
 
-/** Every track whose audio is in Convex storage, by publicId. */
+/** Every track whose audio is in Convex storage, by publicId, with its look. */
 export const list = query({
   args: {},
   returns: v.array(publicTrackValidator),
@@ -36,11 +38,8 @@ export const list = query({
       .withIndex("by_public_id")
       .order("asc")
       .collect();
-    const publicTracks = await Promise.all(
-      tracks.map((track) => resolvePublicTrack(ctx, track))
-    );
 
-    return publicTracks.filter((track) => track !== null);
+    return resolvePublicTracks(ctx, tracks);
   },
 });
 
@@ -144,8 +143,8 @@ export const attachAudio = mutation({
 
     const plan = planAttach(track, args.audio, Date.now());
 
-    if (plan.kind === "replace") {
-      await ctx.db.replace("tracks", track._id, plan.next);
+    if (plan.kind === "patch") {
+      await ctx.db.patch("tracks", track._id, plan.patch);
 
       if (plan.deleteBlob) {
         await deleteBlob(ctx, plan.deleteBlob);
@@ -182,6 +181,44 @@ export const update = mutation({
     });
 
     return null;
+  },
+});
+
+/**
+ * Points a track at a saved look, or clears its look with null. A repeat
+ * writes nothing. Refuses a look that no longer exists.
+ */
+export const setLook = mutation({
+  args: { id: v.number(), look: v.union(v.id("looks"), v.null()) },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    assertPositiveInteger(args.id, "track id");
+
+    const track = await findTrack(ctx, args.id);
+
+    if (!track) {
+      throw new ConvexError(`Track ${args.id} not found`);
+    }
+
+    const requested: RequestedLook =
+      args.look === null
+        ? { kind: "none" }
+        : {
+            kind: (await ctx.db.get("looks", args.look)) ? "found" : "gone",
+            id: args.look,
+          };
+    const plan = planSetLook(track, requested, Date.now());
+
+    switch (plan.kind) {
+      case "unchanged":
+        return null;
+      case "refuse":
+        throw new ConvexError(plan.message);
+      case "patch":
+        await ctx.db.patch("tracks", track._id, plan.patch);
+        return null;
+    }
   },
 });
 

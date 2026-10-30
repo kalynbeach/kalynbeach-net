@@ -1,12 +1,25 @@
 import { v, type Infer } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
+import {
+  lookConfigValidator,
+  type Look,
+  type LookConfig,
+  type LookId,
+} from "./looks";
 
 const trackFields = {
   publicId: v.number(),
   title: v.string(),
   artist: v.string(),
   record: v.string(),
+  /**
+   * The saved look the site draws for this track. Absent means none, so the
+   * WavePlayer draws its own default, never the live look. Optional, so rows
+   * from before looks still validate. looks.remove refuses a look any track
+   * names.
+   */
+  look: v.optional(v.id("looks")),
   createdAt: v.number(),
   updatedAt: v.number(),
 };
@@ -51,7 +64,7 @@ export const trackMetadataValidator = v.object({
   record: v.string(),
 });
 
-/** The WavePlayer block's track input. `id` is the publicId as a string. */
+/** The WavePlayer block's track input plus its look. `id` is the publicId as a string. */
 export const publicTrackValidator = v.object({
   id: v.string(),
   title: v.string(),
@@ -60,6 +73,11 @@ export const publicTrackValidator = v.object({
   record: v.string(),
   duration: v.number(),
   peaks: v.array(v.number()),
+  /**
+   * The track's look as stored, or null for none, which draws the
+   * WavePlayer's own default. Readers pass it through parseWaveformConfig.
+   */
+  look: v.union(lookConfigValidator, v.null()),
 });
 
 /** A dashboard row. A legacy row's `src` names the S3 file to upload again. */
@@ -68,6 +86,7 @@ export const adminTrackValidator = v.object({
   title: v.string(),
   artist: v.string(),
   record: v.string(),
+  look: v.union(v.id("looks"), v.null()),
   audio: v.union(
     v.object({ kind: v.literal("legacy"), src: v.string() }),
     v.object({
@@ -170,15 +189,33 @@ export function trackMetadataProblems(
   );
 }
 
+/**
+ * db.patch removes a field set to undefined. `satisfies` fails the build
+ * unless this names exactly the fields only a legacy track has.
+ */
+const DROP_LEGACY = {
+  src: undefined,
+  image: undefined,
+  isLoop: undefined,
+} as const satisfies {
+  readonly [K in Exclude<keyof LegacyTrack, keyof StoredTrack>]: undefined;
+};
+
+type AttachPatch = typeof DROP_LEGACY & {
+  readonly audio: TrackAudio;
+  readonly updatedAt: number;
+};
+
 export type AttachPlan =
   | { kind: "unchanged" }
-  | { kind: "replace"; next: StoredTrack; deleteBlob: Id<"_storage"> | null };
+  | { kind: "patch"; patch: AttachPatch; deleteBlob: Id<"_storage"> | null };
 
 /**
  * What attaching `audio` does to `track`. A blob's duration and peaks never
- * change, so the same blob again is a retry and changes nothing. A legacy
- * track becomes stored and drops `src`, `image`, and `isLoop`. A stored track
- * with another blob takes the new audio, and the old blob is deleted.
+ * change, so the same blob again is a retry and changes nothing. Otherwise
+ * it is a patch, so every field it doesn't name survives. A legacy track
+ * drops `src`, `image`, and `isLoop` and becomes stored. A stored track takes
+ * the new audio, and the old blob is deleted.
  */
 export function planAttach(
   track: Track,
@@ -192,21 +229,58 @@ export function planAttach(
   }
 
   return {
-    kind: "replace",
-    next: {
-      publicId: track.publicId,
-      title: track.title,
-      artist: track.artist,
-      record: track.record,
-      createdAt: track.createdAt,
-      updatedAt: now,
-      audio,
-    },
+    kind: "patch",
+    patch: { ...DROP_LEGACY, audio, updatedAt: now },
     deleteBlob: current,
   };
 }
 
-export function toPublicTrack(track: StoredTrack, src: string): PublicTrack {
+/** The look setLook was asked for, as the handler read it. A `gone` id has no look row behind it. */
+export type RequestedLook =
+  | { readonly kind: "none" }
+  | { readonly kind: "found"; readonly id: LookId }
+  | { readonly kind: "gone"; readonly id: LookId };
+
+export type SetLookPlan =
+  | { readonly kind: "unchanged" }
+  | {
+      readonly kind: "patch";
+      /** `look` is required even when undefined: db.patch removes a field only when its key is present. */
+      readonly patch: {
+        readonly look: LookId | undefined;
+        readonly updatedAt: number;
+      };
+    }
+  | { readonly kind: "refuse"; readonly message: string };
+
+/**
+ * What setLook does to `track`. A track that already holds the requested
+ * look, or none when cleared, writes nothing before any check, so a retry of
+ * a set that landed succeeds. A look that is gone is refused, so a track
+ * never names a deleted look.
+ */
+export function planSetLook(
+  track: Track,
+  requested: RequestedLook,
+  now: number
+): SetLookPlan {
+  const next = requested.kind === "none" ? null : requested.id;
+
+  if (next === (track.look ?? null)) {
+    return { kind: "unchanged" };
+  }
+  if (requested.kind === "gone") {
+    return { kind: "refuse", message: "Look not found" };
+  }
+
+  return { kind: "patch", patch: { look: next ?? undefined, updatedAt: now } };
+}
+
+export function toPublicTrack(
+  track: StoredTrack,
+  src: string,
+  look: LookConfig | null
+): PublicTrack {
   return {
     id: String(track.publicId),
     title: track.title,
@@ -215,21 +289,52 @@ export function toPublicTrack(track: StoredTrack, src: string): PublicTrack {
     record: track.record,
     duration: track.audio.duration,
     peaks: track.audio.peaks,
+    look,
   };
 }
 
-/** The only path from a track to what the site plays. Null for a legacy track or a deleted blob. */
-export async function resolvePublicTrack(
-  ctx: Pick<QueryCtx, "storage">,
-  track: Track
-): Promise<PublicTrack | null> {
-  if (!isStored(track)) {
-    return null;
-  }
+/**
+ * The only path from tracks to what the site plays, in the order given.
+ * Leaves out legacy tracks and tracks whose blob is gone. Reads each look
+ * once, however many tracks share it. A look row that is gone gives null,
+ * since a throw here would reach every visitor. Never reads the site row.
+ */
+/** The reads resolvePublicTracks makes: look rows and blob URLs. A QueryCtx is one. */
+export type PublicTrackReader = {
+  readonly db: {
+    get(table: "looks", id: LookId): Promise<Pick<Look, "config"> | null>;
+  };
+  readonly storage: {
+    getUrl(storageId: Id<"_storage">): Promise<string | null>;
+  };
+};
 
-  const src = await ctx.storage.getUrl(track.audio.storageId);
+export async function resolvePublicTracks(
+  ctx: PublicTrackReader,
+  tracks: readonly Track[]
+): Promise<PublicTrack[]> {
+  const stored = tracks.filter(isStored);
+  const lookIds = new Set(
+    stored.flatMap((track) => (track.look ? [track.look] : []))
+  );
+  const looks = new Map(
+    await Promise.all(
+      [...lookIds].map(
+        async (id) =>
+          [id, (await ctx.db.get("looks", id))?.config ?? null] as const
+      )
+    )
+  );
+  const srcs = await Promise.all(
+    stored.map((track) => ctx.storage.getUrl(track.audio.storageId))
+  );
 
-  return src === null ? null : toPublicTrack(track, src);
+  return stored.flatMap((track, index) => {
+    const src = srcs[index];
+    const look = track.look ? (looks.get(track.look) ?? null) : null;
+
+    return src === null ? [] : [toPublicTrack(track, src, look)];
+  });
 }
 
 export async function toAdminTrack(
@@ -241,6 +346,7 @@ export async function toAdminTrack(
     title: track.title,
     artist: track.artist,
     record: track.record,
+    look: track.look ?? null,
     audio: isStored(track)
       ? {
           kind: "stored",
