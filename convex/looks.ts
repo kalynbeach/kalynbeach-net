@@ -6,6 +6,7 @@ import {
   adminLookValidator,
   liveLookValidator,
   lookConfigValidator,
+  lookUsage,
   planCreate,
   planRemove,
   planRename,
@@ -13,7 +14,9 @@ import {
   planSetLive,
   refuse,
   toAdminLook,
+  type LookId,
   type Site,
+  type TrackRef,
 } from "./lib/looks";
 
 /**
@@ -37,7 +40,7 @@ export const live = query({
   },
 });
 
-/** Every look, oldest first, with the live one marked. */
+/** Every look, oldest first, with the live one marked and the tracks that use each. */
 export const list = query({
   args: {},
   returns: v.array(adminLookValidator),
@@ -46,7 +49,14 @@ export const list = query({
     const looks = await ctx.db.query("looks").order("asc").collect();
     const site = await findSite(ctx);
 
-    return looks.map((look) => toAdminLook(look, site));
+    return Promise.all(
+      looks.map(async (look) =>
+        toAdminLook(
+          look,
+          lookUsage(look, site, await findTracksUsing(ctx, look._id))
+        )
+      )
+    );
   },
 });
 
@@ -132,7 +142,10 @@ export const rename = mutation({
   },
 });
 
-/** Deletes a look. Refuses the live look. A look that is already gone is a no-op. */
+/**
+ * Deletes a look. Refuses the live look and a look any track uses. A look
+ * that is already gone is a no-op.
+ */
 export const remove = mutation({
   args: { id: v.id("looks") },
   returns: v.null(),
@@ -140,7 +153,11 @@ export const remove = mutation({
     await requireAdmin(ctx);
     const plan = planRemove(
       await ctx.db.get("looks", args.id),
-      await findSite(ctx)
+      lookUsage(
+        { _id: args.id },
+        await findSite(ctx),
+        await findTracksUsing(ctx, args.id)
+      )
     );
 
     switch (plan.kind) {
@@ -191,4 +208,20 @@ export const setLive = mutation({
  */
 function findSite(ctx: QueryCtx | MutationCtx): Promise<Site | null> {
   return ctx.db.query("site").unique();
+}
+
+/**
+ * The tracks that name a look, in publicId order. The one reading of usage:
+ * list shows it and remove guards on it.
+ */
+async function findTracksUsing(
+  ctx: QueryCtx | MutationCtx,
+  id: LookId
+): Promise<TrackRef[]> {
+  const tracks = await ctx.db
+    .query("tracks")
+    .withIndex("by_look", (query) => query.eq("look", id))
+    .collect();
+
+  return tracks.map((track) => ({ id: track.publicId, title: track.title }));
 }
