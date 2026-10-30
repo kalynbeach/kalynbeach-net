@@ -66,7 +66,7 @@ export function DashboardFrame({ account }: { account: ReactNode }) {
       </div>
       <div
         hidden={workspace !== "looks"}
-        className="flex min-h-0 flex-1 flex-col"
+        className="@container flex min-h-0 flex-1 flex-col"
       >
         <LooksEditor />
       </div>
