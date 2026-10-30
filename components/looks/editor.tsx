@@ -3,12 +3,13 @@
 /**
  * The dashboard's looks editor. No props:
  *
- *   // app/(admin)/dashboard/page.tsx
+ *   // components/dashboard/frame.tsx
  *   <LooksEditor />
  *
- * It renders blocks of section 1's body, so the shell spaces them like any
- * page's blocks: the looks, then the selected look's name and commands, its
- * preview, and WaveformPanel.
+ * At 1100px and up it fills the frame's height in three columns: the looks
+ * with the selected look's name and commands, its preview as large as the
+ * column allows, and WaveformPanel. The first and last scroll on their own,
+ * so the preview stays in view. Below 1100px they stack in that order.
  *
  * The preview and the panel share the editor's own WaveformProvider with
  * no audio. It takes viewTransitionName={null}: on /dashboard the shell's
@@ -165,63 +166,67 @@ export function LooksEditor() {
   };
 
   return (
-    <>
-      <section aria-label="Looks" className="flex flex-col">
-        <SectionHead title="Looks">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={pending !== null || state.looks === null}
-            onClick={newLook}
-          >
-            {pending === "create" && <Spinner />}
-            New look
-          </Button>
-        </SectionHead>
-        {failed && (
-          <p role="alert" className="role-body text-destructive pt-3">
-            {state.looks === null
-              ? "Looks didn't load."
-              : "Looks stopped updating. Unsaved edits are kept."}
-          </p>
+    <div className="desktop:grid desktop:min-h-0 desktop:flex-1 desktop:grid-cols-[13rem_minmax(0,1fr)_20rem] desktop:grid-rows-[minmax(0,1fr)] flex flex-col gap-6">
+      {/* The negative margin keeps focus rings clear of the scroll clip. */}
+      <div className="desktop:-m-1 desktop:overflow-y-auto desktop:p-1 flex flex-col gap-6">
+        <section aria-label="Looks" className="flex flex-col">
+          <SectionHead title="Looks">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={pending !== null || state.looks === null}
+              className="pointer-coarse:h-11"
+              onClick={newLook}
+            >
+              {pending === "create" && <Spinner />}
+              New look
+            </Button>
+          </SectionHead>
+          {failed && (
+            <p role="alert" className="role-body text-destructive pt-3">
+              {state.looks === null
+                ? "Looks didn't load."
+                : "Looks stopped updating. Unsaved edits are kept."}
+            </p>
+          )}
+          {state.looks === null && !failed && (
+            <div className="h-row text-ramp-6 flex items-center">
+              <Spinner />
+            </div>
+          )}
+          {state.looks !== null && (
+            <LookList rows={view.rows} onSelect={select} />
+          )}
+          {!selection && failure && <Failure label={failure} />}
+        </section>
+        {selection && (
+          <LookControls
+            key={`${selection.look.id}:${selection.look.name}`}
+            selection={selection}
+            pending={pending}
+            failure={failure}
+            commands={commands}
+          />
         )}
-        {state.looks === null && !failed && (
-          <div className="h-row text-ramp-6 flex items-center">
-            <Spinner />
-          </div>
-        )}
-        {state.looks !== null && (
-          <LookList rows={view.rows} onSelect={select} />
-        )}
-        {!selection && failure && <Failure label={failure} />}
-      </section>
+      </div>
       {selection && (
-        <SelectedLook
-          selection={selection}
-          pending={pending}
-          failure={failure}
-          commands={commands}
-        />
+        <SelectedLook selection={selection} onEdit={commands.edit} />
       )}
-    </>
+    </div>
   );
 }
 
 /**
- * The selected look's controls, preview and panel around the editor's own
- * WaveformProvider. It mounts with the first selection, so the preview
- * starts from a real look.
+ * The preview and WaveformPanel, the middle and right columns, around the
+ * editor's own WaveformProvider. It mounts with the first selection, so the
+ * preview starts from a real look.
  */
 function SelectedLook({
   selection,
-  pending,
-  failure,
-  commands,
+  onEdit,
 }: {
   selection: Selection;
-  pending: Command | null;
-  failure: string | null;
-  commands: Commands;
+  onEdit: Commands["edit"];
 }) {
   const [shown, setShown] = useState(() =>
     toKeyedConfig(selection.look.config)
@@ -234,21 +239,21 @@ function SelectedLook({
   return (
     <WaveformProvider
       config={preview.config}
-      onConfigChange={(config) => commands.edit(selection.look.id, config)}
+      onConfigChange={(config) => onEdit(selection.look.id, config)}
       viewTransitionName={null}
     >
-      <LookControls
-        key={`${selection.look.id}:${selection.look.name}`}
-        selection={selection}
-        pending={pending}
-        failure={failure}
-        commands={commands}
-      />
-      <Waveform
-        form={form}
-        className="aspect-square w-full max-w-80 self-center"
-      />
-      <WaveformPanel form={form} onFormChange={setForm} />
+      {/* A size container, so the square preview takes the column's shorter side. */}
+      <div className="desktop:min-h-0 desktop:[container-type:size]">
+        <Waveform
+          form={form}
+          className="desktop:w-[min(100cqw,100cqh)] desktop:max-w-none mx-auto aspect-square w-full max-w-80"
+        />
+      </div>
+      <div className="desktop:relative">
+        <div className="desktop:absolute desktop:-inset-1 desktop:overflow-y-auto desktop:p-1">
+          <WaveformPanel form={form} onFormChange={setForm} />
+        </div>
+      </div>
     </WaveformProvider>
   );
 }
@@ -286,8 +291,10 @@ function LookList({
             aria-current={row.selected ? "true" : undefined}
             onClick={() => onSelect(row.id)}
             className={cn(
-              "role-entry h-row flex w-full items-center gap-3 text-start pointer-coarse:h-11",
-              row.selected ? "text-ramp-10" : "text-ramp-7 hover:text-ramp-9"
+              "role-entry h-row flex w-full items-center gap-2 px-2 text-start pointer-coarse:h-11",
+              row.selected
+                ? "alloy-key text-ramp-10"
+                : "text-ramp-7 hover:text-ramp-9"
             )}
           >
             <span className="min-w-0 flex-1 truncate">{row.name}</span>
@@ -300,13 +307,6 @@ function LookList({
               </span>
             )}
             {row.live && <Badge variant="success">Live</Badge>}
-            <span
-              aria-hidden
-              className={cn(
-                "size-1.25 shrink-0",
-                row.selected && "bg-signal shadow-lit-dot"
-              )}
-            />
           </button>
         </li>
       ))}
@@ -355,8 +355,9 @@ function LookControls({
             />
             <Button
               type="submit"
-              variant="outline"
+              variant="secondary"
               disabled={rename.kind !== "ready" || busy}
+              className="pointer-coarse:h-11"
             >
               {pending === "rename" && <Spinner />}
               Rename
@@ -372,7 +373,11 @@ function LookControls({
           <span role="alert" className="role-body text-ramp-9">
             Saved in another tab since you started editing.
           </span>
-          <Button variant="outline" onClick={() => commands.keep(keep)}>
+          <Button
+            variant="secondary"
+            className="pointer-coarse:h-11"
+            onClick={() => commands.keep(keep)}
+          >
             Keep my edits
           </Button>
         </div>
@@ -380,14 +385,16 @@ function LookControls({
       <div className="flex flex-wrap items-center gap-2">
         <Button
           disabled={!save || busy}
+          className="pointer-coarse:h-11"
           onClick={() => save && commands.save(save)}
         >
           {pending === "save" && <Spinner />}
           Save
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           disabled={!discard}
+          className="pointer-coarse:h-11"
           onClick={() => discard && commands.discard(discard)}
         >
           Discard
@@ -397,8 +404,9 @@ function LookControls({
         ) : (
           <>
             <Button
-              variant="outline"
+              variant="secondary"
               disabled={useOnSite.kind !== "ready" || busy}
+              className="pointer-coarse:h-11"
               onClick={() =>
                 useOnSite.kind === "ready" && commands.useOnSite(useOnSite.id)
               }
@@ -419,7 +427,7 @@ function LookControls({
       )}
       {remove.kind === "held" ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" disabled>
+          <Button variant="secondary" disabled className="pointer-coarse:h-11">
             Delete
           </Button>
           <span className="role-mono-sm text-ramp-6">
@@ -433,20 +441,26 @@ function LookControls({
             variant="destructive"
             autoFocus
             disabled={busy}
+            className="pointer-coarse:h-11"
             onClick={() => commands.remove(remove.id)}
           >
             {pending === "remove" && <Spinner />}
             Delete look
           </Button>
-          <Button variant="ghost" onClick={() => setConfirming(false)}>
+          <Button
+            variant="secondary"
+            className="pointer-coarse:h-11"
+            onClick={() => setConfirming(false)}
+          >
             Cancel
           </Button>
         </div>
       ) : (
         <div className="flex">
           <Button
-            variant="ghost"
+            variant="secondary"
             disabled={busy}
+            className="pointer-coarse:h-11"
             onClick={() => setConfirming(true)}
           >
             Delete
