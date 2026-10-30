@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { pageMetadata } from "@/lib/site";
+import { PageHeader } from "@/components/site/page-header";
 import MeshSVGExporter from "@/components/r3f/mesh-svg-exporter";
 
 export const metadata = pageMetadata("/lab");
@@ -25,8 +26,11 @@ function MeshSVGExporterSkeleton() {
 
 export default function Lab() {
   return (
-    <Suspense fallback={<MeshSVGExporterSkeleton />}>
-      <MeshSVGExporter />
-    </Suspense>
+    <>
+      <PageHeader {...metadata} />
+      <Suspense fallback={<MeshSVGExporterSkeleton />}>
+        <MeshSVGExporter />
+      </Suspense>
+    </>
   );
 }
