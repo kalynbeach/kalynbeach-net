@@ -184,6 +184,7 @@ const a = adminLook("a", circle, { live: true });
 const b = adminLook("b", rosette);
 const looks = [b, a];
 const lowTide = { id: 3, title: "Low Tide" };
+const highTide = { id: 4, title: "High Tide" };
 const edited = withHz(rosette, 330);
 const savedElsewhere = [
   adminLook("b", withHz(rosette, 440), { version: 1 }),
@@ -217,6 +218,17 @@ describe("viewEditor selection", () => {
     expect(rows.map((row) => [row.id, row.selected])).toEqual([
       ["b", false],
       ["a", true],
+    ]);
+  });
+
+  it("counts the tracks that use each look", () => {
+    const rows = viewEditor(
+      run(listed([adminLook("b", rosette, { usedBy: [lowTide, highTide] }), a]))
+    ).rows;
+
+    expect(rows.map((row) => [row.id, row.uses])).toEqual([
+      ["b", 2],
+      ["a", 0],
     ]);
   });
 
