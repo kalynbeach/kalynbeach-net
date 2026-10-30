@@ -19,6 +19,10 @@ function storageId(value: string): Id<"_storage"> {
   return value as Id<"_storage">;
 }
 
+function lookId(value: string): Id<"looks"> {
+  return value as Id<"looks">;
+}
+
 function audio(id: string): TrackAudio {
   return { storageId: storageId(id), duration: 8, peaks: [0.1, 0.5, 1] };
 }
@@ -169,6 +173,33 @@ describe("planAttach", () => {
     expect(attached(storedTrack, audio("blob-new"))).toStrictEqual({
       next: { ...storedTrack, updatedAt: 500, audio: audio("blob-new") },
       deleteBlob: storageId("blob-old"),
+    });
+  });
+
+  it("keeps a stored track's look through Replace audio", () => {
+    const track = { ...storedTrack, look: lookId("dusk") };
+
+    expect(attached(track, audio("blob-new"))).toStrictEqual({
+      next: { ...track, updatedAt: 500, audio: audio("blob-new") },
+      deleteBlob: storageId("blob-old"),
+    });
+  });
+
+  it("keeps a legacy track's look when it converts the track", () => {
+    const track = { ...legacyTrack, look: lookId("dusk") };
+
+    expect(attached(track, audio("blob-new"))).toStrictEqual({
+      next: {
+        publicId: 1,
+        title: "0_initializer",
+        artist: "Kalyn Beach",
+        record: "loops",
+        look: lookId("dusk"),
+        createdAt: 1_742_955_735_839,
+        updatedAt: 500,
+        audio: audio("blob-new"),
+      },
+      deleteBlob: null,
     });
   });
 

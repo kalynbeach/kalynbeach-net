@@ -7,6 +7,12 @@ const trackFields = {
   title: v.string(),
   artist: v.string(),
   record: v.string(),
+  /**
+   * The saved look the site draws for this track. Absent means none, so the
+   * WavePlayer draws its own default, never the live look. Optional, so rows
+   * from before looks still validate.
+   */
+  look: v.optional(v.id("looks")),
   createdAt: v.number(),
   updatedAt: v.number(),
 };
