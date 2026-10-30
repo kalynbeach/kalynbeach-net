@@ -330,6 +330,8 @@ export function renameLook(look: AdminLook, input: string): Rename {
 
 export const REFUSAL_LABELS: { readonly [C in LookRefusalCode]: string } = {
   live: "The live look can't be deleted.",
+  // Placeholder copy for Kalyn to write.
+  used: "Tracks use this look.",
   missing: "This look no longer exists.",
   name: `A name needs 1 to ${MAX_NAME_LENGTH} characters.`,
   config: "This look is too large to save.",
