@@ -39,16 +39,27 @@ export const siteValidator = v.object({
 
 export const liveLookValidator = v.union(lookConfigValidator, v.null());
 
-/** A dashboard row. `live` comes from the site row and is never stored on the look. */
+/** A track as a look names it: its publicId and title. */
+export const trackRefValidator = v.object({
+  id: v.number(),
+  title: v.string(),
+});
+
+/**
+ * A dashboard row. `live` comes from the site row and `usedBy` from the
+ * tracks that name the look, in publicId order. The look stores neither.
+ */
 export const adminLookValidator = v.object({
   id: v.id("looks"),
   name: v.string(),
   config: lookConfigValidator,
   version: v.number(),
   live: v.boolean(),
+  usedBy: v.array(trackRefValidator),
 });
 
 export type LookConfig = Infer<typeof lookConfigValidator>;
+export type TrackRef = Infer<typeof trackRefValidator>;
 export type AdminLook = Infer<typeof adminLookValidator>;
 export type LookId = Id<"looks">;
 export type Look = Doc<"looks">;
@@ -65,6 +76,7 @@ export const MAX_CONFIG_BYTES = 16 * 1024;
  */
 export const LOOK_REFUSAL_CODES = [
   "live",
+  "used",
   "missing",
   "name",
   "config",
@@ -261,22 +273,53 @@ export function planRename(
     : { kind: "patch", patch: { name: cleanName(name), updatedAt: now } };
 }
 
+/** What uses a look. Either use keeps it from being deleted. An AdminLook is one. */
+export type LookUsage = {
+  readonly live: boolean;
+  readonly usedBy: readonly TrackRef[];
+};
+
+/** A look's usage from the site row and the tracks that name it. The one place live is worked out. */
+export function lookUsage(
+  look: Pick<Look, "_id">,
+  site: Site | null,
+  usedBy: readonly TrackRef[]
+): LookUsage {
+  return { live: site?.liveLook === look._id, usedBy };
+}
+
+/**
+ * Why a look can't be deleted, or null. Live wins over used. remove()
+ * refuses by it and the editor holds Delete by it, so both apply one rule.
+ */
+export function removeProblem(usage: LookUsage): "live" | "used" | null {
+  if (usage.live) {
+    return "live";
+  }
+
+  return usage.usedBy.length > 0 ? "used" : null;
+}
+
 export type RemovePlan =
   | { readonly kind: "gone" }
   | { readonly kind: "delete"; readonly id: LookId }
-  | { readonly kind: "refuse"; readonly code: "live" };
+  | { readonly kind: "refuse"; readonly code: "live" | "used" };
 
 /**
  * What remove does. A look that is already gone is a no-op, so a repeat
- * converges. Refusing the live look here is the rule's only real guard.
+ * converges. Its refusals are the only guards that keep site.liveLook and
+ * track.look from dangling. Convex runs mutations serializably, so no
+ * setLook lands between the usage read and the delete.
  */
-export function planRemove(look: Look | null, site: Site | null): RemovePlan {
+export function planRemove(look: Look | null, usage: LookUsage): RemovePlan {
   if (!look) {
     return { kind: "gone" };
   }
 
-  return site?.liveLook === look._id
-    ? { kind: "refuse", code: "live" }
+  const problem = removeProblem(usage);
+
+  return problem
+    ? { kind: "refuse", code: problem }
     : { kind: "delete", id: look._id };
 }
 
@@ -307,12 +350,13 @@ export function planSetLive(look: Look | null, site: Site | null): SetLivePlan {
     : { kind: "patch", id: site._id, site: { liveLook: look._id } };
 }
 
-export function toAdminLook(look: Look, site: Site | null): AdminLook {
+export function toAdminLook(look: Look, usage: LookUsage): AdminLook {
   return {
     id: look._id,
     name: look.name,
     config: look.config,
     version: look.version,
-    live: site?.liveLook === look._id,
+    live: usage.live,
+    usedBy: [...usage.usedBy],
   };
 }
