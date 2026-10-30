@@ -1,7 +1,7 @@
 import { v, type Infer } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
-import type { LookId } from "./looks";
+import { lookConfigValidator, type LookConfig, type LookId } from "./looks";
 
 const trackFields = {
   publicId: v.number(),
@@ -58,7 +58,7 @@ export const trackMetadataValidator = v.object({
   record: v.string(),
 });
 
-/** The WavePlayer block's track input. `id` is the publicId as a string. */
+/** The WavePlayer block's track input plus its look. `id` is the publicId as a string. */
 export const publicTrackValidator = v.object({
   id: v.string(),
   title: v.string(),
@@ -67,6 +67,11 @@ export const publicTrackValidator = v.object({
   record: v.string(),
   duration: v.number(),
   peaks: v.array(v.number()),
+  /**
+   * The track's look as stored, or null for none, which draws the
+   * WavePlayer's own default. Readers pass it through parseWaveformConfig.
+   */
+  look: v.union(lookConfigValidator, v.null()),
 });
 
 /** A dashboard row. A legacy row's `src` names the S3 file to upload again. */
@@ -265,7 +270,11 @@ export function planSetLook(
   return { kind: "patch", patch: { look: next ?? undefined, updatedAt: now } };
 }
 
-export function toPublicTrack(track: StoredTrack, src: string): PublicTrack {
+export function toPublicTrack(
+  track: StoredTrack,
+  src: string,
+  look: LookConfig | null
+): PublicTrack {
   return {
     id: String(track.publicId),
     title: track.title,
@@ -274,21 +283,42 @@ export function toPublicTrack(track: StoredTrack, src: string): PublicTrack {
     record: track.record,
     duration: track.audio.duration,
     peaks: track.audio.peaks,
+    look,
   };
 }
 
-/** The only path from a track to what the site plays. Null for a legacy track or a deleted blob. */
-export async function resolvePublicTrack(
-  ctx: Pick<QueryCtx, "storage">,
-  track: Track
-): Promise<PublicTrack | null> {
-  if (!isStored(track)) {
-    return null;
-  }
+/**
+ * The only path from tracks to what the site plays, in the order given.
+ * Leaves out legacy tracks and tracks whose blob is gone. Reads each look
+ * once, however many tracks share it. A look row that is gone gives null,
+ * since a throw here would reach every visitor. Never reads the site row.
+ */
+export async function resolvePublicTracks(
+  ctx: Pick<QueryCtx, "db" | "storage">,
+  tracks: readonly Track[]
+): Promise<PublicTrack[]> {
+  const stored = tracks.filter(isStored);
+  const lookIds = new Set(
+    stored.flatMap((track) => (track.look ? [track.look] : []))
+  );
+  const looks = new Map(
+    await Promise.all(
+      [...lookIds].map(
+        async (id) =>
+          [id, (await ctx.db.get("looks", id))?.config ?? null] as const
+      )
+    )
+  );
+  const srcs = await Promise.all(
+    stored.map((track) => ctx.storage.getUrl(track.audio.storageId))
+  );
 
-  const src = await ctx.storage.getUrl(track.audio.storageId);
+  return stored.flatMap((track, index) => {
+    const src = srcs[index];
+    const look = track.look ? (looks.get(track.look) ?? null) : null;
 
-  return src === null ? null : toPublicTrack(track, src);
+    return src === null ? [] : [toPublicTrack(track, src, look)];
+  });
 }
 
 export async function toAdminTrack(
