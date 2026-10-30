@@ -6,9 +6,12 @@
  * height and each workspace scrolls inside it; below that it stacks and the
  * page scrolls.
  *
- * Both workspaces stay mounted and the inactive one is `hidden`, so each
- * track row's upload and the editor's unsaved drafts survive a switch. A
- * hidden preview has no size, so its renderer pauses on its own.
+ * A workspace mounts the first time it shows, then stays mounted, and the
+ * inactive one is `hidden`, so each track row's upload and the editor's
+ * unsaved drafts survive a switch. A hidden preview has no size, so its
+ * renderer pauses on its own. Mounting while hidden would break the panel:
+ * a Kevelle slider measures its thumb when it mounts or its value changes,
+ * not when it is revealed, so its thumb would stay hidden.
  */
 import { useState, type ReactNode } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -27,6 +30,14 @@ type Workspace = (typeof WORKSPACES)[number][0];
 /** `account` is the server-rendered SiteAuth, at the end of the header row. */
 export function DashboardFrame({ account }: { account: ReactNode }) {
   const [workspace, setWorkspace] = useState<Workspace>("tracks");
+  const [opened, setOpened] = useState<ReadonlySet<Workspace>>(
+    () => new Set([workspace])
+  );
+
+  const open = (next: Workspace) => {
+    setWorkspace(next);
+    if (!opened.has(next)) setOpened(new Set(opened).add(next));
+  };
 
   return (
     <div className="desktop:h-[calc(100dvh-var(--spacing-lead)*2)] desktop:min-h-[34rem] flex flex-col gap-6">
@@ -43,7 +54,7 @@ export function DashboardFrame({ account }: { account: ReactNode }) {
           onValueChange={(values) => {
             const next = WORKSPACES.find(([value]) => value === values[0]);
 
-            if (next) setWorkspace(next[0]);
+            if (next) open(next[0]);
           }}
         >
           {WORKSPACES.map(([value, label]) => (
@@ -62,13 +73,13 @@ export function DashboardFrame({ account }: { account: ReactNode }) {
         hidden={workspace !== "tracks"}
         className="flex min-h-0 flex-1 flex-col"
       >
-        <TracksDashboard />
+        {opened.has("tracks") && <TracksDashboard />}
       </div>
       <div
         hidden={workspace !== "looks"}
         className="@container flex min-h-0 flex-1 flex-col"
       >
-        <LooksEditor />
+        {opened.has("looks") && <LooksEditor />}
       </div>
     </div>
   );
