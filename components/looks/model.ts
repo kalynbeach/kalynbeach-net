@@ -31,6 +31,7 @@ import {
   type AdminLook,
   type LookId,
   type LookRefusalCode,
+  type RemoveProblem,
 } from "@/convex/lib/looks";
 import type {
   StoredValue,
@@ -221,8 +222,7 @@ export type LookRow = {
   readonly live: boolean;
   readonly unsaved: boolean;
   readonly selected: boolean;
-  /** How many tracks use the look. */
-  readonly uses: number;
+  readonly trackCount: number;
 };
 
 export type UseOnSite =
@@ -233,7 +233,7 @@ export type UseOnSite =
 /** Delete's state. `held` carries the code remove() would refuse with, so its label is REFUSAL_LABELS[code]. */
 export type Remove =
   | { readonly kind: "ready"; readonly id: LookId }
-  | { readonly kind: "held"; readonly code: "live" | "used" };
+  | { readonly kind: "held"; readonly code: RemoveProblem };
 
 export type Selection = {
   readonly look: AdminLook;
@@ -270,7 +270,7 @@ export function viewEditor(state: EditorState): EditorView {
       live: look.live,
       unsaved: state.drafts.has(look.id),
       selected: look.id === shown?.id,
-      uses: look.usedBy.length,
+      trackCount: look.usedBy.length,
     })),
     selection: shown && select(shown, state.drafts.get(shown.id) ?? null),
     anyUnsaved: state.drafts.size > 0,
