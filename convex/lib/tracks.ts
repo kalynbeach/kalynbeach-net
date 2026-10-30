@@ -170,15 +170,33 @@ export function trackMetadataProblems(
   );
 }
 
+/**
+ * db.patch removes a field set to undefined. `satisfies` fails the build
+ * unless this names exactly the fields only a legacy track has.
+ */
+const DROP_LEGACY = {
+  src: undefined,
+  image: undefined,
+  isLoop: undefined,
+} as const satisfies {
+  readonly [K in Exclude<keyof LegacyTrack, keyof StoredTrack>]: undefined;
+};
+
+type AttachPatch = typeof DROP_LEGACY & {
+  readonly audio: TrackAudio;
+  readonly updatedAt: number;
+};
+
 export type AttachPlan =
   | { kind: "unchanged" }
-  | { kind: "replace"; next: StoredTrack; deleteBlob: Id<"_storage"> | null };
+  | { kind: "patch"; patch: AttachPatch; deleteBlob: Id<"_storage"> | null };
 
 /**
  * What attaching `audio` does to `track`. A blob's duration and peaks never
- * change, so the same blob again is a retry and changes nothing. A legacy
- * track becomes stored and drops `src`, `image`, and `isLoop`. A stored track
- * with another blob takes the new audio, and the old blob is deleted.
+ * change, so the same blob again is a retry and changes nothing. Otherwise
+ * it is a patch, so every field it doesn't name survives. A legacy track
+ * drops `src`, `image`, and `isLoop` and becomes stored. A stored track takes
+ * the new audio, and the old blob is deleted.
  */
 export function planAttach(
   track: Track,
@@ -192,16 +210,8 @@ export function planAttach(
   }
 
   return {
-    kind: "replace",
-    next: {
-      publicId: track.publicId,
-      title: track.title,
-      artist: track.artist,
-      record: track.record,
-      createdAt: track.createdAt,
-      updatedAt: now,
-      audio,
-    },
+    kind: "patch",
+    patch: { ...DROP_LEGACY, audio, updatedAt: now },
     deleteBlob: current,
   };
 }
