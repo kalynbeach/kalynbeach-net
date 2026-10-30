@@ -16,7 +16,7 @@ export function Steps({
           className="border-ramp-4 desktop:not-first:pl-5 flex flex-1 flex-col gap-2 border-t pt-2.75 pb-2 not-first:pl-3"
         >
           <span className="role-nav text-ramp-10">{step}</span>
-          <span className="role-stat-label text-ramp-6">{detail}</span>
+          <span className="role-mono-sm text-ramp-6">{detail}</span>
         </li>
       ))}
     </ol>

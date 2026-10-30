@@ -14,7 +14,10 @@ export function PageHeader({ title, description }: PageMeta) {
         {title}
       </h1>
       {description && (
-        <p data-slot="page-lede" className="role-lede text-ramp-7">
+        <p
+          data-slot="page-lede"
+          className="role-lede max-w-measure text-ramp-7"
+        >
           {description}
         </p>
       )}

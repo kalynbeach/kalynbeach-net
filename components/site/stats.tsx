@@ -14,7 +14,7 @@ export function Stats({ items }: { items: readonly Stat[] }) {
           key={stat.label}
           className="border-ramp-4 desktop:not-first:pl-5 flex flex-1 flex-col gap-2 border-t pt-2.75 pb-2 not-first:pl-3"
         >
-          <dt className="role-stat-label text-ramp-6">
+          <dt className="role-mono-sm text-ramp-6">
             {stat.short ? (
               <>
                 <span className="max-desktop:hidden">{stat.label}</span>

@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { SectionHead } from "@/components/site/section-head";
 
 type Entry = {
   /** MM-DD. */
@@ -25,9 +24,9 @@ const marker = {
  * a newer entry moves the latest highlight with no other edit.
  *
  * One row shape at every width: top-aligned, 6px block padding and 20px
- * lines, so a one-line row is 32 tall and a wrapped row keeps its date and
- * marker on the first line. The rail shows at 1100px and up, and breaks at
- * year rows and inferred rows.
+ * lines (the 16px labels pad 2px above and below), so a one-line row is 32
+ * tall and a wrapped row keeps its date and marker on the first line. The
+ * rail shows at 1100px and up, and breaks at year rows and inferred rows.
  */
 export function Timeline({ years }: { years: readonly Year[] }) {
   const lit = new Set([years[0]?.entries[0], years.at(-1)?.entries.at(-1)]);
@@ -38,15 +37,19 @@ export function Timeline({ years }: { years: readonly Year[] }) {
 
   return (
     <section data-slot="timeline">
-      <SectionHead title="Timeline" data-slot="timeline-header">
-        <p className="flex items-center gap-2">
+      <div
+        data-slot="timeline-header"
+        className="flex items-baseline justify-between"
+      >
+        <h2 className="role-heading text-ramp-10">Timeline</h2>
+        <p className="flex items-baseline gap-2">
           <span
             aria-hidden
-            className="border-ramp-6 w-3.5 border-t border-dashed"
+            className="border-ramp-6 w-3.5 self-center border-t border-dashed"
           />
           <span className="role-mono-sm text-ramp-6">inferred</span>
         </p>
-      </SectionHead>
+      </div>
       {years.map(({ year, entries }) => (
         <section key={year}>
           <h3 className="role-readout h-row text-signal-dim flex items-end pb-1">
@@ -57,7 +60,7 @@ export function Timeline({ years }: { years: readonly Year[] }) {
               <li key={entry.date} className="flex gap-3 py-1.5">
                 <time
                   dateTime={`${year}-${entry.date}`}
-                  className="role-date text-ramp-6 desktop:w-12 w-10 shrink-0"
+                  className="role-mono-sm text-ramp-6 desktop:w-12 w-10 shrink-0 py-0.5"
                 >
                   {entry.date}
                 </time>
