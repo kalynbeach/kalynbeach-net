@@ -292,7 +292,10 @@ export function lookUsage(
  * Why a look can't be deleted, or null. Live wins over used. remove()
  * refuses by it and the editor holds Delete by it, so both apply one rule.
  */
-export function removeProblem(usage: LookUsage): "live" | "used" | null {
+/** Why remove() refuses a look that exists. */
+export type RemoveProblem = "live" | "used";
+
+export function removeProblem(usage: LookUsage): RemoveProblem | null {
   if (usage.live) {
     return "live";
   }
@@ -303,13 +306,13 @@ export function removeProblem(usage: LookUsage): "live" | "used" | null {
 export type RemovePlan =
   | { readonly kind: "gone" }
   | { readonly kind: "delete"; readonly id: LookId }
-  | { readonly kind: "refuse"; readonly code: "live" | "used" };
+  | { readonly kind: "refuse"; readonly code: RemoveProblem };
 
 /**
  * What remove does. A look that is already gone is a no-op, so a repeat
- * converges. Its refusals are the only guards that keep site.liveLook and
- * track.look from dangling. Convex runs mutations serializably, so no
- * setLook lands between the usage read and the delete.
+ * converges. Its refusals keep a delete from leaving site.liveLook or a
+ * track's look pointing at nothing. Convex runs mutations serializably, so
+ * no setLook lands between the usage read and the delete.
  */
 export function planRemove(look: Look | null, usage: LookUsage): RemovePlan {
   if (!look) {
