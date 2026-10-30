@@ -138,8 +138,9 @@ function Sections({ children }: { children: ReactNode }) {
         </header>
         {/* At its track's end, so the sidebar sits beside section 1, not at the window's edge. */}
         <div
+          ref={fitSidebar}
           data-slot="site-sidebar"
-          className="max-desktop:hidden desktop:top-lead desktop:w-sidebar desktop:sticky desktop:flex desktop:flex-col desktop:justify-self-end desktop:gap-8"
+          className="max-desktop:hidden desktop:top-[min(var(--spacing-lead),calc(100dvh-var(--spacing-lead)-var(--sidebar-height,0px)))] desktop:w-sidebar desktop:sticky desktop:flex desktop:flex-col desktop:justify-self-end desktop:gap-8"
         >
           <Identity mark={placement.mark === "desktop"} />
           <nav data-slot="site-nav" aria-label="Site">
@@ -195,6 +196,23 @@ function Sections({ children }: { children: ReactNode }) {
       <CommandMenu />
     </div>
   );
+}
+
+/**
+ * Keeps a sidebar taller than the window in reach, as the mini player under
+ * the expanded Software rows is in an 800px window. Its sticky top reads
+ * --sidebar-height, so it scrolls with the page until its bottom sits the
+ * lead above the window's bottom, then sticks there. A shorter sidebar
+ * sticks at the lead.
+ */
+function fitSidebar(sidebar: HTMLElement | null) {
+  if (!sidebar) return;
+  const observer = new ResizeObserver(([entry]) => {
+    const height = entry.borderBoxSize[0].blockSize;
+    sidebar.style.setProperty("--sidebar-height", `${height}px`);
+  });
+  observer.observe(sidebar);
+  return () => observer.disconnect();
 }
 
 /**
