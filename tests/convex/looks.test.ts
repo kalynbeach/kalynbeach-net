@@ -5,6 +5,7 @@ import {
   cleanName,
   isLookRefusal,
   lookNameProblem,
+  lookUsage,
   MAX_CONFIG_BYTES,
   MAX_NAME_LENGTH,
   planCreate,
@@ -13,10 +14,12 @@ import {
   planSave,
   planSetLive,
   refuse,
+  removeProblem,
   toAdminLook,
   type Look,
   type LookConfig,
   type Site,
+  type TrackRef,
 } from "@/convex/lib/looks";
 
 function lookId(value: string): Id<"looks"> {
@@ -57,6 +60,7 @@ function siteOn(id: string): Site {
 
 const a = look("a");
 const b = look("b");
+const lowTide: TrackRef = { id: 3, title: "Low Tide" };
 
 describe("names", () => {
   it("cleans a name by trimming and collapsing inner whitespace", () => {
@@ -240,27 +244,55 @@ describe("planRename", () => {
   });
 });
 
+describe("removeProblem", () => {
+  it("names live before used, and nothing for a look nothing uses", () => {
+    expect(removeProblem({ live: true, usedBy: [lowTide] })).toBe("live");
+    expect(removeProblem({ live: true, usedBy: [] })).toBe("live");
+    expect(removeProblem({ live: false, usedBy: [lowTide] })).toBe("used");
+    expect(removeProblem({ live: false, usedBy: [] })).toBeNull();
+  });
+});
+
 describe("planRemove", () => {
-  it("does nothing for a look that is already gone", () => {
-    expect(planRemove(null, siteOn("a"))).toEqual({ kind: "gone" });
+  it("does nothing for a look that is already gone, even one tracks use", () => {
+    expect(planRemove(null, lookUsage(a, siteOn("a"), [lowTide]))).toEqual({
+      kind: "gone",
+    });
   });
 
   it("refuses the live look", () => {
-    expect(planRemove(a, siteOn("a"))).toEqual({
+    expect(planRemove(a, lookUsage(a, siteOn("a"), []))).toEqual({
       kind: "refuse",
       code: "live",
     });
   });
 
-  it("deletes a look that isn't live", () => {
-    expect(planRemove(b, siteOn("a"))).toEqual({
+  it("refuses a look a track uses", () => {
+    expect(planRemove(b, lookUsage(b, siteOn("a"), [lowTide]))).toEqual({
+      kind: "refuse",
+      code: "used",
+    });
+  });
+
+  it("refuses the live look as live when tracks use it too", () => {
+    expect(planRemove(a, lookUsage(a, siteOn("a"), [lowTide]))).toEqual({
+      kind: "refuse",
+      code: "live",
+    });
+  });
+
+  it("deletes a look that isn't live and no track uses", () => {
+    expect(planRemove(b, lookUsage(b, siteOn("a"), []))).toEqual({
       kind: "delete",
       id: lookId("b"),
     });
   });
 
-  it("deletes any look before the first setLive", () => {
-    expect(planRemove(a, null)).toEqual({ kind: "delete", id: lookId("a") });
+  it("deletes any unused look before the first setLive", () => {
+    expect(planRemove(a, lookUsage(a, null, []))).toEqual({
+      kind: "delete",
+      id: lookId("a"),
+    });
   });
 });
 
@@ -294,15 +326,22 @@ describe("planSetLive", () => {
 
 describe("toAdminLook", () => {
   it("marks only the look the site row points at as live", () => {
-    expect(toAdminLook(a, siteOn("a"))).toEqual({
+    expect(toAdminLook(a, lookUsage(a, siteOn("a"), []))).toEqual({
       id: lookId("a"),
       name: "Look a",
       config,
       version: 0,
       live: true,
+      usedBy: [],
     });
-    expect(toAdminLook(b, siteOn("a")).live).toBe(false);
-    expect(toAdminLook(a, null).live).toBe(false);
+    expect(toAdminLook(b, lookUsage(b, siteOn("a"), [])).live).toBe(false);
+    expect(toAdminLook(a, lookUsage(a, null, [])).live).toBe(false);
+  });
+
+  it("carries the tracks that use the look", () => {
+    expect(toAdminLook(b, lookUsage(b, siteOn("a"), [lowTide])).usedBy).toEqual(
+      [lowTide]
+    );
   });
 });
 
@@ -324,6 +363,7 @@ describe("refusals", () => {
 
   it("recognizes a looks refusal and nothing else", () => {
     expect(isLookRefusal({ code: "config" })).toBe(true);
+    expect(isLookRefusal({ code: "used" })).toBe(true);
     expect(isLookRefusal({ code: "other" })).toBe(false);
     expect(isLookRefusal("live")).toBe(false);
     expect(isLookRefusal(null)).toBe(false);
