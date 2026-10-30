@@ -183,6 +183,7 @@ const rosette = applyPreset(DEFAULT_WAVEFORM_CONFIG, "rosette");
 const a = adminLook("a", circle, { live: true });
 const b = adminLook("b", rosette);
 const looks = [b, a];
+const lowTide = { id: 3, title: "Low Tide" };
 const edited = withHz(rosette, 330);
 const savedElsewhere = [
   adminLook("b", withHz(rosette, 440), { version: 1 }),
@@ -309,6 +310,27 @@ describe("viewEditor unsaved markers", () => {
     expect(selection?.draft).toBeNull();
     expect(selection?.save).toBeNull();
     expect(nextPreview(drafting, null, savedLook.config)).toBe(drafting);
+  });
+
+  it("keeps drafts and the preview object through a list that changes only which tracks use each look", () => {
+    const state = run(listed(looks), {
+      type: "edit",
+      id: lookId("b"),
+      config: edited,
+    });
+    const shown = toKeyedConfig(a.config);
+    const usedA = adminLook("a", circle, { live: true, usedBy: [lowTide] });
+    const relisted = reduceEditor(
+      state,
+      listed([adminLook("b", rosette, { usedBy: [lowTide] }), usedA])
+    );
+
+    expect(viewEditor(relisted).selection?.look).toBe(usedA);
+    expect(nextPreview(shown, null, usedA.config)).toBe(shown);
+    expect(
+      viewEditor(reduceEditor(relisted, { type: "select", id: lookId("b") }))
+        .selection?.draft
+    ).toBe(edited);
   });
 
   it("drops the draft once its Save resolves, so a later save elsewhere doesn't read as unsaved", () => {
@@ -711,8 +733,42 @@ describe("viewEditor commands", () => {
 
       expect(selection?.look.id).toBe("a");
       expect(selection?.useOnSite).toEqual({ kind: "live" });
-      expect(selection?.remove).toEqual({ kind: "live" });
+      expect(selection?.remove).toEqual({ kind: "held", code: "live" });
     }
+  });
+
+  it("holds Delete for a look tracks use, and keeps Use on site", () => {
+    const selection = viewEditor(
+      run(listed([adminLook("b", rosette, { usedBy: [lowTide] }), a]), {
+        type: "select",
+        id: lookId("b"),
+      })
+    ).selection;
+
+    expect(selection?.remove).toEqual({ kind: "held", code: "used" });
+    expect(selection?.useOnSite).toEqual({ kind: "ready", id: "b" });
+  });
+
+  it("holds Delete as live when tracks use the live look too", () => {
+    const selection = viewEditor(
+      run(
+        listed([b, adminLook("a", circle, { live: true, usedBy: [lowTide] })])
+      )
+    ).selection;
+
+    expect(selection?.remove).toEqual({ kind: "held", code: "live" });
+  });
+
+  it("offers Delete again once the last track stops using the look", () => {
+    const selection = viewEditor(
+      run(
+        listed([adminLook("b", rosette, { usedBy: [lowTide] }), a]),
+        { type: "select", id: lookId("b") },
+        listed(looks)
+      )
+    ).selection;
+
+    expect(selection?.remove).toEqual({ kind: "ready", id: "b" });
   });
 
   it("creates with one key until a create resolves, then selects the new look", () => {

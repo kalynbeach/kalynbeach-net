@@ -403,13 +403,18 @@ function LookControls({
           </>
         )}
       </div>
-      {remove.kind === "live" ? (
+      {look.usedBy.length > 0 && (
+        <p className="role-mono-sm text-ramp-6">
+          Used by {look.usedBy.map((track) => track.title).join(", ")}
+        </p>
+      )}
+      {remove.kind === "held" ? (
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" disabled>
             Delete
           </Button>
           <span className="role-mono-sm text-ramp-6">
-            {REFUSAL_LABELS.live}
+            {REFUSAL_LABELS[remove.code]}
           </span>
         </div>
       ) : confirming ? (
