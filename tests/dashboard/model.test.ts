@@ -1,6 +1,7 @@
 import { ConvexError } from "convex/values";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Id } from "@/convex/_generated/dataModel";
+import type { AdminLook, LookId } from "@/convex/lib/looks";
 import { AUDIO_CONTENT_TYPES, MAX_AUDIO_BYTES } from "@/convex/lib/tracks";
 import { toSeconds } from "@/lib/audio";
 import { toPeaks } from "@/components/wave-player/peaks";
@@ -8,6 +9,8 @@ import {
   AUDIO_ACCEPT,
   AudioProblem,
   EMPTY_UPLOAD,
+  MISSING_LOOK,
+  PLAYER_DEFAULT,
   REQUEST_FAILED,
   advance,
   checkMetadata,
@@ -17,6 +20,7 @@ import {
   metadataPatch,
   parseUploadResponse,
   roundPeaks,
+  trackLookView,
   abandonedUpload,
   type AudioSave,
   type UploadState,
@@ -323,5 +327,57 @@ describe("boundaries", () => {
         "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/0_initializer.wav"
       )
     ).toBe("0_initializer.wav");
+  });
+});
+
+describe("trackLookView", () => {
+  const look = (id: string, name: string): AdminLook => ({
+    id: id as LookId,
+    name,
+    config: {},
+    version: 1,
+    live: false,
+    usedBy: [],
+  });
+  const looks = [look("dusk", "Dusk"), look("golden", "Golden")];
+
+  it("waits for the looks, and says when they failed", () => {
+    expect(trackLookView(null, undefined)).toEqual({ kind: "loading" });
+    expect(trackLookView(null, new Error("down"))).toEqual({
+      kind: "failed",
+    });
+  });
+
+  const options = [
+    { value: null, label: PLAYER_DEFAULT },
+    { value: "dusk", label: "Dusk" },
+    { value: "golden", label: "Golden" },
+  ];
+
+  it("offers Player default first, then every look in list order", () => {
+    expect(trackLookView(null, looks)).toEqual({
+      kind: "ready",
+      value: null,
+      label: PLAYER_DEFAULT,
+      options,
+    });
+  });
+
+  it("names the track's look", () => {
+    expect(trackLookView("golden" as LookId, looks)).toEqual({
+      kind: "ready",
+      value: "golden",
+      label: "Golden",
+      options,
+    });
+  });
+
+  it("shows a look the list lacks as missing, and can still clear it", () => {
+    expect(trackLookView("gone" as LookId, looks)).toEqual({
+      kind: "ready",
+      value: "gone",
+      label: MISSING_LOOK,
+      options,
+    });
   });
 });
