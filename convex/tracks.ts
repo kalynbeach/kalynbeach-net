@@ -11,7 +11,7 @@ import {
   planAttach,
   planSetLook,
   publicTrackValidator,
-  resolvePublicTrack,
+  resolvePublicTracks,
   toAdminTrack,
   trackAudioProblem,
   trackAudioValidator,
@@ -28,7 +28,7 @@ import {
  * such as a non-integer id, stay plain Errors.
  */
 
-/** Every track whose audio is in Convex storage, by publicId. */
+/** Every track whose audio is in Convex storage, by publicId, with its look. */
 export const list = query({
   args: {},
   returns: v.array(publicTrackValidator),
@@ -38,11 +38,8 @@ export const list = query({
       .withIndex("by_public_id")
       .order("asc")
       .collect();
-    const publicTracks = await Promise.all(
-      tracks.map((track) => resolvePublicTrack(ctx, track))
-    );
 
-    return publicTracks.filter((track) => track !== null);
+    return resolvePublicTracks(ctx, tracks);
   },
 });
 
