@@ -8,40 +8,46 @@
  * --typeset-leading, and --typeset-flow. Fonts come from --typeset-font-*.
  * Reading-column width is app-owned and not set here.
  *
- * Kevelle mapping. ABC Areal (--font-sans) sets text. Paper Mono
- * (--font-mono) sets code, and h1 to h4 as the heading ranks, at 400 with no
- * tracking in the author's case. Departure Mono (--font-pixel) sets labels
- * and keys at 11px. The serif preset keeps Timeless Serif headings at 500.
- * Colors come from the semantic roles, corners are square, rules are 1px
- * hairlines in the border role, and links underline from the font. Headings
- * outside the serif preset, labels, table cells, footnotes, and keys borrow a
- * type role and keep its fixed size. Everything else scales with the
- * container. A preset sets controls, and the element rules decide where each
- * one applies. The serif preset is the one exception the rules name, for its
- * headings. Where an element or preset matches a role, its leading is the
- * role's line height over its size, rounded up at four places, because the
- * minifier truncates a division and the line would land a fraction under the
- * role's whole pixels. Imported by kevelle.css.
+ * Kevelle mapping, in the machine and human system. Authored headings are
+ * the human's voice: ABC Areal (--font-sans) sets text and h1 to h4 at 700,
+ * and the serif preset sets Timeless Serif on its ladder. Departure Mono
+ * (--font-pixel), the machine's voice, sets h5, h6, table heads, and keys at
+ * 11px in the author's case. Paper Mono (--font-mono) sets code only. Colors
+ * come from the semantic roles, corners are square, rules are 1px hairlines
+ * in the border role, and links underline from the font. Headings, labels,
+ * table cells, footnotes, and keys keep a fixed size on Kevelle's scale.
+ * Everything else scales with the container. A preset sets controls, and the
+ * element rules decide where each one applies. The serif preset is the one
+ * exception the rules name, for its headings. Where an element or preset
+ * matches a role, its leading is the role's line height over its size,
+ * rounded up at four places, because the minifier truncates a division and
+ * the line would land a fraction under the role's whole pixels. Imported by
+ * kevelle.css.
  */
 
 @layer components {
   .typeset {
     --typeset-font-body: var(--font-sans);
-    --typeset-font-heading: var(--font-mono);
+    --typeset-font-heading: var(--font-sans);
     --typeset-font-mono: var(--font-mono);
     --typeset-size: 1em;
     --typeset-leading: 1.5;
     --typeset-flow: 1.25em;
     --typeset-figures: normal;
-    --typeset-cut-body: normal;
-    --typeset-cut-title: normal;
+    --typeset-strong: 700;
+    --typeset-caption-style: normal;
+    /* Timeless Serif's STYL cuts, applied through --styl and joined with
+       --drkm wherever a rule changes the cut. */
+    --typeset-cut-body: 0;
+    --typeset-cut-title: 0;
   }
 
   /*
-   * Articles and notes. Matches type-prose, Timeless Serif Text at 18/28 with
-   * oldstyle figures, and sets h1 and h2 in the display cut like the serif
-   * title roles. Sizes are rem, as in the roles, so the match holds at any
-   * browser font size.
+   * Articles, notes, and posts. Matches type-prose, Timeless Serif Text at
+   * 18/28 with oldstyle figures and 600 for strong, sets h1 and h2 in the
+   * display cut like the serif title roles, and sets captions in the italic.
+   * Sizes are rem, as in the roles, so the match holds at any browser font
+   * size.
    */
   .typeset-serif {
     --typeset-font-body: var(--font-serif);
@@ -50,8 +56,10 @@
     --typeset-leading: 1.5556;
     --typeset-flow: 1.25em;
     --typeset-figures: oldstyle-nums proportional-nums;
-    --typeset-cut-body: "STYL" 100;
-    --typeset-cut-title: "STYL" 0;
+    --typeset-strong: 600;
+    --typeset-caption-style: italic;
+    --typeset-cut-body: 100;
+    --typeset-cut-title: 0;
   }
 
   /* Chat. Matches type-body, 14/20, with one line of space between blocks. */
@@ -76,7 +84,10 @@
     font-size: var(--typeset-size);
     line-height: var(--typeset-leading);
     font-variant-numeric: var(--typeset-figures);
-    font-variation-settings: var(--typeset-cut-body);
+    --styl: var(--typeset-cut-body);
+    font-variation-settings:
+      "STYL" var(--styl),
+      "DRKM" var(--drkm);
     color: var(--color-foreground, currentColor);
     overflow-wrap: break-word;
     margin-trim: block-start;
@@ -116,77 +127,84 @@
       font-variant-numeric: normal;
       margin-block-end: 0;
     }
-    /* h1 to h3 are the heading ranks 1 to 3, Paper Mono at 400 with no
-       tracking at a fixed 20/24, 16/20, and 14/20. h4 is rank 3 in muted
-       ink, so ranks separate by size and then by color. Like the labels, they
-       keep the author's case, so a unit such as kHz stays accurate. Authors
-       who want caps write caps. */
+    /* h1 to h4 are ABC Areal at 700, the component titles' weight, at a
+       fixed 24/28, 20/24, 18/24, and 16/20. They descend by size alone, and
+       h4 still matches a 16px body. From 20px up they track -0.01em. */
     &:where(h1, h2, h3, h4) {
-      font-weight: 400;
+      font-weight: 700;
       letter-spacing: 0;
     }
     &:where(h1) {
-      font-size: 1.25rem;
-      line-height: 1.2;
+      font-size: 1.5rem;
+      line-height: 1.1667;
+      letter-spacing: -0.01em;
       margin-block-start: var(--typeset-flow);
     }
     &:where(h2) {
-      font-size: 1rem;
-      line-height: 1.25;
+      font-size: 1.25rem;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
       margin-block-start: calc(var(--typeset-flow) * 1.4);
     }
     /* Titles balance and take the title cut, like Kevelle's title roles. */
     &:where(h1, h2) {
-      font-variation-settings: var(--typeset-cut-title);
+      --styl: var(--typeset-cut-title);
+      font-variation-settings:
+        "STYL" var(--styl),
+        "DRKM" var(--drkm);
       text-wrap: balance;
     }
     &:where(h3) {
-      font-size: 0.875rem;
-      line-height: 1.4286;
+      font-size: 1.125rem;
+      line-height: 1.3334;
       margin-block-start: var(--typeset-flow);
     }
     &:where(h4) {
-      font-size: 0.875rem;
-      line-height: 1.4286;
-      color: var(--typeset-muted);
+      font-size: 1rem;
+      line-height: 1.25;
       margin-block-start: var(--typeset-flow);
     }
-    /* The serif preset keeps upstream's editorial headings, Timeless Serif at
-       500 with -0.01em tracking, sized from --typeset-size. These follow the
+    /* The serif preset follows Timeless Serif's ladder. h1 is the Light
+       display title at 40/44, type-serif-display's size below md. h2 is the
+       Medium section title at 28/32, like type-serif-title. h3 and h4 are
+       Medium in the Text cut at 22/28 and the body's 18/28. These follow the
        rank rules at the same specificity, so they win by order. */
     &:where(.typeset-serif :is(h1, h2, h3, h4)) {
       font-weight: 500;
       letter-spacing: -0.01em;
     }
     &:where(.typeset-serif h1) {
-      font-size: 1.75em;
-      line-height: 1.3;
+      font-size: 2.5rem;
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
     }
     &:where(.typeset-serif h2) {
-      font-size: 1.25em;
-      line-height: 1.4;
+      font-size: 1.75rem;
+      line-height: 1.1429;
     }
     &:where(.typeset-serif h3) {
-      font-size: 1.125em;
-      line-height: 1.45;
+      font-size: 1.375rem;
+      line-height: 1.2728;
     }
     &:where(.typeset-serif h4) {
-      font-size: 1em;
-      line-height: 1.5;
-      color: var(--color-foreground, currentColor);
+      font-size: 1.125rem;
+      line-height: 1.5556;
+      letter-spacing: 0;
     }
     /* Labels. h5, h6, and table heads take type-label's Departure Mono at a
-       fixed 11/16 on the font's pixel grid, but keep the author's case.
-       Markdown can't mark a unit, so a forced uppercase would turn dBFS into
-       DBFS. Authors who want caps write caps. Leading is a ratio rather than
-       16px, so inline code inside a fixed-size element can't stretch its line. */
+       fixed 11/16 on the font's pixel grid, with its one font pixel of
+       tracking, but keep the author's case. Markdown can't mark a unit, so a
+       forced uppercase would turn dBFS into DBFS. Authors who want caps write
+       caps. Leading is a ratio rather than 16px, so inline code inside a
+       fixed-size element can't stretch its line. */
     &:where(h5, h6, thead th) {
       font-family: var(--font-pixel);
       font-size: 11px;
       font-weight: 400;
       font-synthesis-weight: none;
       line-height: 1.4546;
-      letter-spacing: 0;
+      letter-spacing: calc(1em / 11);
       color: var(--typeset-muted);
     }
     /* The label's em is a fixed 11px, so the flow is divided by 11/16. That
@@ -225,12 +243,10 @@
       font-weight: inherit;
     }
 
-    /* Inline semantics. */
+    /* Inline semantics. Strong follows each face's ladder: 700 in ABC
+       Areal, 600 in Timeless Serif. Emphasis takes each face's italic. */
     &:where(strong, b) {
-      font-weight: 600;
-    }
-    &:where(:is(h1, h2, h3, h4) :is(strong, b)) {
-      font-weight: 600;
+      font-weight: var(--typeset-strong);
     }
     &:where(mark) {
       background-color: var(--color-warning-subtle);
@@ -422,14 +438,17 @@
       margin-block-start: var(--typeset-flow);
     }
 
-    /* GFM footnotes, in type-caption, ABC Areal at a fixed 12/16. */
+    /* GFM footnotes, ABC Areal at type-caption's 12px on an 18px reading
+       line, since a note can run several lines. They stay ABC Areal in every
+       preset, so they keep its 700 strong. */
     &:where(.footnotes, [data-footnotes]) {
+      --typeset-strong: 700;
       margin-block-start: calc(var(--typeset-flow) * 2);
       border-block-start: 1px solid var(--typeset-rule);
       padding-block-start: var(--typeset-flow);
       font-family: var(--font-sans);
       font-size: 0.75rem;
-      line-height: 1.3334;
+      line-height: 1.5;
       font-variant-numeric: normal;
       color: var(--typeset-muted);
     }
@@ -463,6 +482,7 @@
     &:where(figcaption, caption) {
       color: var(--typeset-muted);
       font-size: 0.875em;
+      font-style: var(--typeset-caption-style);
       text-align: center;
       margin-block-start: calc(0.75em / 0.875);
     }
@@ -580,7 +600,10 @@
     ) {
     font-family: var(--font-sans);
     font-variant-numeric: normal;
-    font-variation-settings: normal;
+    --styl: 0;
+    font-variation-settings:
+      "STYL" var(--styl),
+      "DRKM" var(--drkm);
   }
 
   /* First child adds no space above. Last so it wins ties. */
