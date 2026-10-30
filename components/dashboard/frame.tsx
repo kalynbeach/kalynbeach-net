@@ -41,6 +41,13 @@ export function DashboardFrame({ account }: { account: ReactNode }) {
 
   return (
     <div className="desktop:h-[calc(100dvh-var(--spacing-lead)*2)] desktop:min-h-[34rem] flex flex-col gap-6">
+      {/*
+        role-title trims the h1 to its caps, so on desktop its cap top is the
+        row's top: the top line. The switch and the account box center on the
+        caps, and their negative block margins keep them from setting the
+        row's height, as the mark beside the name does. Below 1100px the row
+        wraps, so they keep their height.
+      */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <h1 data-slot="page-title" className="role-title text-ramp-10">
           Dashboard
@@ -49,6 +56,7 @@ export function DashboardFrame({ account }: { account: ReactNode }) {
           aria-label={SWITCH_NAME}
           variant="outline"
           spacing={0}
+          className="desktop:-my-3"
           value={[workspace]}
           // Pressing the active item sends no value, and the workspace stays.
           onValueChange={(values) => {
@@ -67,7 +75,7 @@ export function DashboardFrame({ account }: { account: ReactNode }) {
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
-        <div className="ms-auto">{account}</div>
+        <div className="desktop:-my-3 ms-auto">{account}</div>
       </div>
       <div
         hidden={workspace !== "tracks"}
