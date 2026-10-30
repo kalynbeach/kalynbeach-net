@@ -2,8 +2,7 @@ import Link from "next/link";
 
 /**
  * Renders inside the shell. An unknown pathname resolves to the site map's
- * not-found entry, so the shell draws "NOT FOUND" and the title; this is the
- * body.
+ * not-found entry, so the shell draws the title; this is the body.
  */
 export default function NotFound() {
   return (

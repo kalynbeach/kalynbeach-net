@@ -5,8 +5,8 @@
  * on each root, and delete public/waveform.svg.
  *
  * Each form fills the box its caller sizes and places. The shell places the
- * stage and the glow in the window, the identity places the mark in its 21px
- * slot, and the player views place the screens. So the replacement needs no
+ * stage in section 1, the identity places the mark in its 21px slot, and the
+ * player views place the screens. So the replacement needs no
  * site layout knowledge.
  *
  * The placeholders are static SVG. Their paths live in public/waveform.svg
@@ -16,16 +16,8 @@
 import { cn } from "@/lib/utils";
 
 export type WaveformProps =
-  /** Home: 648 square, six trace layers at 1:1. */
+  /** Home: up to 648 square, six trace layers at 1:1. */
   | { form: "stage" }
-  /** Behind section 1: the stage's layers at 1276, in a bloom group (0.8, blur 40) and a trace group (0.12, blur 4). */
-  | { form: "glow" }
-  /**
-   * Pages with the glow off. The shell keeps the host mounted and invisible,
-   * so the real waveform keeps one surface and moves between forms instead
-   * of popping in.
-   */
-  | { form: "off" }
   /** Player art. The 36px bar art hides the afterglow layer. */
   | { form: "screen"; afterglow?: boolean }
   /** Beside the name. At rest (Home, where the stage holds the waveform) it is the 3x3 beam. */
@@ -35,7 +27,7 @@ export type WaveformProps =
  * Shared view-transition names. One element per name may be on screen at a
  * time. Wiring the transitions is later work; the names live here so the
  * forms that share one never disagree.
- * - waveform: the Home stage and the glow are one waveform in two sizes.
+ * - waveform: the Home stage.
  * - mark: the identity mark and the Home beam.
  * - screen: mini player art, Music card art and bar art. No page shows two.
  */
@@ -45,10 +37,7 @@ export const waveformTransitionNames = {
   screen: "waveform-screen",
 } as const;
 
-/**
- * The six trace layers, bottom to top. The two bloom layers are blurred and
- * take the bloom color on the stage; in the glow every layer does.
- */
+/** The six trace layers, bottom to top. The two bloom layers are blurred and take the bloom color. */
 const traceLayers = [
   {
     symbol: "trace-recent",
@@ -68,7 +57,7 @@ const traceLayers = [
   { symbol: "trace-newest", width: 1.1, className: "", bloom: false },
 ] as const;
 
-function TraceLayers({ allBloom }: { allBloom: boolean }) {
+function TraceLayers() {
   return traceLayers.map((layer, index) => (
     <svg
       key={index}
@@ -76,7 +65,7 @@ function TraceLayers({ allBloom }: { allBloom: boolean }) {
       className={cn(
         "absolute inset-0 size-full",
         layer.className,
-        layer.bloom || allBloom ? "text-bloom" : "text-signal"
+        layer.bloom ? "text-bloom" : "text-signal"
       )}
     >
       <use href={`/waveform.svg#${layer.symbol}`} strokeWidth={layer.width} />
@@ -89,22 +78,9 @@ export function Waveform(props: WaveformProps) {
     case "stage":
       return (
         <div data-waveform="stage" className="relative size-full">
-          <TraceLayers allBloom={false} />
+          <TraceLayers />
         </div>
       );
-    case "glow":
-      return (
-        <div data-waveform="glow" className="relative size-full">
-          <div className="absolute inset-0 opacity-80 blur-2xl">
-            <TraceLayers allBloom />
-          </div>
-          <div className="absolute inset-0 opacity-12 blur-xs">
-            <TraceLayers allBloom />
-          </div>
-        </div>
-      );
-    case "off":
-      return <div data-waveform="off" className="size-full" />;
     case "screen":
       // The art strokes do not scale, so the frames' 1.8 at 176px, 1 at
       // 316px and 7 at 36px (viewBox units) all draw at about 1px.

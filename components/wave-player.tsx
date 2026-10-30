@@ -6,11 +6,11 @@
  * pages, so the mini player and the bar keep their track across navigation.
  * The views read that state:
  *
- * | View              | Where                         | Size    |
- * | WavePlayerMini    | section 3, About and Software | 200x380 |
- * | WavePlayerLibrary | section 3, Music              | 200x232 |
- * | WavePlayerCard    | Music body                    | 340x550 |
- * | WavePlayerBar     | below 1100px, fixed bottom    | fills the 416x57 box the shell fixes |
+ * | View              | Where                                        | Size    |
+ * | WavePlayerMini    | the sidebar-player slot, once #38 mounts it   | 200x380 |
+ * | WavePlayerLibrary | section 1 on Music, beside the card          | fills its box |
+ * | WavePlayerCard    | section 1 on Music                           | 340x550 |
+ * | WavePlayerBar     | below 1100px, the column's sticky last child | fills the column's width |
  *
  * When the block lands, this file re-exports the block's provider and views
  * under these names, and the placeholder bodies, `sample`, the placeholder
