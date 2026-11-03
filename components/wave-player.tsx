@@ -119,7 +119,7 @@ export function WavePlayerMini() {
       >
         <p className="flex flex-1 items-baseline gap-2">
           <span className="role-track text-ramp-10">{view.track.title}</span>
-          <span className="role-tag text-ramp-6 w-max">Sample</span>
+          <span className="role-tag text-ramp-7 w-max">Sample</span>
         </p>
         <button
           type="button"
@@ -142,7 +142,7 @@ export function WavePlayerMini() {
           <Waveform form="screen" />
         </div>
         <p className="flex items-center justify-between">
-          <span className="role-meta text-ramp-6">{view.track.artist}</span>
+          <span className="role-meta text-ramp-7">{view.track.artist}</span>
           <span className="role-readout text-ramp-7">{view.counter}</span>
         </p>
         <Scrubber
@@ -166,7 +166,7 @@ export function WavePlayerLibrary() {
       >
         <p className="flex items-baseline gap-2">
           <span className="role-track text-ramp-10">Library</span>
-          <span className="role-readout text-ramp-6 uppercase">
+          <span className="role-readout text-ramp-7 uppercase">
             {view.count}
           </span>
         </p>
@@ -189,7 +189,7 @@ export function WavePlayerLibrary() {
             <span
               className={cn(
                 "role-mono-sm",
-                active ? "text-signal" : "text-ramp-6"
+                active ? "text-signal" : "text-ramp-7"
               )}
             >
               {duration}
@@ -214,13 +214,13 @@ export function WavePlayerCard() {
     >
       <p className="flex h-8 items-center justify-between px-1">
         <span className="role-card-title text-ramp-10">{view.track.title}</span>
-        <span className="role-mono-sm text-ramp-6">{view.duration}</span>
+        <span className="role-mono-sm text-ramp-7">{view.duration}</span>
       </p>
       <div className="aspect-square w-full">
         <Waveform form="screen" />
       </div>
       <p className="flex h-5 items-center justify-between px-1">
-        <span className="role-meta text-ramp-6">
+        <span className="role-meta text-ramp-7">
           {view.track.artist} · {view.track.record}
         </span>
         <span className="role-readout text-ramp-7">{view.counter}</span>
@@ -285,7 +285,7 @@ function Scrubber({
       </svg>
       <p className="role-readout flex justify-between">
         <span className="text-ramp-8">{elapsed}</span>
-        <span className="text-ramp-6">{remaining}</span>
+        <span className="text-ramp-7">{remaining}</span>
       </p>
     </div>
   );

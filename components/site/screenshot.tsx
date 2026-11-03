@@ -46,7 +46,7 @@ export function Screenshot({
           className="hidden h-auto w-full dark:block"
         />
       </Skeleton>
-      <figcaption className="role-meta text-ramp-6">{caption}</figcaption>
+      <figcaption className="role-meta text-ramp-7">{caption}</figcaption>
     </figure>
   );
 }

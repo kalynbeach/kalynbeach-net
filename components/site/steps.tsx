@@ -15,7 +15,7 @@ export function Steps({
       {steps.map(({ step, detail }) => (
         <li key={step} className={hairlineCell}>
           <span className="role-nav text-ramp-10">{step}</span>
-          <span className="role-mono-sm text-ramp-6">{detail}</span>
+          <span className="role-mono-sm text-ramp-7">{detail}</span>
         </li>
       ))}
     </ol>

@@ -47,7 +47,7 @@ export function Timeline({ years }: { years: readonly Year[] }) {
             aria-hidden
             className="border-ramp-6 w-3.5 self-center border-t border-dashed"
           />
-          <span className="role-mono-sm text-ramp-6">inferred</span>
+          <span className="role-mono-sm text-ramp-7">inferred</span>
         </p>
       </div>
       {years.map(({ year, entries }) => (
@@ -60,7 +60,7 @@ export function Timeline({ years }: { years: readonly Year[] }) {
               <li key={entry.date} className="flex gap-3">
                 <time
                   dateTime={`${year}-${entry.date}`}
-                  className="role-mono-sm text-ramp-6 desktop:w-12 w-10 shrink-0 py-1.5"
+                  className="role-mono-sm text-ramp-7 desktop:w-12 w-10 shrink-0 py-1.5"
                 >
                   {entry.date}
                 </time>

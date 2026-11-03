@@ -15,7 +15,7 @@ export function Stats({ items }: { items: readonly Stat[] }) {
     <dl data-slot="stats" className="flex">
       {items.map((stat) => (
         <div key={stat.label} className={hairlineCell}>
-          <dt className="role-mono-sm text-ramp-6">
+          <dt className="role-mono-sm text-ramp-7">
             {stat.short ? (
               <>
                 <span className="max-desktop:hidden">{stat.label}</span>
