@@ -213,14 +213,20 @@ function Sections({ children }: { children: ReactNode }) {
             // The frame's height, so the stage centers on the window.
             placement.stage && "desktop:min-h-frame desktop:justify-center",
             /*
-             * Music's card, dead center: the frame's height in three rows,
-             * the header, the card and an empty row, 32 apart. The two outer
-             * rows share what the card leaves, and the header's row never
-             * gets less than the header, so the card's top is
-             * max((window - card) / 2, header bottom + 32).
+             * Music's card, dead center: its top is max((window - card) / 2,
+             * header bottom + 32). The page's MDX body (.typeset) above the
+             * card and main's ::after below it grow by equal shares from
+             * flex bases that sum to 0: the body's -32 top margin offsets its
+             * 32 bottom margin, the gap to the card, and its 32 ::before puts
+             * the header back on the top line. The body never shrinks below
+             * its content, so the card never rises above header bottom + 32,
+             * and nothing under the card has a size of its own, so a card too
+             * tall to center scrolls the page only as far as it must. A grid
+             * can't do this: under an indefinite height its empty 1fr row
+             * takes the header row's size.
              */
             music &&
-              "desktop:min-h-frame desktop:grid desktop:grid-rows-[minmax(min-content,1fr)_auto_1fr] desktop:items-start desktop:gap-8"
+              "desktop:min-h-frame desktop:gap-0 desktop:after:flex-[1_1_0px] desktop:[&>.typeset]:-mt-8 desktop:[&>.typeset]:mb-8 desktop:[&>.typeset]:flex-[1_1_0px] desktop:[&>.typeset]:before:block desktop:[&>.typeset]:before:h-8"
           )}
         >
           {placement.stage && (
@@ -249,7 +255,7 @@ function Sections({ children }: { children: ReactNode }) {
               {/* kevelle/wave-player's card fills this box up to 340px. */}
               <div
                 data-slot="music-card"
-                className="w-full max-w-85 justify-self-center"
+                className="w-full max-w-85 self-center"
               >
                 <WavePlayerCard />
               </div>
