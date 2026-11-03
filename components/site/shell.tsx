@@ -38,6 +38,7 @@ import {
   ViewTransition,
   useDeferredValue,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useRef,
   useMemo,
@@ -130,6 +131,13 @@ function Sections({ children }: { children: ReactNode }) {
   const placement = place(entry, useWavePlayer().active, layout);
   const reducedMotion = useReducedMotion();
   const page = entry.kind === "page" ? entry : null;
+  const music = placement.frame === "card";
+  // What the rail holds, top to bottom: the mini player, or Music's Library.
+  const railHolds = placement.frame === "mini" || music;
+  // A landmark only while it holds something, so screen readers never land
+  // in an empty one. The empty column keeps its box.
+  const Rail = railHolds ? "aside" : "div";
+  const [miniShown, setMiniShown] = useState(false);
 
   useScrollToTop(pathname);
 
@@ -183,10 +191,19 @@ function Sections({ children }: { children: ReactNode }) {
           id="site-primary"
           data-slot="site-primary"
           className={cn(
-            // 64 from a page's header to what follows it here: Music's player row, a system page's body.
+            // 64 from a page's header to what follows it here: a system page's body, Music's card below 1200px.
             "max-desktop:mx-edge max-desktop:p-5 gap-opening flex min-w-0 flex-1 flex-col",
             // The frame's height, so the stage centers on the window.
-            placement.stage && "desktop:min-h-frame desktop:justify-center"
+            placement.stage && "desktop:min-h-frame desktop:justify-center",
+            /*
+             * Music's card, dead center: the frame's height in three rows,
+             * the header, the card and an empty row, 32 apart. The two outer
+             * rows share what the card leaves, and the header's row never
+             * gets less than the header, so the card's top is
+             * max((window - card) / 2, header bottom + 32).
+             */
+            music &&
+              "desktop:min-h-frame desktop:grid desktop:grid-rows-[minmax(min-content,1fr)_auto_1fr] desktop:items-start desktop:gap-8"
           )}
         >
           {placement.stage && (
@@ -200,36 +217,50 @@ function Sections({ children }: { children: ReactNode }) {
           )}
           {page?.title && <PageHeader title={page.title} />}
           {children}
-          {placement.frame === "card" && (
-            <div className="desktop:flex-row desktop:items-start flex flex-col gap-5">
-              {/* kevelle/wave-player's card fills this row up to 340px. */}
+          {music && (
+            // Below 1200px the Library follows the card; on desktop it is in the rail.
+            <div className="desktop:contents flex flex-col items-center gap-5">
+              {/* kevelle/wave-player's card fills this box up to 340px. */}
               <div
-                data-slot="card-row"
-                className="desktop:w-85 desktop:shrink-0 flex justify-center"
+                data-slot="music-card"
+                className="w-full max-w-85 justify-self-center"
               >
                 <WavePlayerCard />
               </div>
-              <WavePlayerTracks className="desktop:flex-1" />
+              <div className="desktop:hidden w-full">
+                <WavePlayerTracks />
+              </div>
             </div>
           )}
         </main>
         {entry.kind !== "wide" && (
           // Items stack 40 apart from the top line down, and the rail stays
-          // within the frame.
-          <aside
+          // within the frame. The waveform controls go first, above the mini
+          // player.
+          <Rail
             data-slot="site-rail"
-            aria-label="Player and controls"
+            aria-label={railHolds ? "Player and controls" : undefined}
             className="max-desktop:hidden desktop:top-top desktop:max-h-frame desktop:sticky desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto"
           >
             {placement.frame === "mini" && (
-              <div data-slot="rail-player">
-                <WavePlayerMini
-                  live={!placement.stage}
-                  expand={<Link href="/music" />}
-                />
+              <RailPlayer
+                live={!placement.stage}
+                first={!miniShown}
+                onShown={() => setMiniShown(true)}
+              />
+            )}
+            {music && (
+              <div
+                data-slot="rail-library"
+                // The block's Library header is a 52 row that centers its
+                // label, so the label's cap top sits 23 below the row's top.
+                // This lifts it onto the top line.
+                className="-mt-5.75"
+              >
+                <WavePlayerTracks />
               </div>
             )}
-          </aside>
+          </Rail>
         )}
         {placement.frame === "bar" && (
           // Sticky and last in the column: it rests on the window's bottom
@@ -242,6 +273,46 @@ function Sections({ children }: { children: ReactNode }) {
         )}
       </div>
       <CommandMenu />
+    </div>
+  );
+}
+
+/**
+ * The mini player in the rail. Its first appearance in a visit fades it in,
+ * rising 4px; later ones arrive with the block's own fade or morph alone. A
+ * Web Animation, since Kevelle's reduced-motion rule cuts every CSS animation
+ * short, and under reduced motion the fade keeps only the opacity. During a
+ * view transition the browser draws the frame's own morph over the page, so
+ * this fade shows only where no transition runs, as under reduced motion.
+ */
+function RailPlayer({
+  live,
+  first,
+  onShown,
+}: {
+  live: boolean;
+  /** No mini player has appeared yet this visit. Read when it mounts. */
+  first: boolean;
+  onShown: () => void;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const enter = useEffectEvent(() => {
+    if (!first) return;
+    onShown();
+    const reduced = window.matchMedia(reducedMotionMedia).matches;
+    box.current?.animate(
+      reduced
+        ? { opacity: [0, 1] }
+        : { opacity: [0, 1], translate: ["0 4px", "0 0"] },
+      { duration: 200, easing: "cubic-bezier(0.23, 1, 0.32, 1)" }
+    );
+  });
+
+  useLayoutEffect(() => enter(), []);
+
+  return (
+    <div ref={box} data-slot="rail-player">
+      <WavePlayerMini live={live} expand={<Link href="/music" />} />
     </div>
   );
 }
