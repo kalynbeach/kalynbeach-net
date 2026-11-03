@@ -98,6 +98,8 @@
   --grid-template-columns-three: var(--spacing-sidebar) var(--spacing-section)
     var(--spacing-sidebar);
   --grid-template-columns-wide: var(--spacing-sidebar) minmax(0, 1fr);
+  /* Layout E's ease for the rail: the mini's first fade, the ghost and the waveform controls. */
+  --ease-controls: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 @theme inline {
@@ -324,6 +326,103 @@
     /* Last, so it wins over the h2 and block gaps above. */
     & > :where([data-slot="page-header"] + *) {
       margin-block-start: var(--spacing-opening);
+    }
+  }
+}
+
+/*
+ * Home's waveform controls (components/site/waveform-controls.tsx), with
+ * Layout E's motion. CSS transitions, so a close during the entrance
+ * reverses from where it is. Key presses never animate.
+ *
+ *   ghost in / out      opacity                        200 / 150ms
+ *   ghost press         scale 0.97 on :active          120ms ease-out
+ *   controls in / out   the row's reveal, opacity,     220 / 160ms
+ *                       translateY -4px
+ *   the mini below      follows the row, in step       220 / 160ms
+ *   a key's value       phosphor, then ink 8           held 1500ms, then 300ms ease
+ *
+ * Kevelle's reduced-motion rule cuts every transition to 0.01ms, so there
+ * the ghost's fade and the controls' opacity (120 in, 100 out) run as Web
+ * Animations, nothing slides or scales, and a closing row waits out the
+ * 100ms fade before it collapses.
+ */
+@layer components {
+  [data-slot="waveform-ghost"] {
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 150ms var(--ease-controls),
+      scale 120ms ease-out;
+
+    &[data-shown] {
+      opacity: 1;
+      pointer-events: auto;
+      transition-duration: 200ms, 120ms;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      &:active {
+        scale: 0.97;
+      }
+    }
+  }
+
+  /*
+   * Closed, the row takes no room: grid rows 0fr, and its bottom margin
+   * cancels the rail's 40 gap less the 8 it rises, so the mini below stays
+   * on the top line. Open, the header rises 8 so the label's caps sit on
+   * the top line, and the row grows to the controls' height, carrying the
+   * mini down with it.
+   */
+  [data-slot="waveform-controls-frame"] {
+    --rise: 8px;
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: calc(-1 * var(--rise));
+    margin-bottom: calc(var(--rise) - 2.5rem);
+    visibility: hidden;
+    transition:
+      grid-template-rows 160ms var(--ease-controls),
+      margin-bottom 160ms var(--ease-controls),
+      visibility 0s 160ms;
+
+    &[data-open] {
+      grid-template-rows: 1fr;
+      margin-bottom: 0;
+      visibility: visible;
+      transition-duration: 220ms, 220ms, 0s;
+      transition-delay: 0s;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &:not([data-open]) {
+        transition-delay: 100ms;
+      }
+    }
+  }
+
+  [data-slot="waveform-controls"] {
+    opacity: 0;
+    translate: 0 -4px;
+    transition:
+      opacity 160ms var(--ease-controls),
+      translate 160ms var(--ease-controls);
+
+    [data-open] & {
+      opacity: 1;
+      translate: 0 0;
+      transition-duration: 220ms;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      translate: none;
+    }
+  }
+
+  /* A key's new value turns phosphor at once, holds, then eases to ink 8. */
+  [data-slot="waveform-value"] {
+    transition: color 300ms ease;
+
+    &[data-fresh] {
+      transition: none;
     }
   }
 }
