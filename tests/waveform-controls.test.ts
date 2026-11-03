@@ -153,25 +153,25 @@ describe("the controls' states", () => {
     expect(played.panel).toEqual({
       kind: "open",
       by: "played",
-      mark: { ...spotOf(M), code: "KeyM", held: true, fresh: true, press: 1 },
+      mark: { ...spotOf(M), code: "KeyM", fresh: true, press: 1 },
     });
+    expect(played.held).toEqual([{ ...spotOf(M), code: "KeyM" }]);
     // While held: no idle and no settle.
     expect(timers(played)).toEqual([]);
     const lifted = run([{ type: "lift", code: "KeyM" }], played);
-    expect(lifted.panel).toMatchObject({ mark: { held: false, fresh: true } });
+    expect(lifted.held).toEqual([]);
+    expect(lifted.panel).toMatchObject({ mark: { fresh: true } });
     expect(timers(lifted)).toEqual([
       ["idle", 8000],
       ["settle", 1500],
     ]);
     const settled = run([{ type: "settle", press: 1 }], lifted);
-    expect(settled.panel).toMatchObject({
-      mark: { held: false, fresh: false },
-    });
+    expect(settled.panel).toMatchObject({ mark: { fresh: false } });
   });
 
   test("open, played: another key's lift or an earlier press's settle leaves the mark", () => {
     const played = run([pressM, { type: "lift", code: "KeyN" }]);
-    expect(played.panel).toMatchObject({ mark: { held: true } });
+    expect(played.held).toEqual([{ ...spotOf(M), code: "KeyM" }]);
     const again = run(
       [
         { type: "lift" },
@@ -184,19 +184,18 @@ describe("the controls' states", () => {
     expect(again.panel).toMatchObject({ mark: { press: 2, fresh: true } });
   });
 
-  test.fails("open, played: a sweep still held keeps them open through another key's press and lift", () => {
-    const pressV: ControlsEvent = {
-      type: "press",
-      spot: spotOf({ key: "v", code: "KeyV" })!,
-      code: "KeyV",
-    };
-    const pressX: ControlsEvent = {
-      type: "press",
-      spot: spotOf({ key: "x", code: "KeyX" })!,
-      code: "KeyX",
-    };
-    const sweeping = run([pressV, pressX, { type: "lift", code: "KeyX" }]);
+  test("open, played: a sweep still held keeps them open through another key's press and lift", () => {
+    const V = spotOf({ key: "v", code: "KeyV" })!;
+    const X = spotOf({ key: "x", code: "KeyX" })!;
+    const sweeping = run([
+      { type: "press", spot: V, code: "KeyV" },
+      { type: "press", spot: X, code: "KeyX" },
+      { type: "lift", code: "KeyX" },
+    ]);
+    expect(sweeping.panel).toMatchObject({ mark: { ...X, fresh: true } });
+    expect(sweeping.held).toEqual([{ ...V, code: "KeyV" }]);
     expect(timers(sweeping)).toEqual([["settle", 1500]]);
+    expect(kind(run([{ type: "idle" }], sweeping))).toBe("open");
     const released = run([{ type: "lift", code: "KeyV" }], sweeping);
     expect(timers(released)).toEqual([
       ["idle", 8000],
