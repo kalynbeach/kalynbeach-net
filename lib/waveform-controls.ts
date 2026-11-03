@@ -211,11 +211,14 @@ export type Panel =
   | { readonly kind: "open"; readonly by: "asked"; readonly mark: Mark | null }
   | { readonly kind: "open"; readonly by: "played"; readonly mark: Mark };
 
+/** The ghost, or a control inside the open controls. */
+export type Focus = "ghost" | "controls" | null;
+
 export type ControlsState = {
   readonly panel: Panel;
   readonly pointer: Pointer;
-  /** The ghost has focus. */
-  readonly focused: boolean;
+  /** Which of the controls' parts holds keyboard focus, if either does. */
+  readonly focus: Focus;
   /** Presses so far, for each mark's number. */
   readonly presses: number;
   /**
@@ -231,8 +234,8 @@ export type ControlsEvent =
   | { readonly type: "pointer"; readonly to: Pointer }
   /** The pointer rested on the stage for DWELL_MS. */
   | { readonly type: "dwell" }
-  /** The ghost took or lost focus. */
-  | { readonly type: "focus"; readonly on: boolean }
+  /** Focus moved to the ghost or into the controls, or left both. */
+  | { readonly type: "focus"; readonly to: Focus }
   /** A click or Enter on the ghost, or ? anywhere on Home. */
   | { readonly type: "toggle" }
   /** A key the block played. */
@@ -241,7 +244,7 @@ export type ControlsEvent =
   | { readonly type: "lift"; readonly code?: string }
   /** A mark's value has shown for VALUE_MS since its key came up. */
   | { readonly type: "settle"; readonly press: number }
-  /** IDLE_MS with no key while the pointer was off the rail. */
+  /** IDLE_MS with no key down, the pointer off the rail and focus outside the controls. */
   | { readonly type: "idle" }
   /** × or Escape. */
   | { readonly type: "close" }
@@ -259,14 +262,15 @@ export const VALUE_MS = 1500;
 export const INITIAL_CONTROLS: ControlsState = {
   panel: { kind: "rest" },
   pointer: "away",
-  focused: false,
+  focus: null,
   presses: 0,
   held: [],
 };
 
 /** Closed: the ghost stays while the pointer is over it or it has focus, and otherwise lingers. */
 function closed(state: ControlsState): ControlsState {
-  const kind = state.pointer === "stage" || state.focused ? "ghost" : "closing";
+  const kind =
+    state.pointer === "stage" || state.focus === "ghost" ? "ghost" : "closing";
 
   return { ...state, panel: { kind } };
 }
@@ -297,7 +301,11 @@ export function controlsReducer(
       if (panel.kind === "closing" && event.to === "stage")
         return { ...next, panel: { kind: "ghost" } };
 
-      if (panel.kind === "ghost" && event.to !== "stage" && !state.focused)
+      if (
+        panel.kind === "ghost" &&
+        event.to !== "stage" &&
+        state.focus !== "ghost"
+      )
         return { ...next, panel: { kind: "closing" } };
 
       return next;
@@ -309,12 +317,19 @@ export function controlsReducer(
         : state;
 
     case "focus": {
-      const next = { ...state, focused: event.on };
+      const next = { ...state, focus: event.to };
 
-      if (event.on && (panel.kind === "rest" || panel.kind === "closing"))
+      if (
+        event.to === "ghost" &&
+        (panel.kind === "rest" || panel.kind === "closing")
+      )
         return { ...next, panel: { kind: "ghost" } };
 
-      if (!event.on && panel.kind === "ghost" && state.pointer !== "stage")
+      if (
+        event.to !== "ghost" &&
+        panel.kind === "ghost" &&
+        state.pointer !== "stage"
+      )
         return { ...next, panel: { kind: "closing" } };
 
       return next;
@@ -365,12 +380,7 @@ export function controlsReducer(
       );
 
     case "idle":
-      return panel.kind === "open" &&
-        panel.by === "played" &&
-        state.pointer !== "rail" &&
-        state.held.length === 0
-        ? closed(state)
-        : state;
+      return idles(state) ? closed(state) : state;
 
     case "close":
       return panel.kind === "open" ? closed(state) : state;
@@ -383,6 +393,23 @@ export function controlsReducer(
     case "leave":
       return state === INITIAL_CONTROLS ? state : INITIAL_CONTROLS;
   }
+}
+
+/**
+ * Whether controls a key opened hide after IDLE_MS: not while the pointer
+ * is on the rail, a played key is still down, or focus is inside them,
+ * since hiding makes them inert and would drop that focus.
+ */
+function idles(state: ControlsState): boolean {
+  const { panel } = state;
+
+  return (
+    panel.kind === "open" &&
+    panel.by === "played" &&
+    state.pointer !== "rail" &&
+    state.held.length === 0 &&
+    state.focus !== "controls"
+  );
 }
 
 /** A timer a state runs. Its id stays the same for as long as it should keep running. */
@@ -410,13 +437,9 @@ export function dueTimers(state: ControlsState): readonly Due[] {
 
   if (panel.kind !== "open") return due;
 
-  if (
-    panel.by === "played" &&
-    state.pointer !== "rail" &&
-    state.held.length === 0
-  )
+  if (idles(state))
     due.push({
-      id: `idle@${panel.mark.press}`,
+      id: `idle@${state.presses}`,
       ms: IDLE_MS,
       event: { type: "idle" },
     });
