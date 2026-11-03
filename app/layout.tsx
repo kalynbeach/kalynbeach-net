@@ -14,7 +14,6 @@ const fonts = [
   "/fonts/abc-areal/ABCArealVariable.woff2",
   "/fonts/departure-mono/DepartureMono-Regular.woff2",
   "/fonts/paper-mono/PaperMono-Variable.woff2",
-  "/fonts/timeless-serif/TimelessSerifVF.woff2",
 ];
 
 export const metadata: Metadata = {
