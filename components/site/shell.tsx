@@ -143,9 +143,12 @@ function Sections({ children }: { children: ReactNode }) {
   const controlsShown = placement.stage && layout === "desktop";
   const controls = useWaveformControls(controlsShown);
   // What the rail holds, top to bottom: the open waveform controls and the
-  // mini player, or Music's Library.
+  // mini player, or Music's Library. The controls' state closes only in an
+  // effect after they unmount, so it counts only while they render.
   const railHolds =
-    controls.state.panel.kind === "open" || placement.frame === "mini" || music;
+    (controlsShown && controls.state.panel.kind === "open") ||
+    placement.frame === "mini" ||
+    music;
   // A landmark only while it holds something, so screen readers never land
   // in an empty one. The empty column keeps its box. On Home's desktop the
   // element stays an aside, role none while empty, so opening the controls
