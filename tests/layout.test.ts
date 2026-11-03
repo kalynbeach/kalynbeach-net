@@ -25,9 +25,9 @@ describe("desktop breakpoint", () => {
 
 describe("placement", () => {
   test.each<[string, boolean, Layout | null, Placement]>([
-    ["/", false, "desktop", { stage: true, frame: null, mark: null }],
-    ["/", true, "desktop", { stage: true, frame: "mini", mark: null }],
-    ["/", true, "narrow", { stage: true, frame: "bar", mark: null }],
+    ["/", false, "desktop", { stage: true, frame: null, mark: "desktop" }],
+    ["/", true, "desktop", { stage: true, frame: "mini", mark: "desktop" }],
+    ["/", true, "narrow", { stage: true, frame: "bar", mark: "narrow" }],
     ["/", true, null, { stage: true, frame: null, mark: null }],
     [
       "/music",
@@ -91,13 +91,10 @@ describe("placement", () => {
     )
   );
 
-  test("shows the stage exactly on Home, never beside the card or a mark", () => {
+  test("shows the stage exactly on Home, never beside the card", () => {
     for (const { route, entry, placement } of cases) {
       expect(placement.stage, route).toBe(entry.kind === "stage");
-      if (placement.stage) {
-        expect(placement.frame, route).not.toBe("card");
-        expect(placement.mark, route).toBeNull();
-      }
+      if (placement.stage) expect(placement.frame, route).not.toBe("card");
     }
   });
 
@@ -127,11 +124,9 @@ describe("placement", () => {
     }
   });
 
-  test("shows the static mark on every page but Home", () => {
-    for (const { route, layout, entry, placement } of cases) {
-      expect(placement.mark, route).toBe(
-        entry.kind === "stage" ? null : layout
-      );
+  test("shows the mark on every page, Home included, once the layout is known", () => {
+    for (const { route, layout, placement } of cases) {
+      expect(placement.mark, route).toBe(layout);
     }
   });
 
