@@ -36,7 +36,7 @@ import {
   type Form,
   type WaveformConfig,
 } from "@/components/waveform/settings";
-import { toKeyedConfig } from "./look";
+import { configKey, toKeyedConfig } from "./look";
 import {
   failureLabel,
   initialEditor,
@@ -240,7 +240,13 @@ function SelectedLook({
   return (
     <WaveformProvider
       config={preview.config}
-      onConfigChange={(config) => onEdit(selection.look.id, config)}
+      onConfigChange={(config) => {
+        // The keys know their commits by identity. Holding this object means
+        // an edit that lands back on the stored look, such as Escape's glide
+        // home, still draws it once the reducer drops the draft.
+        setShown({ key: configKey(config), config });
+        onEdit(selection.look.id, config);
+      }}
       viewTransitionName={null}
     >
       {/* A size container, so the square preview takes the column's shorter side. Square itself while it tops the panel's column. */}
