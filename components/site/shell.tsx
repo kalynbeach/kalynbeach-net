@@ -72,7 +72,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
         </header>
         <div
           data-slot="site-sidebar"
-          className="max-desktop:hidden desktop:top-top desktop:sticky desktop:flex desktop:flex-col desktop:gap-8"
+          // 42 under the name's baseline puts the nav's first 28 row 55 under the top line, as drawn.
+          className="max-desktop:hidden desktop:top-top desktop:sticky desktop:flex desktop:flex-col desktop:gap-10.5"
         >
           <Identity atRest={home} />
           <nav data-slot="site-nav" aria-label="Site">

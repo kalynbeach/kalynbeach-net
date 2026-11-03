@@ -23,10 +23,10 @@ const marker = {
  * Years oldest first. The first entry and the latest one are lit, so adding
  * a newer entry moves the latest highlight with no other edit.
  *
- * One row shape at every width: top-aligned, 6px block padding and 20px
- * lines (the 16px labels pad 2px above and below), so a one-line row is 32
- * tall and a wrapped row keeps its date and marker on the first line. The
- * rail shows at 1200px and up, and breaks at year rows and inferred rows.
+ * One row shape at every width: top-aligned, 28px lines (the 16px labels pad
+ * 6px above and below), so a one-line row is 28 tall and a wrapped row keeps
+ * its date and marker on the first line. The rail shows at 1200px and up,
+ * and breaks at year rows and inferred rows.
  */
 export function Timeline({ years }: { years: readonly Year[] }) {
   const lit = new Set([years[0]?.entries[0], years.at(-1)?.entries.at(-1)]);
@@ -57,16 +57,16 @@ export function Timeline({ years }: { years: readonly Year[] }) {
           </h3>
           <ol>
             {entries.map((entry) => (
-              <li key={entry.date} className="flex gap-3 py-1.5">
+              <li key={entry.date} className="flex gap-3">
                 <time
                   dateTime={`${year}-${entry.date}`}
-                  className="role-mono-sm text-ramp-6 desktop:w-12 w-10 shrink-0 py-0.5"
+                  className="role-mono-sm text-ramp-6 desktop:w-12 w-10 shrink-0 py-1.5"
                 >
                   {entry.date}
                 </time>
-                <span aria-hidden className="relative w-1.75 shrink-0 pt-1.75">
+                <span aria-hidden className="relative w-1.75 shrink-0 pt-2.5">
                   {!entry.inferred && (
-                    <span className="bg-ramp-4 max-desktop:hidden absolute -inset-y-1.5 left-0.75 w-px" />
+                    <span className="bg-ramp-4 max-desktop:hidden absolute inset-y-0 left-0.75 w-px" />
                   )}
                   <span
                     className={cn(
@@ -75,11 +75,11 @@ export function Timeline({ years }: { years: readonly Year[] }) {
                     )}
                   />
                 </span>
-                <span className="role-entry text-ramp-9 flex-1">
+                <span className="role-body text-ramp-9 flex-1">
                   {entry.text}
                 </span>
                 {entry.tag && (
-                  <span className="role-mono-sm text-signal-dim w-max py-0.5">
+                  <span className="role-mono-sm text-signal-dim w-max py-1.5">
                     {entry.tag}
                   </span>
                 )}

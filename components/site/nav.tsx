@@ -19,13 +19,17 @@ import { Waveform } from "@/components/waveform";
  *
  * role-name trims the name to its caps, so the row's top is the name's cap
  * top: the top line in the sidebar. The mark's negative block margins keep
- * it from setting the row's height, and it centers on the caps. The trimmed
- * box ends at the baseline, so the name's focus ring sits 4px out to clear
- * the descender of the y.
+ * it from setting the row's height, and it centers on the caps. On desktop
+ * it is 20px and sits 20 right of the name. The trimmed box ends at the
+ * baseline, so the name's focus ring sits 4px out to clear the descender of
+ * the y.
  */
 export function Identity({ atRest }: { atRest: boolean }) {
   return (
-    <div data-slot="site-identity" className="flex items-center gap-3">
+    <div
+      data-slot="site-identity"
+      className="desktop:gap-5 flex items-center gap-3"
+    >
       <Link
         href="/"
         data-slot="site-name"
@@ -33,7 +37,7 @@ export function Identity({ atRest }: { atRest: boolean }) {
       >
         {siteName}
       </Link>
-      <span className="-my-2 size-5.25">
+      <span className="desktop:size-5 -my-2 size-5.25">
         <Waveform form="mark" atRest={atRest} />
       </span>
     </div>
@@ -41,13 +45,14 @@ export function Identity({ atRest }: { atRest: boolean }) {
 }
 
 /**
- * Text color alone marks the active row. The parent of the active page stays
- * idle-colored, so one row reads as active.
+ * Text color alone marks the active row: ramp 10 against idle ramp 7, as
+ * Layout E draws it. The parent of the active page stays idle-colored, so one
+ * row reads as active.
  */
 const rowColor = {
-  idle: "text-nav-idle hover:text-ramp-9",
+  idle: "text-ramp-7 hover:text-ramp-9",
   active: "text-ramp-10",
-  ancestor: "text-nav-idle hover:text-ramp-9",
+  ancestor: "text-ramp-7 hover:text-ramp-9",
 } as const satisfies Record<NavRow["state"], string>;
 
 export function NavTree({
