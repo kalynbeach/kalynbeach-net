@@ -51,7 +51,10 @@ import { cn } from "@/lib/utils";
 import { desktopMedia, place, type Layout } from "@/lib/layout";
 import { resolve, type SiteEntry } from "@/lib/site";
 import { Waveform, WaveformProvider } from "@/components/waveform/waveform";
-import { parseWaveformConfig } from "@/components/waveform/settings";
+import {
+  parseWaveformConfig,
+  type StoredValue,
+} from "@/components/waveform/settings";
 import { useLiveLook } from "@/components/looks/live";
 import {
   WavePlayerBar,
@@ -81,10 +84,13 @@ const columns = {
 
 export function SiteShell({
   tracks,
+  liveLook,
   children,
 }: {
   /** The root layout's read of tracks.list, or [] when Convex failed or was slow. First paint draws it. */
   tracks: readonly PublicTrack[];
+  /** The root layout's read of looks.live, or null. First paint draws it. */
+  liveLook: StoredValue;
   children: ReactNode;
 }) {
   return (
@@ -92,7 +98,7 @@ export function SiteShell({
       tracks={useLiveTracks(tracks)}
       screen={<PlayerScreen />}
     >
-      <PublicWaveform>
+      <PublicWaveform liveLook={liveLook}>
         <Sections>{children}</Sections>
       </PublicWaveform>
     </WavePlayerProvider>
@@ -128,10 +134,16 @@ function PlayerScreen() {
  * holds and nothing saves; it takes back the exact object onConfigChange
  * gives, since the keys know their own commits by identity.
  */
-function PublicWaveform({ children }: { children: ReactNode }) {
+function PublicWaveform({
+  liveLook,
+  children,
+}: {
+  liveLook: StoredValue;
+  children: ReactNode;
+}) {
   // An audio restart replaces the feed, so read it on every render.
   const { feed } = useWavePlayer();
-  const look = useLiveLook();
+  const look = useLiveLook(liveLook);
 
   return (
     <WaveformProvider
