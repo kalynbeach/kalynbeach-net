@@ -436,3 +436,17 @@
     }
   }
 }
+
+/*
+ * On desktop the ghost under Home's stage stands in for the stage's own
+ * hint, which kevelle/waveform shows after the pointer rests 600ms or a
+ * stray key, so nothing about the keys shows before the ghost. The hint
+ * still shows while the stage has keyboard focus. The block has no prop
+ * for this, so the rule reaches into its caption by data-shown; if the
+ * block renames that, the hint shows again and nothing breaks.
+ */
+@media (width >= 75rem) {
+  [data-slot="waveform-stage"]:not(:has(:focus-visible)) [data-shown] {
+    opacity: 0;
+  }
+}
