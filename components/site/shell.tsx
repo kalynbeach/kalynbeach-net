@@ -68,6 +68,12 @@ import {
 import { Identity, NavSheet, NavTree } from "@/components/site/nav";
 import { PageHeader } from "@/components/site/page-header";
 import { CommandMenu } from "@/components/site/command-menu";
+import {
+  WaveformControls,
+  WaveformGhost,
+  pointerZone,
+  useWaveformControls,
+} from "@/components/site/waveform-controls";
 
 const columns = {
   stage: "desktop:grid-cols-three",
@@ -132,11 +138,19 @@ function Sections({ children }: { children: ReactNode }) {
   const reducedMotion = useReducedMotion();
   const page = entry.kind === "page" ? entry : null;
   const music = placement.frame === "card";
-  // What the rail holds, top to bottom: the mini player, or Music's Library.
-  const railHolds = placement.frame === "mini" || music;
+  // Home's waveform controls show on desktop only. Below 1200px the keys
+  // still play, and the block's own key guide answers ?.
+  const controlsShown = placement.stage && layout === "desktop";
+  const controls = useWaveformControls(controlsShown);
+  // What the rail holds, top to bottom: the open waveform controls and the
+  // mini player, or Music's Library.
+  const railHolds =
+    controls.state.panel.kind === "open" || placement.frame === "mini" || music;
   // A landmark only while it holds something, so screen readers never land
-  // in an empty one. The empty column keeps its box.
-  const Rail = railHolds ? "aside" : "div";
+  // in an empty one. The empty column keeps its box. On Home's desktop the
+  // element stays an aside, role none while empty, so opening the controls
+  // doesn't remount the rail and cut their entrance.
+  const Rail = railHolds || controlsShown ? "aside" : "div";
   const [miniShown, setMiniShown] = useState(false);
 
   useScrollToTop(pathname);
@@ -207,12 +221,21 @@ function Sections({ children }: { children: ReactNode }) {
           )}
         >
           {placement.stage && (
+            // The stage's box, which the ghost sits under. The ghost comes
+            // first, so it is the next tab stop after the nav.
             <div
-              data-slot="waveform-stage"
-              className="max-desktop:w-stage-compact desktop:w-stage max-desktop:my-auto aspect-square self-center"
+              className="max-desktop:w-stage-compact desktop:w-stage max-desktop:my-auto relative aspect-square self-center"
+              {...(controlsShown ? pointerZone(controls, "stage") : {})}
             >
-              {/* Page-wide keys: a visitor plays the figure with nothing focused. */}
-              <Waveform form="stage" keys="page" className="size-full" />
+              {controlsShown && <WaveformGhost controls={controls} />}
+              <div data-slot="waveform-stage" className="size-full">
+                {/* Page-wide keys: a visitor plays the figure with nothing focused, until the controls' switch turns them off. */}
+                <Waveform
+                  form="stage"
+                  keys={controls.pageKeys || !controlsShown ? "page" : "focus"}
+                  className="size-full"
+                />
+              </div>
             </div>
           )}
           {page?.title && <PageHeader title={page.title} />}
@@ -235,13 +258,18 @@ function Sections({ children }: { children: ReactNode }) {
         </main>
         {entry.kind !== "wide" && (
           // Items stack 40 apart from the top line down, and the rail stays
-          // within the frame. The waveform controls go first, above the mini
-          // player.
+          // within the frame. It starts 8 above the top line, padded back
+          // down, so a labelled item's header, which rises 8 to put its
+          // label's caps on the line, isn't clipped. The waveform controls
+          // go first, above the mini player.
           <Rail
             data-slot="site-rail"
+            role={Rail === "aside" && !railHolds ? "none" : undefined}
             aria-label={railHolds ? "Player and controls" : undefined}
-            className="max-desktop:hidden desktop:top-top desktop:max-h-frame desktop:sticky desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto"
+            className="max-desktop:hidden desktop:top-[calc(var(--spacing-top)-0.5rem)] desktop:max-h-[calc(var(--spacing-frame)+0.5rem)] desktop:sticky desktop:-mt-2 desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto desktop:pt-2"
+            {...(controlsShown ? pointerZone(controls, "rail") : {})}
           >
+            {controlsShown && <WaveformControls controls={controls} />}
             {placement.frame === "mini" && (
               <RailPlayer
                 live={!placement.stage}
