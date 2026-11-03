@@ -390,8 +390,9 @@ function MetadataFields({
 }
 
 /**
- * EditForm mounts when the dialog opens and takes the draft and its base
- * then, so a live update from another tab doesn't reset what Kalyn typed.
+ * The dialog's portal mounts EditForm on each open and keeps it through the
+ * exit animation, so the form takes the draft and its base when the dialog
+ * opens, and a live update from another tab doesn't reset what Kalyn typed.
  */
 function EditTrack({
   track,
@@ -409,7 +410,7 @@ function EditTrack({
       </DialogTrigger>
       <DialogContent>
         <DialogTitle>Edit track</DialogTitle>
-        {open && <EditForm track={track} onDone={() => setOpen(false)} />}
+        <EditForm track={track} onDone={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
@@ -504,7 +505,7 @@ function RemoveTrack({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        setFailure(null);
+        if (next) setFailure(null);
       }}
     >
       <DialogTrigger render={<Button variant="ghost" disabled={disabled} />}>
