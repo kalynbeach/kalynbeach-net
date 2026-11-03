@@ -9,9 +9,10 @@
 export const siteName = "Kalyn Beach";
 
 /**
- * How a public page shows the player. full: the card and the Library follow
- * the page in section 1. follow: once playback is under way, the mini player
- * in the rail, or the bar below 1200px, follows the visitor. #38's names.
+ * How a public page shows the player. full: the card, dead center in
+ * section 1, and the Library in the rail (under the card below 1200px).
+ * follow: once playback is under way, the mini player in the rail, or the
+ * bar below 1200px, follows the visitor.
  */
 export type PlayerRole = "full" | "follow";
 
