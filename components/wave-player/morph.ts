@@ -9,6 +9,9 @@ export type FrameKind = "card" | "mini" | "bar";
  */
 export const FRAME_NAME = "wave-player";
 
+/** The motion preference a frame mounted under. "unknown" is the server and hydration. */
+export type MountMotion = "full" | "reduced" | "unknown";
+
 type Motion = Required<Pick<ViewTransitionProps, "share" | "enter" | "exit">>;
 
 /**
@@ -39,26 +42,37 @@ export type FrameTransition = Pick<
 >;
 
 /**
- * The props for one frame's <ViewTransition>.
+ * Whether a frame renders a <ViewTransition> at all, decided once when it
+ * mounts (#208). React starts a browser view transition for every
+ * <ViewTransition> a transition commit places, whatever its triggers, so a
+ * frame that mounts under reduced motion renders none, and so does an
+ * extra frame with morph off. A frame the server rendered mounts as
+ * "unknown" and wraps, so hydration matches the server's markup. The
+ * answer never changes for a mounted frame, because a change of element
+ * type would remount its view.
+ */
+export function frameWraps(morph: boolean, motion: MountMotion): boolean {
+  return morph && motion !== "reduced";
+}
+
+/**
+ * The props for a wrapping frame's <ViewTransition>, from the live
+ * preference. `reduced` is true through hydration and whenever the system
+ * asks, and turns every trigger off, so the frame swaps, appears, and
+ * leaves at once. An exit or a share whose trigger is "none" starts nothing.
  *
  * `default: "none"` turns off "update", so the frame never crossfades for its
  * own content changes or an unrelated transition, and every trigger it uses
  * is named explicitly. A "none" default with no `share` would silently stop
  * the morph.
- *
- * `morph: false` leaves the frame unnamed and still, for a page that shows
- * several frames at once. Reduced motion keeps the name, so the one-frame
- * rule and React's duplicate check behave the same under either preference,
- * and turns every trigger off, so React applies no name and the frame swaps
- * at once.
  */
 export function frameTransition(
   kind: FrameKind,
-  options: { readonly morph: boolean; readonly reduced: boolean }
+  reduced: boolean
 ): FrameTransition {
   return {
-    name: options.morph ? FRAME_NAME : undefined,
+    name: FRAME_NAME,
     default: "none",
-    ...(options.morph && !options.reduced ? MOTION[kind] : STILL),
+    ...(reduced ? STILL : MOTION[kind]),
   };
 }

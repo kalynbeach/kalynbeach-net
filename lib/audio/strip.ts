@@ -4,10 +4,11 @@ import { createFilePlayer, isAudioFile } from "./file";
 import type { FileHandle, FilePlayback, FilePlayer } from "./file";
 import { captureInput, stopTracks, toSourceError } from "./input";
 import type {
-  DeviceList,
   InputCapture,
+  InputChoice,
   InputDevice,
   InputHandle,
+  StationInputs,
 } from "./input";
 import {
   createNoiseBed,
@@ -67,7 +68,12 @@ export type SourceSpec =
        */
       readonly program?: ToneProgram;
     } & ToneSource)
-  | { readonly kind: "input"; readonly deviceId: string | null }
+  /**
+   * The station's chosen input (station.inputs), captured exactly. While it
+   * plays, or after it fails, the strip follows a new choice, and a play()
+   * while the chosen device's stream is still live reuses it.
+   */
+  | { readonly kind: "input" }
   | {
       readonly kind: "file";
       /** A local File, or a URL whose host sends Access-Control-Allow-Origin. */
@@ -185,7 +191,7 @@ export interface Strip {
 /** What a strip needs from the station. */
 export type StripHost = {
   readonly mediaDevices: MediaDevices | null;
-  readonly inputs: DeviceList;
+  readonly inputs: StationInputs;
   readonly setTimer: (callback: () => void, ms: number) => () => void;
   /** The strip's status changed, which may change what the station plays. */
   changed(): void;
@@ -260,8 +266,12 @@ type SourceState = SourceNodes &
     | {
         readonly kind: "input";
         readonly capture: InputCapture;
+        /** The device id the capture asked for exactly, or null for the browser default. */
+        readonly asked: string | null;
         node: AudioNode | null;
         ended: boolean;
+        /** Ends the subscription that follows the station's choice. */
+        unfollow: (() => void) | null;
       }
     | {
         readonly kind: "file";
@@ -275,6 +285,24 @@ type ToneState = Extract<SourceState, { readonly kind: "tones" }>;
 type InputState = Extract<SourceState, { readonly kind: "input" }>;
 
 type FileState = Extract<SourceState, { readonly kind: "file" }>;
+
+/** A capture and the device id it asked for exactly, or null for the default. */
+type Captured = {
+  readonly capture: InputCapture;
+  readonly asked: string | null;
+};
+
+/** Whether a capture that asked for `asked` serves the choice: the default for the default, the chosen id for a device. */
+/** The device id a choice asks for: null for the default. */
+function chosenId(chosen: InputChoice): string | null {
+  if (chosen === null) return null;
+
+  return chosen.kind === "resolved" ? chosen.device.id : chosen.remembered.id;
+}
+
+function serves(asked: string | null, chosen: InputChoice): boolean {
+  return asked === chosenId(chosen);
+}
 
 /**
  * Opens a strip on `host`. It starts silent: level 0 with the monitor on, so
@@ -302,6 +330,16 @@ export function createStrip(
   // resumes after an await knows it was superseded.
   let generation = 0;
   let closed = false;
+  // After a failed input, waits for the person to pick another device. The
+  // next play(), stop(), or close() ends the wait.
+  let awaitingChoice: (() => void) | null = null;
+
+  /** Supersedes every play in flight. */
+  function supersede(): void {
+    generation += 1;
+    awaitingChoice?.();
+    awaitingChoice = null;
+  }
 
   function setStatus(next: SourceStatus): void {
     if (JSON.stringify(next) === JSON.stringify(status)) return;
@@ -416,7 +454,10 @@ export function createStrip(
   function releaseSource(source: SourceState): void {
     detachSource(source);
 
-    if (source.kind === "input") stopTracks(source.capture.stream);
+    if (source.kind === "input") {
+      source.unfollow?.();
+      stopTracks(source.capture.stream);
+    }
 
     if (source.kind === "file") source.player.dispose();
   }
@@ -554,16 +595,15 @@ export function createStrip(
     return ok(source.handle);
   }
 
-  async function playInput(
+  /** Captures `deviceId` exactly, or the default for null. A capture that a later play() superseded stops its tracks. */
+  async function captureAs(
     deviceId: string | null,
     playing: number
-  ): Promise<Result<InputHandle, SourceError>> {
-    setStatus({ kind: "connecting", source: "input" });
-
+  ): Promise<Result<Captured, SourceError>> {
     const captured = await captureInput(
       host.mediaDevices,
       deviceId,
-      host.inputs.getSnapshot()
+      host.inputs.getSnapshot().devices
     );
 
     if (playing !== generation) {
@@ -572,7 +612,119 @@ export function createStrip(
       return err({ kind: "superseded" });
     }
 
-    if (!captured.ok) return fail("input", captured.error);
+    return captured.ok
+      ? ok({ capture: captured.value, asked: deviceId })
+      : captured;
+  }
+
+  /**
+   * Captures the station's chosen input against a fresh device list.
+   *   default     no device constraint
+   *   resolved    exactly that device
+   *   missing     device-not-found with no request, so the default never
+   *               opens in its place
+   *   unresolved  exactly the remembered id. When that id has rotated, a
+   *               default capture grants the labels, the list matches the
+   *               remembered label, and the strip keeps or swaps to that
+   *               device, or fails device-not-found when nothing matches.
+   */
+  async function captureChosen(
+    playing: number
+  ): Promise<Result<Captured, SourceError>> {
+    const { inputs } = host;
+
+    if (inputs.getSnapshot().chosen !== null) await inputs.refresh();
+
+    if (playing !== generation) return err({ kind: "superseded" });
+
+    const chosen = inputs.getSnapshot().chosen;
+
+    if (chosen === null) return captureAs(null, playing);
+
+    switch (chosen.kind) {
+      case "resolved":
+        return captureAs(chosen.device.id, playing);
+
+      case "missing":
+        return err({ kind: "device-not-found" });
+
+      case "unresolved": {
+        const remembered = await captureAs(chosen.remembered.id, playing);
+
+        if (remembered.ok || remembered.error.kind !== "device-not-found")
+          return remembered;
+
+        const probe = await captureAs(null, playing);
+
+        if (!probe.ok) return probe;
+
+        await inputs.refresh();
+
+        const matched = inputs.getSnapshot().chosen;
+        const { capture } = probe.value;
+
+        if (playing !== generation || matched?.kind !== "resolved") {
+          stopTracks(capture.stream);
+
+          return err({
+            kind: playing !== generation ? "superseded" : "device-not-found",
+          });
+        }
+
+        if (capture.handle.device.id === matched.device.id)
+          return ok({ capture, asked: matched.device.id });
+
+        stopTracks(capture.stream);
+
+        return captureAs(matched.device.id, playing);
+      }
+    }
+  }
+
+  async function playInput(
+    playing: number
+  ): Promise<Result<InputHandle, SourceError>> {
+    setStatus({ kind: "connecting", source: "input" });
+
+    const asking = chosenId(host.inputs.getSnapshot().chosen);
+    const captured = await captureChosen(playing);
+
+    // captureAs() checks right after getUserMedia, but a stop(), close(), or
+    // play() can still land in the continuations before this one.
+    if (playing !== generation) {
+      if (captured.ok) stopTracks(captured.value.capture.stream);
+
+      return err({ kind: "superseded" });
+    }
+
+    // A choice made while this capture was pending gets its own try, so a
+    // failure of the old device never hides the newer one.
+    if (!captured.ok) {
+      if (chosenId(host.inputs.getSnapshot().chosen) !== asking)
+        return playInput(playing);
+
+      // A failed device, busy or missing, gets another try once the person
+      // picks another, as a playing input follows the choice.
+      awaitingChoice = host.inputs.subscribe(() => {
+        if (chosenId(host.inputs.getSnapshot().chosen) !== asking)
+          void strip.play({ kind: "input" });
+      });
+
+      return fail("input", captured.error);
+    }
+
+    const { capture, asked } = captured.value;
+
+    // The person chose another device while this capture was pending. The
+    // newer choice wins, so learn() never writes the old device back.
+    if (!serves(asked, host.inputs.getSnapshot().chosen)) {
+      stopTracks(capture.stream);
+
+      return playInput(playing);
+    }
+
+    if (asked !== null)
+      host.inputs.learn(capture.handle.device.id, capture.track.label);
 
     void host.inputs.refresh();
 
@@ -580,12 +732,14 @@ export function createStrip(
 
     const source: InputState = {
       kind: "input",
-      capture: captured.value,
+      capture,
+      asked,
       node: null,
       fade: null,
       envelope: null,
       bed: null,
       ended: false,
+      unfollow: null,
     };
 
     if (!to) {
@@ -612,6 +766,19 @@ export function createStrip(
 
       source.bed = null;
       setStatus(inputStatus(source));
+    });
+
+    // The strip moves to a new choice by itself, and never to another
+    // device unasked: a remembered device that goes missing or unresolved
+    // keeps its track, which ends on its own when the device leaves.
+    source.unfollow = host.inputs.subscribe(() => {
+      if (current !== source) return;
+
+      const { chosen } = host.inputs.getSnapshot();
+
+      if (chosen?.kind === "missing" || chosen?.kind === "unresolved") return;
+
+      if (!serves(source.asked, chosen)) void strip.play({ kind: "input" });
     });
 
     setStatus(inputStatus(source));
@@ -665,7 +832,7 @@ export function createStrip(
   async function playSpec(
     spec: SourceSpec
   ): Promise<Result<ToneHandle | InputHandle | FileHandle, SourceError>> {
-    generation += 1;
+    supersede();
 
     const playing = generation;
     const to = attachment;
@@ -673,6 +840,17 @@ export function createStrip(
     if (closed) return err({ kind: "station-not-running" });
 
     if (!to) return fail(spec.kind, { kind: "station-not-running" });
+
+    if (
+      spec.kind === "input" &&
+      current?.kind === "input" &&
+      !current.ended &&
+      serves(current.asked, host.inputs.getSnapshot().chosen)
+    ) {
+      setStatus(inputStatus(current));
+
+      return ok(current.capture.handle);
+    }
 
     if (current) {
       retire(current);
@@ -686,7 +864,7 @@ export function createStrip(
         return playTones(spec, opening, to);
 
       case "input":
-        return playInput(spec.deviceId, playing);
+        return playInput(playing);
 
       case "file":
         return playFile(spec.file, spec.loop, to, playing);
@@ -837,7 +1015,7 @@ export function createStrip(
       return playSpec(spec) as Promise<Result<HandleFor<S>, SourceError>>;
     },
     stop() {
-      generation += 1;
+      supersede();
 
       if (current) {
         retire(current);
@@ -885,7 +1063,7 @@ export function createStrip(
       if (closed) return;
 
       closed = true;
-      generation += 1;
+      supersede();
 
       const source = current;
       const from = attachment;

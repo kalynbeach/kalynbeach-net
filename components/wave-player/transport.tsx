@@ -3,8 +3,11 @@
 /*
  * What every view shares: its input, its root, and the transport.
  *
- * The transport is Kevelle Buttons, as the oscilloscope's and Binaural
- * Beats' are. Widths are layout classes, which a block may pass to Button.
+ * The transport is three raised Kevelle alloy keys, set only through
+ * Button's variants: Play is the primary key, and Previous and Next are
+ * secondary. They stand apart rather than in a ButtonGroup, which would
+ * drop their key line and drop. Widths are layout classes, which a block
+ * may pass to Button.
  */
 
 import type { KeyboardEvent, ReactNode } from "react";
@@ -85,10 +88,11 @@ export function PlayerRegion({
 
 export type TransportSize = "card" | "mini" | "bar";
 
+/** Raised keys keep a gap, so each one's key line and drop read on their own. */
 const ROW = {
   card: "h-10 gap-2",
-  mini: "h-8 gap-1",
-  bar: "h-9 gap-0.5",
+  mini: "h-8 gap-2",
+  bar: "h-9 gap-1",
 } as const satisfies Record<TransportSize, string>;
 
 /**
@@ -118,7 +122,7 @@ export function Transport({
         <TooltipTrigger
           render={
             <Button
-              variant="ghost"
+              variant="secondary"
               size={large ? "icon-lg" : "icon"}
               className={large ? undefined : "w-9"}
               aria-label="Previous track"
@@ -154,7 +158,7 @@ export function Transport({
         <TooltipTrigger
           render={
             <Button
-              variant="ghost"
+              variant="secondary"
               size={large ? "icon-lg" : "icon"}
               className={large ? undefined : "w-9"}
               aria-label="Next track"

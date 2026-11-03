@@ -16,11 +16,11 @@
  *     {children}
  *   </WaveformProvider>
  *
- *   // the live figure: one slot per place
- *   <Waveform form="stage" className="aspect-square w-full max-w-162" />
+ *   // the live figure: one slot per place. Home's stage plays the page's keys.
+ *   <Waveform form="stage" keys="page" className="aspect-square w-full max-w-162" />
  *   <Waveform form="screen" className="size-full" />   inside the player
  *
- *   // the static mark, beside the name on pages other than home
+ *   // the mark, beside the name on pages other than home
  *   <Waveform form="mark" className="size-5" />
  *
  * One live figure, in one place at a time. The provider owns one figure and
@@ -37,10 +37,15 @@
  * that unmounts the last one. Slots that mount in one commit claim in tree
  * order, so the last one holds the canvas, and the others show empty boxes.
  *
- * Two more instances. "mark" is the static figure beside the name: the same
- * look, color, and screen with no motion, always still whatever `still` or
- * reduced motion say, and shown at full strength from its first frame. It
- * draws on a canvas of its own, so it can share a page with the player.
+ * Two more instances. "mark" is the figure beside the name. It draws the
+ * page's figure by default, simplified so it reads at 20 px: the nearest
+ * fraction with terms up to 5, so Golden's 1:φ draws 3:5, on its own tones
+ * in tune, in up to three copies, on a short trail with no bloom. It turns
+ * with the page's figure, precesses as slowly as the page's figure drifts,
+ * up to 0.1 Hz, and swells with the audio and strikes. It holds still
+ * only under `still` or reduced motion, as the others do, and shows at full
+ * strength from its first frame. It draws on a canvas of its own, so it can
+ * share a page with the player.
  * "glow" draws on a canvas of its own behind the page.
  *
  * View transitions. The live canvas carries view-transition-name "waveform",
@@ -48,7 +53,7 @@
  * transition pairs the canvas with itself and morphs it from its old slot to
  * its new one. While no slot holds it, the newest mark borrows the name, so
  * leaving home for a page without a player morphs the live stage into the
- * static mark. The glow carries "waveform-glow". It sits behind every page,
+ * mark. The glow carries "waveform-glow". It sits behind every page,
  * so a site can hold it still while the page changes around it, as in
  * ::view-transition-group(waveform-glow) { animation: none }. Under
  * prefers-reduced-motion none of them carries a name, so nothing of the
@@ -77,11 +82,47 @@
  * captures the canvas in its new box.
  *
  * Keys for everyone, configs from the dashboard. onConfigChange receives
- * the panel's and the stage's key edits and decides what they do. A public
+ * the panel's edits and the keys' play, and decides what they do. A public
  * site passes config={local ?? saved} and onConfigChange={setLocal}, so
- * anyone can play with the figure and nothing saves. The dashboard's panel
- * saves through its own provider. Without onConfigChange the stage only
- * strikes.
+ * anyone can play with the figure and nothing saves. Pass back the object
+ * onConfigChange gives you, since the keys know their own commits by
+ * identity. A config they didn't make ends the play and becomes where
+ * Escape returns. The dashboard's panel saves through its own provider.
+ * Without onConfigChange the stage only strikes.
+ *
+ * Keys. WAVEFORM_KEYS in ./keys.ts says what each key does, by its place on
+ * the keyboard. A S D F G H J K and W E T Y U are notes, laid out as on
+ * Ableton Live's computer keyboard. Each plays Y over X at a just interval.
+ * N and M step the ratio, and the figure closes as it lands. Z and X move
+ * Y's frequency, freeing Y from a ratio first at the pitch it draws, as the
+ * panel's Free does. C and V move X's frequency, and Y's with it while a
+ * ratio locks it, the arrows turn the figure and move Y's phase, [ and ]
+ * the drift, and - and = the size, a step a tap and a sweep while held,
+ * four times as far and as fast with Shift. Comma and Period step Y's wave,
+ * Semicolon and Quote the copies, 1 to 0 pick the first ten presets, and
+ * Space strikes. ./keys.ts holds the key copy, which is a draft.
+ *
+ * Where keys play. A stage plays them while it has focus. Home's stage
+ * takes keys="page", so it also plays them with nothing focused, while
+ * that stage is mounted and present, until the visitor turns page keys off
+ * with the key guide's switch, as WCAG 2.1.4 asks. The switch lasts as long
+ * as the provider, and the focused stage still plays, so a visitor can turn
+ * them back on. Keys stand down with Ctrl, Meta, or Alt, during IME
+ * composition, after another handler took the key, while a modal dialog is
+ * open, and while a text field has focus, and a focused control keeps its
+ * own Space, Enter, arrows, Home, End, Page Up, Page Down, and Escape.
+ *
+ * Play. Presses glide, a sweep key steps at each press and sweeps on while
+ * held, and a first press touches the figure. Play draws at once on every
+ * live form. While it moves, onConfigChange receives what it shows every
+ * frame, numbers as drawn and choices as they land, so the panel moves
+ * with the figure, and once it rests, the play's landing itself. A frame
+ * that shows nothing new commits nothing, and under
+ * reduced motion each press commits once. Escape glides back to the last
+ * config the page passed that the keys didn't make. ? toggles the key
+ * guide, a non-modal popover over the stage that keeps the keys playing,
+ * and Escape closes it first. Under reduced motion every key stays, a sweep
+ * key moves one step a press, and every change is instant.
  *
  * Forms. Every form fills the box its className gives it, and the forms
  * that draw the shared figure draw it at the same phase. "stage" is the
@@ -89,18 +130,20 @@
  * its anchor's width and centered on the anchor's x and the box's vertical
  * middle, never wider than the box's shorter side. Give it a box behind the
  * page's solid sections, and the light shows around them. "screen" fills a
- * player's square slot, and "mark" sits beside a name. Each form has its
- * own size, strength, depth, reactivity, and figure in the config.
- * Everything else is shared.
+ * player's square slot, and "mark" sits beside a name. Rotation, spin, and
+ * symmetry copies shrink a form's figure just enough that every copy stays
+ * inside its square at any angle, and an unturned figure keeps its size.
+ * Each form has its own size, strength, depth, reactivity, and figure in
+ * the config. Everything else is shared.
  *
  * A form's figure is "shared" or a ratio. A ratio draws a simplified
- * version of the shared figure that holds still: X's frequency, both
- * waves, and both phases, with Y locked to that ratio and both tones in
- * tune, in XY, in one copy with no motion, at the longest trail with no
- * bloom. It draws the tones even under source "audio", and the audio still
- * brightens and swells it. The mark draws 3:2 by default, because a dense
- * figure such as Golden fills a 20 px box solid. The other forms draw the
- * shared figure.
+ * version of the shared figure that stays legible at 20 px: X's frequency,
+ * both waves, and both phases, with Y locked to that ratio and both tones
+ * in tune, in XY, in one copy, on a short trail with no bloom. It turns
+ * with the shared figure's rotation and spin, and drifts Y 0.05 Hz, so it
+ * moves slowly through its family. It draws the tones even under source
+ * "audio", and the audio still brightens and swells it. Every form draws
+ * the shared figure by default, the mark in its simplified form.
  *
  * Contracts. Client components, safe to render on the server: nothing
  * touches window during import or render, the glow and the mark attach to
@@ -110,6 +153,19 @@
  * follows route changes. The config is plain JSON. Store it as is and pass
  * what comes back through parseWaveformConfig, the one boundary for stored
  * JSON. className takes layout classes only.
+ *
+ * Resets and links. WaveformPanel resets each section to
+ * DEFAULT_WAVEFORM_CONFIG, and WaveformResetAllButton, in ./panel.tsx,
+ * resets every control. WaveformRandomizeButton draws a new figure with
+ * randomFigure(config) in ./settings.ts: the tones, the motion, and the
+ * light's shape, in one edit, as a preset is. A page places both buttons in
+ * its own toolbar, beside the panel. resetControls(config, ids) in
+ * ./settings.ts resets any controls. writeWaveformSearch(search, config)
+ * puts a config in a URL's query, one param per field that differs from the
+ * default, keyed by control id, and readWaveformSearch(search) reads it back
+ * through parseWaveformConfig. A link carries the config only, never the
+ * input. Read it once, when the page mounts, since a config the keys didn't
+ * make ends their play.
  *
  * Presence. The live figure arrives when the first slot claims the canvas,
  * and the glow when it mounts. Arriving turns the beam on, so the phosphor
@@ -123,9 +179,12 @@
  * transition, while the afterglow fades where it was.
  *
  * Still. Under prefers-reduced-motion, or with `still`, a form draws one
- * second of the figure and holds it: after it starts, after a config, form,
- * anchor, or theme change, after its box resizes or its anchor's x or width
- * changes, after the GPU recovers, and after a pause cuts its second short.
+ * second of the figure and holds it: after it starts, after a form, anchor,
+ * or theme change, after its box resizes or its anchor's x or width
+ * changes, after the GPU recovers, after a pause cuts its second short, and
+ * 150 ms after the config stops changing. While configs keep coming, from a
+ * slider drag, a held key, or the play of another provider, it keeps the
+ * second it holds, then settles once on the last.
  * Each form draws the same second of its figure, as the figure stands at its
  * end, so forms that mount at different times hold the same figure. Audio
  * and strikes never start it again, and presence fades its opacity only.
@@ -136,6 +195,9 @@
  * stays translucent, never ink. On dark it is P31's own green on P31 and
  * phosphor on any other screen. Picking a signal color for either trace
  * also picks the Neutral screen, so the trace shows the token's own color.
+ * The screen form is the exception: it draws on the dark ground, with
+ * dark's "auto" color, in both themes, so its host must be a dark box in
+ * both, as kevelle/wave-player's Screen is.
  *
  * Audio and strikes. `audio` is a kevelle/audio SampleFeed, such as a
  * player's tap, or null. Its level, and a strike, kick each form outward and
@@ -146,20 +208,76 @@
  * 1.5 s, so it cannot flash. With source "audio" the shared figure is the
  * music itself while it plays, and the tones otherwise.
  *
+ * Input. useWaveformInput(config, onConfigChange), in ./input.tsx, feeds
+ * the waveform from an input device or a file, as the Oscilloscope's
+ * sources do, or from nothing on Tones, where the figure draws its own
+ * tones. Call it where the provider is, with the provider's config and
+ * change handler, and pass its feed to the provider's audio:
+ *
+ *   import { useWaveformInput, WaveformInputPicker } from "@/components/waveform/input"
+ *
+ *   const input = useWaveformInput(config, setConfig)
+ *
+ *   <WaveformProvider config={config} onConfigChange={setConfig} audio={input.feed}>
+ *     <WaveformPanel input={input} />   or <WaveformInputPicker input={input} /> alone
+ *   </WaveformProvider>
+ *
+ * The hook's source and the config's source are one choice. Tones is
+ * source "tones", and Input and File are "audio", so the figure draws the
+ * feed while it plays. setSource() and openFile() write the config's source
+ * through onConfigChange, and a config that turns to "tones" elsewhere, by
+ * a reset or a link, stops the input. A config on "audio" starts the hook on
+ * Input, not listening, so nothing prompts. Tones listens to nothing, and
+ * the feed stays null.
+ *
+ * The hook opens one silent strip on the page's kevelle/audio station for
+ * as long as it is mounted: tapped, level 0, and monitor off, so nothing
+ * reaches the speakers. Unmounting closes it and stops the microphone. A
+ * file loops. It returns the feed, the source, the file, the devices, the
+ * person's device choice, whether it is listening, a status, and
+ * setSource(), choose(), listen(), stop(), and openFile(). Call listen()
+ * and setSource() from a click, so the station starts inside the gesture.
+ * The device choice is the station's, remembered for the origin and shared
+ * with the Oscilloscope, so a reload or another page opens the same device.
+ * A next visit listens again by itself only when the last one ended
+ * listening to input and the microphone permission reads "granted", so the
+ * page never prompts on load, and it moves the config's source to "audio".
+ * A Listen, Stop, source pick, or file before the permission answers wins,
+ * and the visit does not resume.
+ * A browser that holds audio until a gesture reads "suspended" until the
+ * next Listen. WaveformInputPicker is its controls: the source, the device,
+ * a file, Listen or Play and Stop, and the status, from Kevelle ui/* parts
+ * only. It keeps no state, so a page can render it twice. WaveformPanel
+ * shows it in its Source section, in place of the source control, when it
+ * gets `input`. Its copy is a draft, kept in one place in ./input.tsx.
+ *
  * The stage. While present, its box carries a transparent button over the
- * canvas, with an accessible name and a focus ring inside the box. A band
- * of the background lines the ring, so it reads against the figure. Pressing
- * it, or Space or Enter while it has focus, strikes the waveform. With
- * onConfigChange, the keys in ./keys.ts also change the figure while it has
- * focus. An absent stage drops the button. useWaveform().strike() strikes
- * from a page's own control, and WaveformPanel, in ./panel.tsx, edits every
- * setting.
+ * canvas, with an accessible name, aria-keyshortcuts for every key, and no
+ * ring, outline, or border. Keyboard focus shows through the figure: its
+ * bloom lifts over 280 ms, at once when still, and a caption shows at the
+ * box's bottom edge, so focus also reads as text. With keys, the caption says
+ * they exist, and it also shows after the pointer rests 600 ms on the stage,
+ * and for 3 s after a printable key that plays nothing. Without them it says
+ * how to strike. Pressing the button, or Space or Enter while it has focus,
+ * strikes the waveform. An absent stage drops the button.
+ * useWaveform().strike() strikes from a page's own control, and
+ * WaveformPanel, in ./panel.tsx, edits every setting.
  */
 
 import * as React from "react";
 import { cn } from "cn";
 
 import type { SampleFeed } from "@/lib/audio";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Kbd } from "@/components/ui/kbd";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 
 import {
   createWaveform,
@@ -167,13 +285,34 @@ import {
   type Claim,
   type WaveformEngine,
 } from "./engine";
-import { KEY_SHORTCUTS, STRIKE_SHORTCUTS, keyChange } from "./keys";
+import {
+  COPY,
+  GUIDE_KEY,
+  HOME_KEY,
+  WAVEFORM_KEYS,
+  createPlayer,
+  entryFor,
+  guideOf,
+  shortcutsOf,
+  standsDown,
+  type KeyInput,
+  type Player,
+} from "./keys";
 import type { Form, WaveformConfig } from "./settings";
+
+/** The keys a stage plays, under a provider with onConfigChange. */
+type StageKeys = {
+  readonly player: Player;
+  /** The key guide's switch for page-wide keys. Lasts as long as the provider. */
+  readonly pageKeys: boolean;
+  setPageKeys(on: boolean): void;
+};
 
 type WaveformContextValue = {
   readonly engine: WaveformEngine;
   readonly config: WaveformConfig;
   readonly onConfigChange: ((config: WaveformConfig) => void) | null;
+  readonly keys: StageKeys | null;
 };
 
 const WaveformContext = React.createContext<WaveformContextValue | null>(null);
@@ -217,16 +356,37 @@ export function WaveformProvider({
     createWaveform({ config, audio, viewTransitionName })
   );
 
+  // Lambdas, so nothing touches window while rendering on the server.
+  const [player] = React.useState(() =>
+    createPlayer(engine, config, {
+      request: (tick) => requestAnimationFrame(tick),
+      cancel: (id) => cancelAnimationFrame(id),
+    })
+  );
+
+  const [pageKeys, setPageKeys] = React.useState(true);
+
   React.useEffect(() => {
-    engine.set({ config, audio });
-  }, [engine, config, audio]);
+    player.sync({ config, audio, onConfigChange: onConfigChange ?? null });
+  }, [player, config, audio, onConfigChange]);
 
   // The slots release in layout cleanups, before this runs.
-  React.useEffect(() => () => engine.dispose(), [engine]);
+  React.useEffect(
+    () => () => {
+      player.dispose();
+      engine.dispose();
+    },
+    [engine, player]
+  );
 
   const value = React.useMemo(
-    () => ({ engine, config, onConfigChange: onConfigChange ?? null }),
-    [engine, config, onConfigChange]
+    () => ({
+      engine,
+      config,
+      onConfigChange: onConfigChange ?? null,
+      keys: onConfigChange ? { player, pageKeys, setPageKeys } : null,
+    }),
+    [engine, config, onConfigChange, player, pageKeys]
   );
 
   return <WaveformContext value={value}>{children}</WaveformContext>;
@@ -246,8 +406,7 @@ export function useWaveformConfig() {
   return { config, onConfigChange };
 }
 
-export type WaveformProps = {
-  readonly form: Form;
+type Placement = {
   /** The element whose width frames the figure and whose x centers it, usually section 1 for the glow. Default: the box's shorter side, centered. */
   readonly anchor?: Element | null;
   /** Default true. false departs over 2.6 s; true arrives over 1.6 s. */
@@ -257,6 +416,24 @@ export type WaveformProps = {
   /** Layout classes only: size and placement. The form fills this box, with no border or shadow of its own. */
   readonly className?: string;
 };
+
+/** Where a stage's keys play: while it has focus, or also with nothing focused on the page. */
+export type StageKeysScope = "focus" | "page";
+
+export type WaveformProps = Placement &
+  (
+    | {
+        readonly form: "stage";
+        /**
+         * Default "focus": the keys play while the stage has focus.
+         * "page" also plays them with nothing focused, while this stage is
+         * mounted and present, until the visitor turns page keys off in the
+         * key guide.
+         */
+        readonly keys?: StageKeysScope;
+      }
+    | { readonly form: Exclude<Form, "stage">; readonly keys?: never }
+  );
 
 export function Waveform(props: WaveformProps) {
   return props.form === "stage" || props.form === "screen" ? (
@@ -316,12 +493,16 @@ function Slot({
   anchor = null,
   present = true,
   still = false,
+  keys = "focus",
   className,
 }: WaveformProps) {
-  const { engine, config, onConfigChange } = useWaveformContext("Waveform");
+  const { engine } = useWaveformContext("Waveform");
   const box = React.useRef<HTMLDivElement>(null);
   const claim = React.useRef<Claim | null>(null);
-  const state = { form, anchor, present, still };
+  const [focused, setFocused] = React.useState(false);
+  const staged = form === "stage" && present;
+  const lit = staged && focused;
+  const state = { form, anchor, present, still, lit };
   const initial = React.useEffectEvent(() => state);
 
   // Layout effects, so a hand-off between slots in one commit happens
@@ -340,31 +521,322 @@ function Slot({
   }, [engine]);
 
   React.useLayoutEffect(() => {
-    claim.current?.set({ form, anchor, present, still });
-  }, [form, anchor, present, still]);
-
-  const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (!onConfigChange) return;
-    const next = keyChange(config, event);
-
-    if (!next) return;
-    event.preventDefault();
-
-    if (next !== config) onConfigChange(next);
-  };
+    claim.current?.set({ form, anchor, present, still, lit });
+  }, [form, anchor, present, still, lit]);
 
   return (
     <div ref={box} className={cn("relative", className)}>
-      {form === "stage" && present ? (
-        <button
-          type="button"
-          aria-label="Waveform. Press to strike it."
-          aria-keyshortcuts={onConfigChange ? KEY_SHORTCUTS : STRIKE_SHORTCUTS}
-          onClick={engine.strike}
-          onKeyDown={onKeyDown}
-          className="focus-visible:ring-background focus-visible:inset-ring-ring absolute inset-0 size-full outline-none focus-visible:ring-5 focus-visible:inset-ring-2 focus-visible:ring-inset"
-        />
-      ) : null}
+      {staged ? <Stage scope={keys} onLit={setFocused} /> : null}
     </div>
+  );
+}
+
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+
+/**
+ * An open modal dialog takes every key. ARIA dialogs and native ones say so
+ * themselves, and one kept mounted but hidden is closed. Base UI's, such as
+ * a Cmd-K palette, hide the page around them instead, so the stage reads as
+ * under a modal once an ancestor is inert or hidden.
+ */
+const MODAL = '[aria-modal="true"], dialog:modal';
+
+const HIDDEN = '[inert], [aria-hidden="true"]';
+
+/** Fields that take text. */
+const TEXT_FIELD =
+  'input:not([type="button"], [type="checkbox"], [type="color"], [type="file"], [type="image"], [type="radio"], [type="range"], [type="reset"], [type="submit"]), textarea, select, [role="textbox"], [role="searchbox"], [role="combobox"], [role="spinbutton"]';
+
+/** Widgets whose type-ahead takes letters. */
+const TYPEAHEAD =
+  '[role="listbox"], [role="menu"], [role="menubar"], [role="tree"]';
+
+/** The pointer rests this long on the stage before the hint shows. */
+const DWELL_MS = 600;
+
+/** The hint shows this long after a printable key that plays nothing. */
+const STRAY_MS = 3000;
+
+function focusOf(element: Element | null): KeyInput["focus"] {
+  if (
+    !element ||
+    element === document.body ||
+    element === document.documentElement
+  )
+    return "page";
+
+  return (element instanceof HTMLElement && element.isContentEditable) ||
+    element.matches(TEXT_FIELD) ||
+    element.closest(TYPEAHEAD)
+    ? "text"
+    : "control";
+}
+
+function keyInputOf(
+  event: KeyboardEvent,
+  focus: KeyInput["focus"],
+  stage: Element | null
+): KeyInput {
+  return {
+    key: event.key,
+    code: event.code,
+    shiftKey: event.shiftKey,
+    ctrlKey: event.ctrlKey,
+    metaKey: event.metaKey,
+    altKey: event.altKey,
+    repeat: event.repeat,
+    isComposing: event.isComposing,
+    defaultPrevented: event.defaultPrevented,
+    focus,
+    modal:
+      [...document.querySelectorAll(MODAL)].some(
+        (dialog) => dialog.getClientRects().length > 0
+      ) || stage?.closest(HIDDEN) != null,
+  };
+}
+
+/** Why the hint shows. At rest, for none of them. */
+type Hint = {
+  /** The pointer rested on the stage. */
+  readonly dwell: boolean;
+  /** The stage has keyboard focus. */
+  readonly focus: boolean;
+  /** A printable key that played nothing, a moment ago. */
+  readonly stray: boolean;
+};
+
+const AT_REST: Hint = { dwell: false, focus: false, stray: false };
+
+type Timer = ReturnType<typeof setTimeout>;
+
+/** The stage's strike button, and with keys, its hint and its key guide. */
+function Stage({
+  scope,
+  onLit,
+}: {
+  readonly scope: StageKeysScope;
+  readonly onLit: (lit: boolean) => void;
+}) {
+  const { engine, keys } = useWaveformContext("Waveform");
+  const button = React.useRef<HTMLButtonElement>(null);
+  const hintId = React.useId();
+  const [guide, setGuide] = React.useState(false);
+  const [hint, setHint] = React.useState(AT_REST);
+  const dwell = React.useRef<Timer | null>(null);
+  const stray = React.useRef<Timer | null>(null);
+  const player = keys?.player ?? null;
+  const paging = scope === "page" && keys !== null && keys.pageKeys;
+
+  function strayKey() {
+    if (stray.current) clearTimeout(stray.current);
+    setHint((last) => (last.stray ? last : { ...last, stray: true }));
+
+    stray.current = setTimeout(
+      () => setHint((last) => ({ ...last, stray: false })),
+      STRAY_MS
+    );
+  }
+
+  /** Plays one keydown, from the stage's own handler or the page's. */
+  function keyDown(event: KeyboardEvent, focus: KeyInput["focus"]) {
+    if (!keys) return;
+    const input = keyInputOf(event, focus, button.current);
+
+    if (standsDown(input)) return;
+    const at = event.timeStamp;
+    const reduced = matchMedia(REDUCED_MOTION).matches;
+
+    if (input.key === HOME_KEY && guide) {
+      event.preventDefault();
+      setGuide(false);
+
+      return;
+    }
+
+    if (input.key === GUIDE_KEY) {
+      event.preventDefault();
+      setGuide(!guide);
+
+      return;
+    }
+
+    if (input.key === HOME_KEY) {
+      if (keys.player.home(at, reduced)) event.preventDefault();
+
+      return;
+    }
+
+    const hit = entryFor(WAVEFORM_KEYS, input);
+
+    if (!hit) {
+      if (input.key.length === 1) strayKey();
+
+      return;
+    }
+
+    event.preventDefault();
+    keys.player.keyDown(hit, input, at, reduced);
+  }
+
+  const onPageKey = React.useEffectEvent((event: KeyboardEvent) => {
+    // The stage's own handler has the keys it has focus for.
+    if (event.target === button.current) return;
+    keyDown(event, focusOf(document.activeElement));
+  });
+
+  React.useEffect(() => {
+    if (!paging) return;
+    const listener = (event: KeyboardEvent) => onPageKey(event);
+
+    document.addEventListener("keydown", listener);
+
+    return () => document.removeEventListener("keydown", listener);
+  }, [paging]);
+
+  // Keyups release wherever focus went, even while the keys stand down, so
+  // no sweep sticks. A blur, a hidden page, or an unmount loses the keyups,
+  // so it releases everything held.
+  React.useEffect(() => {
+    if (!player) return;
+
+    const up = (event: KeyboardEvent) =>
+      player.keyUp(event.code, event.timeStamp);
+
+    const lost = () => player.letGo(performance.now());
+
+    const hidden = () => {
+      if (document.hidden) lost();
+    };
+
+    document.addEventListener("keyup", up);
+    window.addEventListener("blur", lost);
+    document.addEventListener("visibilitychange", hidden);
+
+    return () => {
+      document.removeEventListener("keyup", up);
+      window.removeEventListener("blur", lost);
+      document.removeEventListener("visibilitychange", hidden);
+      lost();
+    };
+  }, [player]);
+
+  React.useEffect(
+    () => () => {
+      if (dwell.current) clearTimeout(dwell.current);
+
+      if (stray.current) clearTimeout(stray.current);
+      onLit(false);
+    },
+    [onLit]
+  );
+
+  // Keyboard focus always shows the caption, so focus reads as text even
+  // where the bloom lift has no room, at the bloom's limit.
+  const shown = hint.focus || (keys !== null && (hint.dwell || hint.stray));
+
+  const caption = (
+    <span
+      id={hintId}
+      data-shown={shown ? "" : undefined}
+      className="bg-background type-caption text-muted-foreground px-2 py-1 opacity-0 transition-opacity duration-(--duration-small) ease-out data-shown:opacity-100"
+    >
+      {keys ? COPY.hint : COPY.strikeHint}
+    </span>
+  );
+
+  const edge =
+    "pointer-events-none absolute inset-x-0 bottom-3 flex justify-center";
+
+  return (
+    <>
+      <button
+        ref={button}
+        type="button"
+        aria-label={COPY.stage}
+        aria-keyshortcuts={keys ? shortcutsOf(WAVEFORM_KEYS) : undefined}
+        aria-describedby={hintId}
+        onClick={engine.strike}
+        onKeyDown={(event) => {
+          // Space and Enter strike through the button's own click.
+          if (event.key === " " || event.key === "Enter") return;
+          keyDown(event.nativeEvent, "page");
+        }}
+        onFocus={(event) => {
+          const visible = event.currentTarget.matches(":focus-visible");
+
+          onLit(visible);
+          setHint((last) => ({ ...last, focus: visible }));
+        }}
+        onBlur={() => {
+          onLit(false);
+          setHint((last) => ({ ...last, focus: false }));
+        }}
+        onPointerMove={(event) => {
+          if (event.pointerType === "touch" || hint.dwell) return;
+
+          if (dwell.current) clearTimeout(dwell.current);
+
+          dwell.current = setTimeout(
+            () => setHint((last) => ({ ...last, dwell: true })),
+            DWELL_MS
+          );
+        }}
+        onPointerLeave={() => {
+          if (dwell.current) clearTimeout(dwell.current);
+          dwell.current = null;
+          setHint((last) => (last.dwell ? { ...last, dwell: false } : last));
+        }}
+        className="absolute inset-0 size-full outline-none"
+      />
+      {keys ? (
+        <Popover open={guide} onOpenChange={setGuide}>
+          {/* The guide's anchor along the stage's bottom edge, holding the hint. Hidden and out of reach, so only ? opens the guide. */}
+          <PopoverTrigger
+            nativeButton={false}
+            tabIndex={-1}
+            aria-hidden="true"
+            render={<span />}
+            className={edge}
+          >
+            {caption}
+          </PopoverTrigger>
+          <PopoverContent side="top" initialFocus={false} finalFocus={button}>
+            <PopoverTitle>{COPY.guide}</PopoverTitle>
+            <PopoverDescription>
+              {scope === "page" ? COPY.pageWide : COPY.focusOnly} {COPY.faster}
+            </PopoverDescription>
+            <dl className="flex flex-col gap-2">
+              {guideOf(WAVEFORM_KEYS).map((row) => (
+                <div
+                  key={row.label}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <dt className="type-caption">{row.does}</dt>
+                  <dd>
+                    <Kbd>{row.label}</Kbd>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {scope === "page" ? (
+              <Field>
+                <div className="flex min-h-8 items-center justify-between gap-3 pointer-coarse:min-h-11">
+                  <FieldLabel>{COPY.pageKeys}</FieldLabel>
+                  <Switch
+                    aria-label={COPY.pageKeys}
+                    checked={keys.pageKeys}
+                    onCheckedChange={keys.setPageKeys}
+                  />
+                </div>
+              </Field>
+            ) : null}
+          </PopoverContent>
+        </Popover>
+      ) : (
+        <span aria-hidden="true" className={edge}>
+          {caption}
+        </span>
+      )}
+    </>
   );
 }

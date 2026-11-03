@@ -25,9 +25,9 @@ export function StatusBadge({ state }: { readonly state: PlayerState }) {
 
 /**
  * Covers the screen box without replacing its slot. "full" is the card's
- * Alert with its description; "compact" drops the description for the
- * mini's narrower screen; "spinner" draws only the loading spinner, for the
- * bar's 36px box.
+ * Alert with its description and Retry; "spinner" draws only the loading
+ * spinner, for the mini player's 72px box and the bar's 36px one, where a
+ * failure shows in the status Badge and the transport's Retry key.
  */
 export function ScreenOverlay({
   state,
@@ -36,7 +36,7 @@ export function ScreenOverlay({
 }: {
   readonly state: PlayerState;
   readonly onCommand: (command: PlayerCommand) => void;
-  readonly fit: "full" | "compact" | "spinner";
+  readonly fit: "full" | "spinner";
 }) {
   const overlay = STATUS_VIEW[state.status.kind].overlay;
 
@@ -67,9 +67,7 @@ export function ScreenOverlay({
       <Alert role="note" variant="destructive">
         <WarningCircleIcon aria-hidden="true" />
         <AlertTitle>{failure.title}</AlertTitle>
-        {fit === "full" ? (
-          <AlertDescription>{failure.description}</AlertDescription>
-        ) : null}
+        <AlertDescription>{failure.description}</AlertDescription>
         {failure.retry ? (
           <div className="col-start-2 mt-2">
             <Button size="sm" onClick={() => onCommand({ type: "toggle" })}>

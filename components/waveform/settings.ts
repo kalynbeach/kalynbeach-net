@@ -107,7 +107,8 @@ export type Look = {
 
 /**
  * What a form draws. "shared" is the config's figure. A ratio is a
- * simplified version of it that holds still, with Y locked to that ratio.
+ * simplified version of it, with Y locked to that ratio, that turns with
+ * it and drifts slowly.
  * figureFor() in ./figure.ts lists what it keeps.
  */
 export type FormFigure = "shared" | RatioId;
@@ -134,7 +135,8 @@ export type WaveformConfig = {
   readonly forms: { readonly [F in Form]: FormSettings };
 };
 
-const HZ_RANGE = { min: 20, max: 2000 } as const;
+/** X's range and Y's free range, as on the Oscilloscope. */
+export const HZ_RANGE = { min: 20, max: 2000 } as const;
 
 /** Y's frequency before motion: the lock's multiple of X, or its own while free. */
 export function yHzOf(tones: Tones): number {
@@ -217,6 +219,12 @@ export type ControlContext = { readonly hdrDisplay: boolean };
 export type Requirement = {
   readonly met: (config: WaveformConfig, context: ControlContext) => boolean;
   readonly reason: string | null;
+  /**
+   * The write that meets it, for a key that moves the control anyway, as
+   * Free meets Y's frequency's need. It reads the config only. Without one,
+   * no key may sweep the control.
+   */
+  readonly meet?: (config: WaveformConfig) => WaveformConfig;
 };
 
 type ControlBase = {
@@ -363,7 +371,7 @@ function formControls(form: Form) {
       group: "forms",
       label: "Figure",
       effect:
-        "Shared draws the page's figure. A ratio draws a simpler one that holds still, from the same waves and phases at that ratio.",
+        "Shared draws the page's figure. A ratio draws a simpler one from the same waves and phases at that ratio, which turns with the page's and drifts slowly.",
       options: [{ value: "shared", label: "Shared" }, ...RATIO_OPTIONS],
       read: (config) => config.forms[form].figure,
       set: (config, figure) => withForm(config, form, { figure }),
@@ -432,22 +440,25 @@ const SCREEN = formControls("screen");
 
 const MARK = formControls("mark");
 
+/** The ratio, named so Y's frequency can meet its need through it. */
+const RATIO = choice<RatioId | "free">({
+  group: "figure",
+  label: "Ratio",
+  effect: "X against Y. Whole ratios close; golden ones keep drifting.",
+  chips: true,
+  options: [...RATIO_OPTIONS, { value: "free", label: "Free" }],
+  read: (config) => config.tones.ratio,
+  set: (config, ratio) => withTones(config, { ratio }),
+  link: (before, after) =>
+    after.tones.ratio === "free" && before.tones.ratio !== "free"
+      ? withTones(after, {
+          yHz: clampNumber(yHzOf(before.tones), HZ_RANGE, HZ_RANGE.min),
+        })
+      : after,
+});
+
 export const CONTROLS: ControlTable = {
-  "tones.ratio": choice<RatioId | "free">({
-    group: "figure",
-    label: "Ratio",
-    effect: "X against Y. Whole ratios close; golden ones keep drifting.",
-    chips: true,
-    options: [...RATIO_OPTIONS, { value: "free", label: "Free" }],
-    read: (config) => config.tones.ratio,
-    set: (config, ratio) => withTones(config, { ratio }),
-    link: (before, after) =>
-      after.tones.ratio === "free" && before.tones.ratio !== "free"
-        ? withTones(after, {
-            yHz: clampNumber(yHzOf(before.tones), HZ_RANGE, HZ_RANGE.min),
-          })
-        : after,
-  }),
+  "tones.ratio": RATIO,
   "tones.x.hz": number({
     group: "figure",
     label: "X frequency",
@@ -468,6 +479,8 @@ export const CONTROLS: ControlTable = {
       {
         met: (config) => config.tones.ratio === "free",
         reason: "The ratio sets it. Pick Free to tune Y.",
+        // Free starts Y at the pitch the lock drew, so nothing jumps.
+        meet: (config) => writeChoice(config, RATIO, "free"),
       },
     ],
     ...HZ_RANGE,
@@ -996,6 +1009,25 @@ export function unmetNeed(
   return control.needs?.find((need) => !need.met(config, context)) ?? null;
 }
 
+/** No HDR display, for the needs a write can meet, which read the config only. */
+const NO_CONTEXT: ControlContext = { hdrDisplay: false };
+
+/**
+ * `config` with each unmet need of `id` that a write can meet, met, in
+ * order. The same object when none is unmet.
+ */
+export function meetNeeds(
+  config: WaveformConfig,
+  id: ControlId
+): WaveformConfig {
+  let next = config;
+
+  for (const need of CONTROLS[id].needs ?? [])
+    if (need.meet && !need.met(next, NO_CONTEXT)) next = need.meet(next);
+
+  return next;
+}
+
 /** Whether a control changes the picture now, and so whether the panel enables it. */
 export function controlApplies(
   control: Control,
@@ -1310,8 +1342,8 @@ export function activePreset(
 }
 
 /**
- * Each form's starting look. The mark draws 3:2 of its own, because a dense
- * figure such as Golden fills a 20 px box solid.
+ * Each form's starting look. Every form draws the shared figure, and the
+ * mark draws it simplified for 20 px, as figureFor() in ./figure.ts says.
  */
 const FORM_DEFAULTS = {
   stage: {
@@ -1335,7 +1367,7 @@ const FORM_DEFAULTS = {
     depth: 0,
     reactivity: 0.5,
   },
-  mark: { figure: "3:2", size: 0.9, strength: 1, depth: 0, reactivity: 0.3 },
+  mark: { figure: "shared", size: 0.9, strength: 1, depth: 0, reactivity: 0.3 },
 } satisfies { readonly [F in Form]: FormSettings };
 
 /** Golden on the tones, with each form's starting look. */
@@ -1382,6 +1414,35 @@ function storedAt(stored: StoredValue, id: ControlId): StoredValue | undefined {
 }
 
 /**
+ * The config with one stored field written through its control: fitted
+ * into its range or matched against its options, with no linked write. A
+ * missing or bad value leaves the config as it was.
+ */
+function withStored(
+  config: WaveformConfig,
+  id: ControlId,
+  raw: StoredValue | undefined
+): WaveformConfig {
+  const control = CONTROLS[id];
+
+  switch (control.kind) {
+    case "number":
+      return isNumber(raw)
+        ? control.set(config, fitNumber(control, raw))
+        : config;
+
+    case "choice": {
+      const option = control.options.find((item) => item.value === raw);
+
+      return option ? control.set(config, option.value) : config;
+    }
+
+    case "switch":
+      return isBoolean(raw) ? control.set(config, raw) : config;
+  }
+}
+
+/**
  * The one boundary for a stored config, such as a Convex document. Takes any
  * JSON and returns a whole config: each field a control reads is parsed
  * through its control, fitted into its range or matched against its
@@ -1389,30 +1450,251 @@ function storedAt(stored: StoredValue, id: ControlId): StoredValue | undefined {
  * dropped. Linked writes don't run, so a stored config keeps what it holds.
  */
 export function parseWaveformConfig(value: StoredValue): WaveformConfig {
-  let config = DEFAULT_WAVEFORM_CONFIG;
+  return CONTROL_IDS.reduce(
+    (config, id) => withStored(config, id, storedAt(value, id)),
+    DEFAULT_WAVEFORM_CONFIG
+  );
+}
 
-  for (const id of CONTROL_IDS) {
-    const control = CONTROLS[id];
-    const raw = storedAt(value, id);
+/** Whether a control's stored field differs from the default's. */
+const differs = (config: WaveformConfig, id: ControlId) =>
+  storedAt(config, id) !== storedAt(DEFAULT_WAVEFORM_CONFIG, id);
 
-    switch (control.kind) {
-      case "number":
-        if (isNumber(raw))
-          config = control.set(config, fitNumber(control, raw));
-        break;
+/**
+ * The config with each of `ids` holding its field from
+ * DEFAULT_WAVEFORM_CONFIG, written as parseWaveformConfig writes, so no
+ * linked write runs. Returns `config` itself when every field already holds
+ * its default, so `resetControls(config, ids) === config` means there is
+ * nothing to reset. Branches it doesn't change keep their identity.
+ */
+export function resetControls(
+  config: WaveformConfig,
+  ids: readonly ControlId[]
+): WaveformConfig {
+  return ids.reduce(
+    (next, id) =>
+      differs(next, id)
+        ? withStored(next, id, storedAt(DEFAULT_WAVEFORM_CONFIG, id))
+        : next,
+    config
+  );
+}
 
-      case "choice": {
-        const option = control.options.find((item) => item.value === raw);
+/** A draw from 0 up to 1, as Math.random returns. */
+type Random = () => number;
 
-        if (option) config = control.set(config, option.value);
-        break;
-      }
+const between = (random: Random, min: number, max: number) =>
+  min + (max - min) * random();
 
-      case "switch":
-        if (isBoolean(raw)) config = control.set(config, raw);
-        break;
-    }
+/** Spread by ratio, as a log control's slider is. */
+const betweenByRatio = (random: Random, min: number, max: number) =>
+  min * (max / min) ** random();
+
+/** Either sign, `min` to `max` from zero. */
+const eitherWay = (random: Random, min: number, max: number) =>
+  (random() < 0.5 ? -1 : 1) * between(random, min, max);
+
+/** The cents that move `hz` by `by` hertz, since the same cents turn a high Y's figure faster. */
+const centsMoving = (hz: number, by: number) => 1200 * Math.log2(1 + by / hz);
+
+/** One of `options`, each as likely as its weight. */
+function weighted<V>(
+  random: Random,
+  options: readonly (readonly [value: V, weight: number])[]
+): V {
+  const total = options.reduce((sum, [, weight]) => sum + weight, 0);
+  let left = random() * total;
+
+  for (const [value, weight] of options) {
+    left -= weight;
+
+    if (left < 0) return value;
   }
 
-  return config;
+  return options[options.length - 1][0];
+}
+
+const RANDOM_WAVES = [
+  ["sine", 6],
+  ["triangle", 2],
+  ["square", 1],
+  ["saw", 0.5],
+] as const satisfies readonly (readonly [Wave, number])[];
+
+const RATIO_IDS = RATIO_OPTIONS.map((option) => option.value);
+
+/** A fraction p / q of 1.5 to 5, with q 1 to 4. */
+function nearFraction(random: Random): number {
+  const q = 1 + Math.floor(random() * 4);
+  const p = Math.round(betweenByRatio(random, 1.5, 5) * q);
+
+  return p / q;
+}
+
+/**
+ * A new figure from `random`: the tones, the motion, and the light's beam,
+ * trail, bloom, focus, and intensity, each drawn from about the presets'
+ * own ranges, so a draw looks like a preset. The source, the display, the
+ * forms, the colors, the screen, and HDR stay the config's. Each value is
+ * written through its control, as parseWaveformConfig writes, so it fits
+ * its range, and no linked write runs. One call is one edit, with no glide,
+ * as a preset is.
+ *
+ * - X is 80 to 330 Hz by ratio. Y takes one of the ratios two times in
+ *   three. Otherwise it is free, 0.02 to 0.15 Hz off a fraction of X with
+ *   small terms, as the boards' Zigzag, Lattice, and Mesh sit near one.
+ * - Each way a figure turns through its family stays slow: X's detune and
+ *   the drift turn it by at most 0.2 Hz, and the wander swings Y by at most
+ *   0.25 Hz. A figure that turns about once a second fills its trail solid.
+ *   Each is off often, so most draws move in one or two ways.
+ * - A figure that never closes, golden or free, draws sines, since corners
+ *   and zigzags fill a drifting lattice solid.
+ * - X's phase is 30° to 150° and Y's is 0, so a 1:1 of matching waves
+ *   never draws a line.
+ * - Up to 4 copies, a trail of 48 to 100, bloom 0.5 to 0.95, and intensity
+ *   1 to 2, about the presets' light, so a dense draw stays open.
+ */
+export function randomFigure(
+  config: WaveformConfig,
+  random: Random = Math.random
+): WaveformConfig {
+  const x = betweenByRatio(random, 80, 330);
+
+  const locked =
+    random() < 0.35 ? null : RATIO_IDS[Math.floor(random() * RATIO_IDS.length)];
+
+  // A locked Y's own frequency holds what the lock draws, as a preset's
+  // does, so Free starts there.
+  const yHz = locked
+    ? x * RATIOS[locked].y
+    : x * nearFraction(random) + eitherWay(random, 0.02, 0.15);
+
+  const symmetry = random() < 0.55 ? 1 : 2 + Math.floor(random() * 3);
+
+  const wander =
+    random() < 0.75 ? 0 : centsMoving(yHz, between(random, 0.05, 0.25));
+
+  const closes = locked !== null && RATIOS[locked].set === "harmonic";
+
+  const wave = () => {
+    const drawn = weighted(random, RANDOM_WAVES);
+
+    return closes ? drawn : "sine";
+  };
+
+  const writes: readonly (readonly [ControlId, Leaf])[] = [
+    ["tones.x.hz", x],
+    ["tones.ratio", locked ?? "free"],
+    ["tones.yHz", clampNumber(yHz, HZ_RANGE, HZ_RANGE.min)],
+    ["tones.x.wave", wave()],
+    ["tones.y.wave", wave()],
+    // X's detune turns a locked figure at Y's multiple of it.
+    [
+      "tones.x.detuneCents",
+      random() < 0.6
+        ? 0
+        : eitherWay(random, centsMoving(yHz, 0.05), centsMoving(yHz, 0.2)),
+    ],
+    ["tones.y.detuneCents", 0],
+    ["tones.x.phase", between(random, Math.PI / 6, (5 * Math.PI) / 6)],
+    ["tones.y.phase", 0],
+    ["motion.drift", random() < 0.5 ? 0 : eitherWay(random, 0.02, 0.2)],
+    ["motion.wander", wander],
+    ["motion.wanderRate", betweenByRatio(random, 0.05, 0.3)],
+    ["motion.rotation", random()],
+    ["motion.spin", random() < 0.6 ? 0 : eitherWay(random, 0.005, 0.04)],
+    ["motion.symmetry", symmetry],
+    ["motion.mirror", symmetry <= 2 && random() < 0.15],
+    ["look.beam", random() < 0.8 ? "line" : "gaussian"],
+    ["look.persistence", between(random, 48, 100)],
+    ["look.bloom", between(random, 0.5, 0.95)],
+    ["look.focus", between(random, 0.9, 1.8)],
+    ["look.intensity", betweenByRatio(random, 1, 2)],
+  ];
+
+  return writes.reduce(
+    (next, [id, value]) => withStored(next, id, value),
+    config
+  );
+}
+
+/**
+ * `search` with the config's query params in place of any it had: one param
+ * per field that differs from DEFAULT_WAVEFORM_CONFIG, keyed by its control
+ * id, as in ?tones.ratio=free&tones.yHz=655. Numbers write in their
+ * shortest round-trip form, so a preset reads back exactly, choices write
+ * their option's value, and switches write 1 or 0. Params that name no
+ * control stay. The default config writes none, so its link is the bare
+ * page. Returns "" or a string that starts with "?".
+ */
+export function writeWaveformSearch(
+  search: string,
+  config: WaveformConfig
+): string {
+  const params = new URLSearchParams(search);
+
+  for (const id of CONTROL_IDS) {
+    const value = storedAt(config, id);
+
+    if (!differs(config, id) || value === undefined) params.delete(id);
+    else params.set(id, isBoolean(value) ? (value ? "1" : "0") : String(value));
+  }
+
+  const query = params.toString();
+
+  return query ? `?${query}` : "";
+}
+
+/** A query param as its control's JSON value. A malformed one parses to its default. */
+function decodeParam(control: Control, raw: string): Leaf | undefined {
+  switch (control.kind) {
+    case "number":
+      // Number("") is 0, so an empty value is malformed, not zero.
+      return raw.trim() === "" ? undefined : Number(raw);
+
+    case "choice":
+      return control.options.find((option) => String(option.value) === raw)
+        ?.value;
+
+    case "switch":
+      return raw === "1" ? true : raw === "0" ? false : undefined;
+  }
+}
+
+type SearchRecord = { [key: string]: SearchRecord | Leaf };
+
+/**
+ * The config a search string from writeWaveformSearch names. Each param
+ * that names a control becomes that control's JSON value at its path, and
+ * the whole goes through parseWaveformConfig, so a malformed value takes its
+ * default, an out-of-range one is fitted into its range, and unknown params
+ * are ignored. A search that names no control returns
+ * DEFAULT_WAVEFORM_CONFIG itself.
+ */
+export function readWaveformSearch(search: string): WaveformConfig {
+  const params = new URLSearchParams(search);
+  const stored: SearchRecord = {};
+
+  for (const id of CONTROL_IDS) {
+    const raw = params.get(id);
+    const value = raw === null ? undefined : decodeParam(CONTROLS[id], raw);
+
+    if (value === undefined) continue;
+
+    const path = id.split(".");
+    const leaf = path.pop() ?? id;
+    let at = stored;
+
+    for (const key of path) {
+      const inner = at[key];
+      const next: SearchRecord = inner instanceof Object ? inner : {};
+
+      at[key] = next;
+      at = next;
+    }
+
+    at[leaf] = value;
+  }
+
+  return parseWaveformConfig(stored);
 }
