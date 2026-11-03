@@ -46,8 +46,10 @@ export const list = query({
   returns: v.array(adminLookValidator),
   handler: async (ctx) => {
     await requireAdmin(ctx);
-    const looks = await ctx.db.query("looks").order("asc").collect();
-    const site = await findSite(ctx);
+    const [looks, site] = await Promise.all([
+      ctx.db.query("looks").order("asc").collect(),
+      findSite(ctx),
+    ]);
 
     return Promise.all(
       looks.map(async (look) =>
