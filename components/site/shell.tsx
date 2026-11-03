@@ -58,6 +58,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
     // .root (Kevelle) isolates the page, so Base UI portals stack predictably.
     // It is also the container the geometry measures (cqi).
     <div className="root @container">
+      {/* First in the tab order, ahead of the sidebar's nav. Hidden until focused. */}
+      <a
+        href="#site-primary"
+        data-slot="skip-link"
+        className="role-nav bg-background text-ramp-10 sr-only z-10 focus-visible:not-sr-only focus-visible:fixed focus-visible:top-3 focus-visible:left-3 focus-visible:px-3 focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        Skip to content
+      </a>
       <div
         data-slot="site-sections"
         className={cn(
@@ -81,6 +89,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </nav>
         </div>
         <main
+          id="site-primary"
           data-slot="site-primary"
           className={cn(
             // 64 from a page's header to what follows it here: Music's player row, a system page's body.
