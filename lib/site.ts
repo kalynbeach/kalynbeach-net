@@ -11,7 +11,7 @@ export const siteName = "Kalyn Beach";
 /**
  * How a public page shows the player. full: the card and the Library follow
  * the page in section 1. follow: once playback is under way, the mini player
- * under the nav, or the bar below 1200px, follows the visitor. #38's names.
+ * in the rail, or the bar below 1200px, follows the visitor. #38's names.
  */
 export type PlayerRole = "full" | "follow";
 

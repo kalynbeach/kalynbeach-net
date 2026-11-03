@@ -148,7 +148,7 @@ function Sheet({ rows, atRest }: { rows: readonly NavRow[]; atRest: boolean }) {
         <Drawer.Viewport className="fixed inset-0">
           <Drawer.Popup
             data-slot="nav-sheet"
-            className="top-safe-top bottom-safe-bottom left-edge w-sidebar bg-background fixed flex translate-x-(--drawer-swipe-movement-x) flex-col transition-transform duration-(--duration-large) ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full data-swiping:duration-0"
+            className="top-safe-top bottom-safe-bottom left-edge w-sheet bg-background fixed flex translate-x-(--drawer-swipe-movement-x) flex-col transition-transform duration-(--duration-large) ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full data-swiping:duration-0"
           >
             <Drawer.Title className="sr-only">Navigation</Drawer.Title>
             <div

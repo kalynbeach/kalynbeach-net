@@ -7,7 +7,7 @@
  * The views read that state:
  *
  * | View              | Where                                        | Size    |
- * | WavePlayerMini    | the sidebar-player slot, once #38 mounts it   | 200x380 |
+ * | WavePlayerMini    | the rail, once #38 mounts it                 | 200x380 |
  * | WavePlayerLibrary | section 1 on Music, beside the card          | fills its box |
  * | WavePlayerCard    | section 1 on Music                           | 340x550 |
  * | WavePlayerBar     | below 1200px, the column's sticky last child | fills the column's width |

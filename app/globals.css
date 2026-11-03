@@ -3,7 +3,7 @@
 @import "@clerk/ui/themes/shadcn.css";
 
 /*
- * Site tokens for the two-section shell. Kevelle (app/kevelle,
+ * Site tokens for the three-section shell. Kevelle (app/kevelle,
  * registry-owned) supplies the neutral ramp, the signal colors and the font
  * files. This file names the site's font roles, layout geometry, type roles
  * and the few colors Kevelle lacks. Each value is set once here; components
@@ -27,29 +27,64 @@
   --font-long: var(--font-serif);
   --font-mono: var(--font-ui);
 
-  --spacing-sidebar: 18.75rem; /* 300: the sidebar and the nav sheet */
-  --spacing-primary: 40.5rem; /* 648: section 1, and the widest the Home stage gets */
-  --spacing-gutter: 1.25rem; /* 20: between the sidebar and section 1 */
-  --spacing-margin: 2rem; /* 32: the window's side margins at 1200px and up */
-  --spacing-lead: 5.25rem; /* 84: above and below the sections, and the sticky top */
+  --spacing-sidebar: 15rem; /* 240: the sidebar, and the rail that mirrors it */
+  --spacing-sheet: 18.75rem; /* 300: the nav sheet below 1200px */
+  --spacing-top: 6rem; /* 96: the top line, the sections' top and bottom padding, the sticky top */
   --spacing-header: 3.25rem; /* 52: the mobile top bar, the sheet header, the player's header rows */
   --spacing-row: 2rem; /* 32: nav, list and timeline rows */
   --spacing-edge: 0.75rem; /* 12: below 1200px, section 1, the sheet and the bar sit this far in */
-  /* Home's stage: section 1's width, short enough to leave the lead below it as well as above. */
-  --spacing-stage: min(100%, calc(100dvh - 2 * var(--spacing-lead)));
   --spacing-safe-top: env(safe-area-inset-top);
   --spacing-safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
   /* Prose's line length: about 70 characters at any size, since em is the text's own. */
   --container-measure: 32em;
 
   /*
-   * Section 1 keeps its width and stays centered while the side tracks can
-   * hold the sidebar (1352px and up). Narrower, the left track stops at the
-   * sidebar's width and section 1 slides right of center instead of
-   * shrinking.
+   * Layout E, from 1200px up: sidebar | gutter | section 1 | gutter | rail,
+   * centered as one block, so section 1 is centered on the window by
+   * construction.
+   *
+   *   sidebar = rail = 240
+   *   gutter    = clamp(64, 6.25cqi, 160)
+   *   section 1 = min(600, 100cqi - 480 - 2 * gutter - 72)
+   *   margin    = (100cqi - 480 - 2 * gutter - section 1) / 2, on both sides
+   *
+   * Section 1 is 600 from about 1317 up, then narrows (568 at 1280, 498 at
+   * 1200) so both outer margins stay at least 36. Everything measures the
+   * .root container (cqi), not the viewport (vw), so a classic scrollbar
+   * narrows the block without moving section 1 off center. The admin wide
+   * layout keeps the same margins and sidebar, and its one section spans
+   * section 1, the second gutter and the rail.
    */
-  --grid-template-columns-column: minmax(var(--spacing-sidebar), 1fr)
-    minmax(0, var(--spacing-primary)) minmax(0, 1fr);
+  --spacing-gutter: clamp(4rem, 6.25cqi, 10rem);
+  --spacing-section: min(
+    37.5rem,
+    calc(
+      100cqi - 2 * var(--spacing-sidebar) - 2 * var(--spacing-gutter) - 4.5rem
+    )
+  );
+  --spacing-margin: calc(
+    (
+        100cqi - 2 * var(--spacing-sidebar) - 2 * var(--spacing-gutter) -
+          var(--spacing-section)
+      ) /
+      2
+  );
+  /* The window's height between the top line and the bottom line. */
+  --spacing-frame: calc(100dvh - 2 * var(--spacing-top));
+  /*
+   * Home's stage, dead center on the window: as tall as the frame allows, and
+   * as wide as section 1 plus the gutters less 48 on each side, so it keeps
+   * 48 clear of the sidebar and the rail.
+   */
+  --spacing-stage: min(
+    var(--spacing-frame),
+    calc(var(--spacing-section) + 2 * (var(--spacing-gutter) - 3rem))
+  );
+  /* Below 1200px: the column's width, short enough to leave 84 above and below it. */
+  --spacing-stage-compact: min(100%, calc(100dvh - 10.5rem));
+
+  --grid-template-columns-three: var(--spacing-sidebar) var(--spacing-section)
+    var(--spacing-sidebar);
   --grid-template-columns-wide: var(--spacing-sidebar) minmax(0, 1fr);
 }
 

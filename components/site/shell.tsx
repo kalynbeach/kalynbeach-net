@@ -3,22 +3,26 @@
 /**
  * The site shell. The root layout renders it once around every page.
  *
- * At 1200px and up there are two sections: the sidebar (the name, the nav
- * and the mini player's slot) and section 1. The site map entry for the
- * pathname picks the layout: Home's stage, a page's column, or an admin
- * page's wide section. Below 1200px the top bar, the nav sheet and the
- * player bar stand in for the sidebar. No section has a border, shadow or
+ * At 1200px and up there are three sections: the sidebar (the name, the mark
+ * and the nav), section 1, and the rail, which mirrors the sidebar on the
+ * right and holds only what is live. They sit centered as one block, so
+ * section 1 is centered on the window (app/globals.css states the rule). The
+ * site map entry for the pathname picks the layout: Home's stage, a page's
+ * column, or an admin page's wide section, which takes section 1's and the
+ * rail's place. Below 1200px the top bar, the nav sheet and the player bar
+ * stand in for the sidebar and the rail. No section has a border, shadow or
  * fill of its own.
  *
  * Pages render section 1's content, their header first. The shell adds what
  * outlives a page: Home's stage, Music's player views, and the header of a
  * page with none of its own.
  *
- * The top line: on desktop the sidebar and section 1 start on one grid row,
- * the lead below the window's top. The name and a page's title trim to their
- * cap tops (role-name, role-title), and nothing sits above section 1's first
- * child, so the name's caps, the title's caps and Home's stage share one line
- * on every page, and the sidebar never moves between pages.
+ * The top line: on desktop the sections start on one grid row, 96 below the
+ * window's top. The name and a page's title trim to their cap tops
+ * (role-name, role-title), and nothing sits above section 1's first child, so
+ * the name's caps and the title's caps share one line on every page, and the
+ * sidebar never moves between pages. Home's stage is the exception: it sits
+ * dead center on the window.
  *
  * A client component because the pathname is only readable on the client.
  * It still renders on the server for the first request. Nothing here sits
@@ -40,8 +44,8 @@ import { PageHeader } from "@/components/site/page-header";
 import { CommandMenu } from "@/components/site/command-menu";
 
 const columns = {
-  stage: "desktop:grid-cols-column",
-  page: "desktop:grid-cols-column",
+  stage: "desktop:grid-cols-three",
+  page: "desktop:grid-cols-three",
   wide: "desktop:grid-cols-wide",
 } as const satisfies Record<SiteEntry["kind"], string>;
 
@@ -52,12 +56,13 @@ export function SiteShell({ children }: { children: ReactNode }) {
 
   return (
     // .root (Kevelle) isolates the page, so Base UI portals stack predictably.
-    <div className="root">
+    // It is also the container the geometry measures (cqi).
+    <div className="root @container">
       <div
         data-slot="site-sections"
         className={cn(
           "flex min-h-dvh flex-col",
-          "desktop:gap-x-gutter desktop:px-margin desktop:py-lead desktop:grid desktop:items-start",
+          "desktop:gap-x-gutter desktop:px-margin desktop:py-top desktop:grid desktop:items-start",
           columns[entry.kind]
         )}
       >
@@ -65,27 +70,28 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <Identity atRest={home} />
           <NavSheet rows={entry.nav} atRest={home} />
         </header>
-        {/* At its track's end, so the sidebar sits beside section 1, not at the window's edge. */}
         <div
           data-slot="site-sidebar"
-          className="max-desktop:hidden desktop:top-lead desktop:w-sidebar desktop:sticky desktop:flex desktop:flex-col desktop:justify-self-end desktop:gap-8"
+          className="max-desktop:hidden desktop:top-top desktop:sticky desktop:flex desktop:flex-col desktop:gap-8"
         >
           <Identity atRest={home} />
           <nav data-slot="site-nav" aria-label="Site">
             <NavTree rows={entry.nav} />
           </nav>
-          {/* The mini player's slot. Empty until #38 mounts the player here. */}
-          <div data-slot="sidebar-player" />
         </div>
         <main
           data-slot="site-primary"
-          className="max-desktop:mx-edge max-desktop:p-5 flex min-w-0 flex-1 flex-col gap-8"
+          className={cn(
+            "max-desktop:mx-edge max-desktop:p-5 flex min-w-0 flex-1 flex-col gap-8",
+            // The frame's height, so the stage centers on the window.
+            home && "desktop:min-h-frame desktop:justify-center"
+          )}
         >
           {home && (
             <div
               data-slot="waveform-stage"
               aria-hidden
-              className="w-stage max-desktop:my-auto mx-auto aspect-square"
+              className="max-desktop:w-stage-compact desktop:w-stage max-desktop:my-auto aspect-square self-center"
             >
               <Waveform form="stage" />
             </div>
@@ -103,6 +109,16 @@ export function SiteShell({ children }: { children: ReactNode }) {
             </div>
           )}
         </main>
+        {entry.kind !== "wide" && (
+          // Empty until a later layer mounts what is live: the mini player,
+          // the waveform controls, Music's Library. Items stack 40 apart from
+          // the top line down, and the rail stays within the frame.
+          <aside
+            data-slot="site-rail"
+            aria-label="Player and controls"
+            className="max-desktop:hidden desktop:top-top desktop:max-h-frame desktop:sticky desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto"
+          />
+        )}
         {page?.player === "follow" && (
           // Last in the column: the page ends above the bar, and the bar rests on the window's bottom edge.
           <div className="bottom-safe-bottom mx-edge mb-safe-bottom desktop:hidden sticky">
