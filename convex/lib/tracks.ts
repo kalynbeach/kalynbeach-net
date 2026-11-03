@@ -317,17 +317,18 @@ export async function resolvePublicTracks(
   const lookIds = new Set(
     stored.flatMap((track) => (track.look ? [track.look] : []))
   );
-  const looks = new Map(
-    await Promise.all(
+  const [entries, srcs] = await Promise.all([
+    Promise.all(
       [...lookIds].map(
         async (id) =>
           [id, (await ctx.db.get("looks", id))?.config ?? null] as const
       )
-    )
-  );
-  const srcs = await Promise.all(
-    stored.map((track) => ctx.storage.getUrl(track.audio.storageId))
-  );
+    ),
+    Promise.all(
+      stored.map((track) => ctx.storage.getUrl(track.audio.storageId))
+    ),
+  ]);
+  const looks = new Map(entries);
 
   return stored.flatMap((track, index) => {
     const src = srcs[index];
