@@ -184,6 +184,26 @@ describe("the controls' states", () => {
     expect(again.panel).toMatchObject({ mark: { press: 2, fresh: true } });
   });
 
+  test.fails("open, played: a sweep still held keeps them open through another key's press and lift", () => {
+    const pressV: ControlsEvent = {
+      type: "press",
+      spot: spotOf({ key: "v", code: "KeyV" })!,
+      code: "KeyV",
+    };
+    const pressX: ControlsEvent = {
+      type: "press",
+      spot: spotOf({ key: "x", code: "KeyX" })!,
+      code: "KeyX",
+    };
+    const sweeping = run([pressV, pressX, { type: "lift", code: "KeyX" }]);
+    expect(timers(sweeping)).toEqual([["settle", 1500]]);
+    const released = run([{ type: "lift", code: "KeyV" }], sweeping);
+    expect(timers(released)).toEqual([
+      ["idle", 8000],
+      ["settle", 1500],
+    ]);
+  });
+
   test("open, played: 8 s idle hides it, but not while the pointer is on the rail", () => {
     const played = run([pressM, { type: "lift" }]);
     expect(kind(run([{ type: "idle" }], played))).toBe("closing");
