@@ -11,7 +11,10 @@
  * block stands down (keys.ts standsDown) and its guide never opens. Escape
  * passes through after closing the controls, so the block still glides the
  * figure back to the saved look. A key the block played arrives on window,
- * after the block's listeners, with defaultPrevented set.
+ * after the block's listeners, with defaultPrevented set. Other widgets set
+ * it too, such as the mini player's seek bar on the arrows, so the capturing
+ * listener first notes whether the block may take the key at all, and only
+ * that event counts as played.
  *
  * Page-wide keys: the controls carry the switch that turns them off (WCAG
  * 2.1.4). Off, the stage takes keys="focus", and `?` works only with focus
@@ -130,6 +133,7 @@ export function useWaveformControls(active: boolean): WaveformControlsApi {
   const ghost = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLElement>(null);
   const panelId = useId();
+  const mayPlay = useRef<KeyboardEvent | null>(null);
 
   useEffect(() => {
     if (!active) dispatch({ type: "leave" });
@@ -150,6 +154,12 @@ export function useWaveformControls(active: boolean): WaveformControlsApi {
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
     const stage = document.querySelector(STAGE);
     const input = keyInputOf(event, stage);
+    // The block may play a key that reaches the focused stage and, with page
+    // keys on, any key standsDown leaves it. Read here, before any other
+    // handler can take the key.
+    const onStage = stage?.contains(event.target as Node) ?? false;
+    mayPlay.current =
+      onStage || (pageKeys && !standsDown(input)) ? event : null;
 
     if (event.key === GUIDE_KEY) {
       if (standsDown(input)) return;
@@ -174,7 +184,8 @@ export function useWaveformControls(active: boolean): WaveformControlsApi {
   });
 
   const onPlayed = useEffectEvent((event: KeyboardEvent) => {
-    if (!event.defaultPrevented || event.repeat) return;
+    if (event !== mayPlay.current || !event.defaultPrevented || event.repeat)
+      return;
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     const spot = spotOf(event);
 
