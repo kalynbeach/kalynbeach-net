@@ -427,7 +427,10 @@ export function WaveformControls({
                         <kbd
                           key={cap.text}
                           data-pressed={
-                            marked?.held && marked.cap === capIndex
+                            state.held.some(
+                              (held) =>
+                                held.row === index && held.cap === capIndex
+                            )
                               ? ""
                               : undefined
                           }
