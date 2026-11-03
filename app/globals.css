@@ -11,8 +11,8 @@
  */
 
 @theme {
-  /* The sidebar and section 1 side by side at 1100px and up. Below it: top bar, nav sheet, player bar. */
-  --breakpoint-desktop: 68.75rem;
+  /* The sidebar and section 1 side by side at 1200px and up. Below it: top bar, nav sheet, player bar. */
+  --breakpoint-desktop: 75rem;
 
   /*
    * Font roles. ui: titles, headings, nav, labels, values, dates and code.
@@ -30,11 +30,11 @@
   --spacing-sidebar: 18.75rem; /* 300: the sidebar and the nav sheet */
   --spacing-primary: 40.5rem; /* 648: section 1, and the widest the Home stage gets */
   --spacing-gutter: 1.25rem; /* 20: between the sidebar and section 1 */
-  --spacing-margin: 2rem; /* 32: the window's side margins at 1100px and up */
+  --spacing-margin: 2rem; /* 32: the window's side margins at 1200px and up */
   --spacing-lead: 5.25rem; /* 84: above and below the sections, and the sticky top */
   --spacing-header: 3.25rem; /* 52: the mobile top bar, the sheet header, the player's header rows */
   --spacing-row: 2rem; /* 32: nav, list and timeline rows */
-  --spacing-edge: 0.75rem; /* 12: below 1100px, section 1, the sheet and the bar sit this far in */
+  --spacing-edge: 0.75rem; /* 12: below 1200px, section 1, the sheet and the bar sit this far in */
   /* Home's stage: section 1's width, short enough to leave the lead below it as well as above. */
   --spacing-stage: min(100%, calc(100dvh - 2 * var(--spacing-lead)));
   --spacing-safe-top: env(safe-area-inset-top);
@@ -103,14 +103,14 @@
 
 /*
  * The type scale. Each role sets family, size, weight, line height and
- * tracking together, and steps down below 1100px where the phone needs it,
+ * tracking together, and steps down below 1200px where the phone needs it,
  * so call sites never repeat a breakpoint. Sizes are rem so the reader's
  * browser size applies; Departure Mono stays in px on its 11px grid. Line
  * heights are unitless, each the role's whole-pixel line over its size,
  * rounded up at four places. The role- prefix keeps them apart from
  * Kevelle's type- utilities.
  *
- *   role        face and size (below 1100px)   for
+ *   role        face and size (below 1200px)   for
  *   name        ABC Areal 18/20                 the name in the sidebar
  *   title       TX-02 44/48 (32/36)             each page's h1
  *   lede        ABC Areal 20/28 (18/26)         the paragraph under the title

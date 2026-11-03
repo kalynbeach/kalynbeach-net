@@ -26,7 +26,7 @@ const marker = {
  * One row shape at every width: top-aligned, 6px block padding and 20px
  * lines (the 16px labels pad 2px above and below), so a one-line row is 32
  * tall and a wrapped row keeps its date and marker on the first line. The
- * rail shows at 1100px and up, and breaks at year rows and inferred rows.
+ * rail shows at 1200px and up, and breaks at year rows and inferred rows.
  */
 export function Timeline({ years }: { years: readonly Year[] }) {
   const lit = new Set([years[0]?.entries[0], years.at(-1)?.entries.at(-1)]);

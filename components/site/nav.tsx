@@ -100,7 +100,7 @@ function NavItem({
 }
 
 /**
- * Below 1100px: the menu button and the sheet it slides in from the left.
+ * Below 1200px: the menu button and the sheet it slides in from the left.
  * Escape, a backdrop click, a link click and any navigation close it.
  *
  * Built on Base UI's Drawer directly. The registry's DrawerContent renders a

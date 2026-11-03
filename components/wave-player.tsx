@@ -10,7 +10,7 @@
  * | WavePlayerMini    | the sidebar-player slot, once #38 mounts it   | 200x380 |
  * | WavePlayerLibrary | section 1 on Music, beside the card          | fills its box |
  * | WavePlayerCard    | section 1 on Music                           | 340x550 |
- * | WavePlayerBar     | below 1100px, the column's sticky last child | fills the column's width |
+ * | WavePlayerBar     | below 1200px, the column's sticky last child | fills the column's width |
  *
  * When the block lands, this file re-exports the block's provider and views
  * under these names, and the placeholder bodies, `sample`, the placeholder

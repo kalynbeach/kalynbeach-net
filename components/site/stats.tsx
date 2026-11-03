@@ -1,6 +1,6 @@
 type Stat = {
   label: string;
-  /** Label below 1100px, where the cell is narrower. */
+  /** Label below 1200px, where the cell is narrower. */
   short?: string;
   value: string;
 };
