@@ -44,7 +44,7 @@ describe("spacing tokens", () => {
 
   // A class that reads a removed token compiles to an invalid declaration,
   // which the browser drops with no error.
-  test.fails("every spacing token the site's classes read is defined", () => {
+  test("every spacing token the site's classes read is defined", () => {
     const missing = sources.flatMap(([file, text]) =>
       [...text.matchAll(/\((--spacing-[\w-]+)\)/g)]
         .map((match) => match[1])
