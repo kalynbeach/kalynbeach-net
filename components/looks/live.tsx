@@ -4,11 +4,11 @@
  * The site's live look, for the shell's one WaveformProvider.
  *
  *   // app/layout.tsx
- *   const look = await fetchPublicQuery(api.looks.live, {}, null);
- *   <LiveLookProvider look={look}>...</LiveLookProvider>
+ *   const liveLook = await fetchPublicQuery(api.looks.live, {}, null);
+ *   <SiteShell tracks={tracks} liveLook={liveLook}>...</SiteShell>
  *
  *   // components/site/shell.tsx
- *   const look = useLiveLook();
+ *   const look = useLiveLook(liveLook);
  *   <WaveformProvider config={look.config} onConfigChange={look.onConfigChange}>
  *
  * First paint draws the server's read, because the engine takes its config
@@ -26,27 +26,13 @@
  * error as a value, and the hook treats it as no news.
  */
 import { useQueries } from "convex/react";
-import { createContext, use, useState, type ReactNode } from "react";
+import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type {
   StoredValue,
   WaveformConfig,
 } from "@/components/waveform/settings";
 import { settle, toKeyedConfig, type KeyedConfig } from "./look";
-
-/** undefined only without a provider; null is a real answer, no live look. */
-const LiveLookContext = createContext<StoredValue | undefined>(undefined);
-
-/** Hands the root layout's read to useLiveLook, which reads it once, at mount. */
-export function LiveLookProvider({
-  look,
-  children,
-}: {
-  look: StoredValue;
-  children: ReactNode;
-}) {
-  return <LiveLookContext value={look}>{children}</LiveLookContext>;
-}
 
 /**
  * A visitor's key edits and the live look they were made on, by object.
@@ -62,16 +48,15 @@ export type VisitorPlay = {
 /** Module scope, so the request never changes and the subscription never restarts. */
 const LIVE = { live: { query: api.looks.live, args: {} } };
 
-/** Props for the shell's WaveformProvider. `config` keeps its object until the shown look changes. */
-export function useLiveLook(): {
+/**
+ * Props for the shell's WaveformProvider. `config` keeps its object until
+ * the shown look changes. `initial` is the root layout's read, used once, at
+ * mount; null means no live look.
+ */
+export function useLiveLook(initial: StoredValue): {
   readonly config: WaveformConfig;
   readonly onConfigChange: (config: WaveformConfig) => void;
 } {
-  const initial = use(LiveLookContext);
-
-  if (initial === undefined)
-    throw new Error("useLiveLook needs a LiveLookProvider above it.");
-
   const result = useQueries(LIVE).live;
   const live = useSettled(
     result instanceof Error ? undefined : result,

@@ -8,7 +8,6 @@ import { api } from "@/convex/_generated/api";
 import ConvexClerkProvider from "@/components/providers/convex-clerk-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteShell } from "@/components/site/shell";
-import { LiveLookProvider } from "@/components/looks/live";
 import { fetchPublicQuery } from "@/lib/convex/server";
 import "./globals.css";
 
@@ -52,9 +51,9 @@ export default async function RootLayout({
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClerkProvider>
             <ThemeProvider>
-              <LiveLookProvider look={liveLook}>
-                <SiteShell tracks={tracks}>{children}</SiteShell>
-              </LiveLookProvider>
+              <SiteShell tracks={tracks} liveLook={liveLook}>
+                {children}
+              </SiteShell>
             </ThemeProvider>
             <Analytics />
             <SpeedInsights />
