@@ -45,14 +45,13 @@ export function Identity({ atRest }: { atRest: boolean }) {
 }
 
 /**
- * Text color alone marks the active row: ramp 10 against idle ramp 7, as
- * Layout E draws it. The parent of the active page stays idle-colored, so one
- * row reads as active.
+ * Text color alone marks the active row: ramp 10 against nav-idle. The
+ * parent of the active page stays idle-colored, so one row reads as active.
  */
 const rowColor = {
-  idle: "text-ramp-7 hover:text-ramp-9",
+  idle: "text-nav-idle hover:text-ramp-9",
   active: "text-ramp-10",
-  ancestor: "text-ramp-7 hover:text-ramp-9",
+  ancestor: "text-nav-idle hover:text-ramp-9",
 } as const satisfies Record<NavRow["state"], string>;
 
 export function NavTree({

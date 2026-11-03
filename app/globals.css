@@ -104,6 +104,8 @@
   --color-ramp-9: var(--neutral-9);
   --color-ramp-10: var(--neutral-10);
 
+  --color-nav-idle: var(--nav-idle);
+
   /* Waveform light: the bloom layers of the Home stage. */
   --color-bloom: var(--bloom);
 
@@ -116,6 +118,13 @@
 :root {
   /* Paper's astral. Kevelle's light --astral is a different, deeper value. */
   --bloom: oklch(0.64 0.192 262);
+  /*
+   * Idle nav rows: the lowest-contrast mix of ramps 6 and 7 that still reads
+   * 4.5:1 on the background, so the current row (ramp 10) stands apart as far
+   * as that allows. Light 4.57:1 on the background and 4.51:1 to the current
+   * row; dark 4.56:1 and 4.33:1.
+   */
+  --nav-idle: color-mix(in oklab, var(--neutral-6) 75%, var(--neutral-7));
   --lit-beam: 0 0 4px 0 color-mix(in oklab, var(--signal-dim) 45%, transparent);
   --lit-marker: var(--lit-beam);
   --lit-progress: var(--lit-beam);
@@ -123,6 +132,7 @@
 
 .dark {
   --bloom: var(--signal);
+  --nav-idle: color-mix(in oklab, var(--neutral-6) 90%, var(--neutral-7));
   --lit-beam: 0 0 5px 1px color-mix(in oklab, var(--signal) 70%, transparent);
   --lit-marker: 0 0 6px 0 color-mix(in oklab, var(--signal) 50%, transparent);
   --lit-progress: 0 0 4px 0 color-mix(in oklab, var(--signal) 60%, transparent);
@@ -145,7 +155,8 @@
  *   lede        ABC Areal 19/28 (18/26)         7    the paragraph under the title
  *   heading     ABC Areal 22/28 500 (20/28)     10   section headings
  *   body        ABC Areal 17/28                 8    prose; 9 for timeline entries
- *   nav         TX-02 14/28                     7    nav rows (10 current), step names
+ *   nav         TX-02 14/28                     7    step names; nav rows take
+ *                                                    nav-idle (10 current)
  *   stat-value  TX-02 24/32 (16/20)             10   figures in a stat row
  *   meta        ABC Areal 12/16                 7    captions
  *   mono-sm     TX-02 12/16                     7    labels: stat labels, dates, tags
