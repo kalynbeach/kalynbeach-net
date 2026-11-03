@@ -186,11 +186,13 @@ export function spotOf(input: {
 /** Where the pointer is. "stage" spans the stage box, the gap under it and the ghost. */
 export type Pointer = "stage" | "rail" | "away";
 
-/** The key just pressed: its row and cap, held while it's down, its value fresh until it settles. */
+/** A key the block played that is still down: its cap, and the code its keyup carries. */
+export type Held = Spot & { readonly code: string };
+
+/** The key just pressed: its row and cap, its value fresh until it settles once the key is up. */
 export type Mark = Spot & {
   /** KeyboardEvent.code, which its keyup carries. */
   readonly code: string;
-  readonly held: boolean;
   readonly fresh: boolean;
   /** The press's number, so a settle meant for an earlier press does nothing. */
   readonly press: number;
@@ -216,6 +218,12 @@ export type ControlsState = {
   readonly focused: boolean;
   /** Presses so far, for each mark's number. */
   readonly presses: number;
+  /**
+   * Every key the block played that is still down. The mark names only the
+   * latest, so a sweep held under another key's press keeps its own cap
+   * pressed here, and keeps the controls a key opened from idling.
+   */
+  readonly held: readonly Held[];
 };
 
 export type ControlsEvent =
@@ -253,6 +261,7 @@ export const INITIAL_CONTROLS: ControlsState = {
   pointer: "away",
   focused: false,
   presses: 0,
+  held: [],
 };
 
 /** Closed: the ghost stays while the pointer is over it or it has focus, and otherwise lingers. */
@@ -322,7 +331,6 @@ export function controlsReducer(
       const mark: Mark = {
         ...event.spot,
         code: event.code,
-        held: true,
         fresh: true,
         press,
       };
@@ -330,6 +338,10 @@ export function controlsReducer(
       return {
         ...state,
         presses: press,
+        held: [
+          ...state.held.filter(({ code }) => code !== event.code),
+          { ...event.spot, code: event.code },
+        ],
         panel:
           panel.kind === "open" && panel.by === "asked"
             ? { ...panel, mark }
@@ -337,12 +349,13 @@ export function controlsReducer(
       };
     }
 
-    case "lift":
-      return withMark(state, (mark) =>
-        mark.held && (event.code === undefined || event.code === mark.code)
-          ? { ...mark, held: false }
-          : mark
+    case "lift": {
+      const held = state.held.filter(
+        ({ code }) => event.code !== undefined && code !== event.code
       );
+
+      return held.length === state.held.length ? state : { ...state, held };
+    }
 
     case "settle":
       return withMark(state, (mark) =>
@@ -354,7 +367,8 @@ export function controlsReducer(
     case "idle":
       return panel.kind === "open" &&
         panel.by === "played" &&
-        state.pointer !== "rail"
+        state.pointer !== "rail" &&
+        state.held.length === 0
         ? closed(state)
         : state;
 
@@ -380,8 +394,9 @@ export type Due = {
 
 /**
  * The timers `state` runs: the dwell before the ghost, the ghost's linger,
- * the idle that hides controls a key opened, and a fresh value's hold. The
- * hold starts once the key comes up, so a held sweep stays bright.
+ * the idle that hides controls a key opened, which waits for every key to
+ * come up, and a fresh value's hold, which starts once its own key comes up,
+ * so a held sweep stays bright.
  */
 export function dueTimers(state: ControlsState): readonly Due[] {
   const { panel } = state;
@@ -395,7 +410,11 @@ export function dueTimers(state: ControlsState): readonly Due[] {
 
   if (panel.kind !== "open") return due;
 
-  if (panel.by === "played" && state.pointer !== "rail" && !panel.mark.held)
+  if (
+    panel.by === "played" &&
+    state.pointer !== "rail" &&
+    state.held.length === 0
+  )
     due.push({
       id: `idle@${panel.mark.press}`,
       ms: IDLE_MS,
@@ -404,7 +423,7 @@ export function dueTimers(state: ControlsState): readonly Due[] {
 
   const { mark } = panel;
 
-  if (mark?.fresh && !mark.held)
+  if (mark?.fresh && !state.held.some(({ code }) => code === mark.code))
     due.push({
       id: `settle@${mark.press}`,
       ms: VALUE_MS,
