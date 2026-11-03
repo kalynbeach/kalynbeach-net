@@ -111,9 +111,9 @@ describe("the controls' states", () => {
   });
 
   test("ghost: focus reaching the button shows it, and losing it lets it linger", () => {
-    const focused = run([{ type: "focus", on: true }]);
+    const focused = run([{ type: "focus", to: "ghost" }]);
     expect(kind(focused)).toBe("ghost");
-    const blurred = run([{ type: "focus", on: false }], focused);
+    const blurred = run([{ type: "focus", to: null }], focused);
     expect(kind(blurred)).toBe("closing");
     expect(timers(blurred)).toEqual([["fade", 400]]);
     expect(kind(run([{ type: "fade" }], blurred))).toBe("rest");
@@ -211,6 +211,18 @@ describe("the controls' states", () => {
     expect(kind(run([{ type: "idle" }], onRail))).toBe("open");
   });
 
+  test("open, played: focus inside the controls holds off the idle hide until it leaves", () => {
+    const played = run([pressM, { type: "lift" }]);
+    const focused = run([{ type: "focus", to: "controls" }], played);
+    expect(timers(focused)).toEqual([["settle", 1500]]);
+    expect(kind(run([{ type: "idle" }], focused))).toBe("open");
+    const left = run([{ type: "focus", to: null }], focused);
+    expect(timers(left)).toEqual([
+      ["idle", 8000],
+      ["settle", 1500],
+    ]);
+  });
+
   test("open, asked: a key marks its row and keeps the controls asked", () => {
     const asked = run([{ type: "toggle" }, pressM]);
     expect(asked.panel).toMatchObject({
@@ -224,7 +236,7 @@ describe("the controls' states", () => {
     for (const events of [
       [pressM],
       [{ type: "toggle" }],
-      [{ type: "focus", on: true }],
+      [{ type: "focus", to: "ghost" }],
     ] as ControlsEvent[][]) {
       expect(run([...events, { type: "leave" }])).toEqual(INITIAL_CONTROLS);
     }
