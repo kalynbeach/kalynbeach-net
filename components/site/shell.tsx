@@ -15,10 +15,12 @@
  *
  * It owns the public site's player and waveform: one WavePlayerProvider,
  * where the track list enters, and one WaveformProvider fed by the player's
- * audio, where the look enters. It reads playback and the layout and draws
- * what `place()` (lib/layout.ts) decides: the Home stage, the mark, the
- * player's one frame and its screen. Pages render section 1's content, their
- * header first; the shell adds what outlives a page.
+ * audio, where the site's look enters. The player draws its own waveform in
+ * its frames (PlayerScreen), so the site's figure stays on Home's stage and
+ * in the mark. It reads playback and the layout and draws what `place()`
+ * (lib/layout.ts) decides: the Home stage, the mark and the player's one
+ * frame. Pages render section 1's content, their header first; the shell
+ * adds what outlives a page.
  *
  * The top line: on desktop the sections start on one grid row, 96 below the
  * window's top. The name and a page's title trim to their cap tops
@@ -38,18 +40,20 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useMemo,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { desktopMedia, place, type Layout, type Playback } from "@/lib/layout";
+import { desktopMedia, place, type Layout } from "@/lib/layout";
 import { sampleTracks } from "@/lib/sample-tracks";
 import { resolve, type SiteEntry } from "@/lib/site";
 import { Waveform, WaveformProvider } from "@/components/waveform/waveform";
 import {
   DEFAULT_WAVEFORM_CONFIG,
+  parseWaveformConfig,
   type WaveformConfig,
 } from "@/components/waveform/settings";
 import {
@@ -72,11 +76,29 @@ const columns = {
 
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
-    <WavePlayerProvider tracks={sampleTracks}>
+    <WavePlayerProvider tracks={sampleTracks} screen={<PlayerScreen />}>
       <PublicWaveform>
         <Sections>{children}</Sections>
       </PublicWaveform>
     </WavePlayerProvider>
+  );
+}
+
+/**
+ * The player's own waveform, which the block moves between the card, the
+ * mini player and the bar. It draws the current track's look, or the
+ * block's default player look, fed by the playing audio. Its canvas takes no
+ * view-transition name: it rides inside the frame's morph, and the site's
+ * figure already carries `waveform`.
+ */
+function PlayerScreen() {
+  const { feed, look } = useWavePlayer();
+  const config = useMemo(() => parseWaveformConfig(look.config), [look]);
+
+  return (
+    <WaveformProvider config={config} audio={feed} viewTransitionName={null}>
+      <Waveform form="screen" className="size-full" />
+    </WaveformProvider>
   );
 }
 
@@ -104,13 +126,9 @@ function Sections({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const entry = resolve(pathname);
   const layout = useLayout();
-  const placement = place(entry, usePlayback(), layout);
+  const placement = place(entry, useWavePlayer().active, layout);
   const reducedMotion = useReducedMotion();
   const page = entry.kind === "page" ? entry : null;
-  const screen =
-    placement.live === "screen" ? (
-      <Waveform form="screen" className="size-full" />
-    ) : undefined;
 
   useScrollToTop(pathname);
 
@@ -167,11 +185,10 @@ function Sections({ children }: { children: ReactNode }) {
             // 64 from a page's header to what follows it here: Music's player row, a system page's body.
             "max-desktop:mx-edge max-desktop:p-5 gap-opening flex min-w-0 flex-1 flex-col",
             // The frame's height, so the stage centers on the window.
-            placement.live === "stage" &&
-              "desktop:min-h-frame desktop:justify-center"
+            placement.stage && "desktop:min-h-frame desktop:justify-center"
           )}
         >
-          {placement.live === "stage" && (
+          {placement.stage && (
             <div
               data-slot="waveform-stage"
               className="max-desktop:w-stage-compact desktop:w-stage max-desktop:my-auto aspect-square self-center"
@@ -183,16 +200,12 @@ function Sections({ children }: { children: ReactNode }) {
           {children}
           {placement.frame === "card" && (
             <div className="desktop:flex-row desktop:items-start flex flex-col gap-5">
-              {/*
-               * kevelle/wave-player's card is a fixed 340px. Below 1200px the
-               * row gives up section 1's padding, so the card fits from 364px
-               * up, and narrower windows zoom the row to fit it at 320px.
-               */}
+              {/* kevelle/wave-player's card fills this row up to 340px. */}
               <div
                 data-slot="card-row"
-                className="max-desktop:-mx-5 flex justify-center max-[22.75rem]:[zoom:calc(296/340)]"
+                className="desktop:w-85 desktop:shrink-0 flex justify-center"
               >
-                <WavePlayerCard screen={screen} />
+                <WavePlayerCard />
               </div>
               <WavePlayerTracks className="desktop:flex-1" />
             </div>
@@ -209,7 +222,7 @@ function Sections({ children }: { children: ReactNode }) {
             {placement.frame === "mini" && (
               <div data-slot="rail-player">
                 <WavePlayerMini
-                  screen={screen}
+                  live={!placement.stage}
                   expand={<Link href="/music" />}
                 />
               </div>
@@ -221,7 +234,7 @@ function Sections({ children }: { children: ReactNode }) {
           // edge and takes its own height at the end of the page, so nothing
           // ends up under it however its title wraps.
           <WavePlayerBar
-            screen={screen}
+            live={!placement.stage}
             className="bottom-safe-bottom mx-edge mb-safe-bottom desktop:hidden sticky w-auto"
           />
         )}
@@ -253,19 +266,6 @@ function subscribeLayout(onChange: () => void) {
 
 function readLayout(): Layout {
   return window.matchMedia(desktopMedia).matches ? "desktop" : "narrow";
-}
-
-/**
- * `active` is deferred in the block, so the frames it mounts animate;
- * `ended` is deferred here to change in the same render, or Replay would
- * show a render with neither and the card would drop the live waveform for
- * a frame.
- */
-function usePlayback(): Playback {
-  const { active, status } = useWavePlayer();
-  const ended = useDeferredValue(status.kind === "ended");
-
-  return active ? "active" : ended ? "ended" : "idle";
 }
 
 const reducedMotionMedia = "(prefers-reduced-motion: reduce)";

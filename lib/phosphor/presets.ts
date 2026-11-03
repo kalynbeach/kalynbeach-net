@@ -119,8 +119,12 @@ function within(value: number, limit: Limit, fallback: number) {
     : fallback;
 }
 
-/** Clamps every numeric field into LOOK_LIMITS and drops traces past MAX_TRACES. */
+/**
+ * Clamps every numeric field into LOOK_LIMITS, drops traces past MAX_TRACES,
+ * and drops a referenceSize that is not a finite positive number.
+ */
 export function clampLook(look: PhosphorLook): PhosphorLook {
+  const { referenceSize, ...fields } = look;
   const [first, ...rest] = look.traces;
 
   const traces: [TraceColor, ...TraceColor[]] = [
@@ -129,7 +133,10 @@ export function clampLook(look: PhosphorLook): PhosphorLook {
   ];
 
   return {
-    ...look,
+    ...fields,
+    ...(referenceSize !== undefined &&
+      referenceSize > 0 &&
+      Number.isFinite(referenceSize) && { referenceSize }),
     persistence: within(
       look.persistence,
       LOOK_LIMITS.persistence,

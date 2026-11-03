@@ -66,6 +66,17 @@ export type PhosphorLook = {
    * size, and the browser scales the backing store up.
    */
   readonly resolution: number;
+  /**
+   * The shorter canvas side, in backing pixels, the look's light was tuned
+   * at. On a canvas whose shorter side is smaller, the bloom's spread and the
+   * gaussian beam's width narrow in proportion, the gaussian beam's energy
+   * scales with the square of that ratio, and the line beam's with the
+   * ratio, so a small screen draws the same figure as a large one instead of
+   * a blur. A larger canvas draws as
+   * tuned. Absent: light keeps its pixel sizes, as the Oscilloscope tunes
+   * them.
+   */
+  readonly referenceSize?: number;
 };
 
 /** What the screen tells a producer each frame. */

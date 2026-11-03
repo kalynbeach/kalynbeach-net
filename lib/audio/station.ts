@@ -1,5 +1,5 @@
 import { createDeviceList } from "./input";
-import type { DeviceList } from "./input";
+import type { DeviceList, MemoryStorage } from "./input";
 import { createSafetyStage } from "./safety";
 import { createStrip } from "./strip";
 import type {
@@ -89,6 +89,8 @@ export type StationEnv = {
   readonly mediaDevices: MediaDevices | null;
   readonly audioSession: AudioSessionLike | null;
   readonly mediaSession: MediaSession | null;
+  /** Where the chosen input is remembered: localStorage, or null on the server and where reading it throws. */
+  readonly storage: MemoryStorage | null;
   readonly setTimer: (callback: () => void, ms: number) => () => void;
 };
 
@@ -100,6 +102,7 @@ const SERVER_ENV: StationEnv = {
   mediaDevices: null,
   audioSession: null,
   mediaSession: null,
+  storage: null,
   setTimer: () => () => {},
 };
 
@@ -137,12 +140,22 @@ function browserEnv(): StationEnv {
     mediaDevices: "mediaDevices" in navigator ? navigator.mediaDevices : null,
     audioSession: hasAudioSession(navigator) ? navigator.audioSession : null,
     mediaSession: hasMediaSession(navigator) ? navigator.mediaSession : null,
+    storage: pageStorage(),
     setTimer(callback, ms) {
       const id = window.setTimeout(callback, ms);
 
       return () => window.clearTimeout(id);
     },
   };
+}
+
+/** Reading localStorage throws a SecurityError in sandboxed frames and where the person blocks site data. */
+function pageStorage(): MemoryStorage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
 function hasAudioSession(
@@ -188,7 +201,7 @@ const ignore = () => {};
 export function createAudioStation(env: StationEnv): AudioStation {
   const listeners = new Set<() => void>();
   const strips = new Set<StripRuntime>();
-  const inputs = createDeviceList(env.mediaDevices);
+  const inputs = createDeviceList(env.mediaDevices, env.storage);
   let snapshot: StationSnapshot = env.createContext ? IDLE : UNSUPPORTED;
   let context: AudioContext | null = null;
   let contextsCreated = 0;

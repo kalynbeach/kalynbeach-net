@@ -21,8 +21,10 @@ export { createPhosphorScreen } from "./screen";
  *
  * Trace colors resolve from CSS custom properties on the canvas when the
  * screen starts, and again when setLook() changes traces, screen, or
- * ground. Nothing else re-reads them. A theme switch should flip the
- * ground, and that one setLook() picks up the new theme's tokens.
+ * ground. A canvas out of the document has no computed style, so a change
+ * made while it is out resolves when it is back. Nothing else re-reads
+ * them. A theme switch should flip the ground, and that one setLook() picks
+ * up the new theme's tokens.
  *
  * Grounds. look.ground says what the canvas sits on. "screen", the default,
  * is the phosphor's own opaque screen, lifted by look.background. It is the
@@ -40,6 +42,18 @@ export { createPhosphorScreen } from "./screen";
  * and the gaussian beam's energy stay in CSS pixels. The line beam stays one
  * backing pixel wide and the bloom works in backing texels, so both grow by
  * 1 / resolution on the page.
+ *
+ * Reference size. Without look.referenceSize, light keeps those pixel sizes
+ * on any canvas, as the oscilloscope tunes them, so a small canvas fills
+ * with bloom. look.referenceSize is the shorter canvas side, in backing
+ * pixels, that the look was tuned at. On a canvas whose shorter side is
+ * smaller, the bloom's spread and the gaussian beam's width narrow by that
+ * ratio, the gaussian beam's energy falls with its square, and the line
+ * beam's falls with the ratio, so a small screen draws the figure a large
+ * one does instead of a blur. The narrowing
+ * stops at a sigma of half a backing pixel, and the line beam cannot narrow
+ * past its one pixel. A larger canvas draws as tuned. clampLook() drops a
+ * referenceSize that is not a finite positive number.
  *
  * Lifecycle. The screen owns its frame loop. The loop runs only while the
  * canvas intersects the viewport, the document is visible, and the canvas
