@@ -21,14 +21,16 @@ export type Frame = "card" | "mini" | "bar";
  * The site's waveform lives on the stage and in the mark and never enters
  * a player view: the player draws its own waveform in its frames. The
  * union keeps the stage the page's one live figure. On Home a frame draws
- * the player's still (live={false}), the card never shows, and there is no
- * mark. Elsewhere a frame draws the player's live screen.
+ * the player's still (live={false}) and the card never shows. Elsewhere a
+ * frame draws the player's live screen. The mark draws on every page, Home
+ * included. It has a canvas of its own and takes the waveform's
+ * view-transition name only while no stage holds the live figure.
  */
 export type Placement =
   | {
       readonly stage: true;
       readonly frame: "mini" | "bar" | null;
-      readonly mark: null;
+      readonly mark: Layout | null;
     }
   | {
       readonly stage: false;
@@ -59,7 +61,7 @@ export function place(
 
   switch (entry.kind) {
     case "stage":
-      return { stage: true, frame: follower, mark: null };
+      return { stage: true, frame: follower, mark: layout };
     case "wide":
       return { stage: false, frame: null, mark: layout };
     case "page":
