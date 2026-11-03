@@ -2,9 +2,9 @@
 
 /**
  * The dashboard's one frame: the title, the Tracks and Looks switch, and the
- * account, then both workspaces. At 1100px and up it fills the window's
- * height and each workspace scrolls inside it; below that it stacks and the
- * page scrolls.
+ * account, then both workspaces. At 1200px and up it fills the window's
+ * height between the top and bottom lines, and each workspace scrolls inside
+ * it; below that it stacks and the page scrolls.
  *
  * A workspace mounts the first time it shows, then stays mounted, and the
  * inactive one is `hidden`, so each track row's upload and the editor's
@@ -40,12 +40,12 @@ export function DashboardFrame({ account }: { account: ReactNode }) {
   };
 
   return (
-    <div className="desktop:h-[calc(100dvh-var(--spacing-lead)*2)] desktop:min-h-[34rem] flex flex-col gap-6">
+    <div className="desktop:h-frame desktop:min-h-[34rem] flex flex-col gap-6">
       {/*
         role-title trims the h1 to its caps, so on desktop its cap top is the
         row's top: the top line. The switch and the account box center on the
         caps, and their negative block margins keep them from setting the
-        row's height, as the mark beside the name does. Below 1100px the row
+        row's height, as the mark beside the name does. Below 1200px the row
         wraps, so they keep their height.
       */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
