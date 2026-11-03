@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { desktopMedia, place, type Layout, type Placement } from "@/lib/layout";
@@ -20,6 +20,38 @@ describe("desktop breakpoint", () => {
   test("the desktop layout starts at 1200px", () => {
     const rem = Number(token?.match(/^([\d.]+)rem$/)?.[1]);
     expect(rem * 16).toBe(1200);
+  });
+});
+
+describe("spacing tokens", () => {
+  const root = join(import.meta.dirname, "..");
+  const defined = new Set(
+    ["app/globals.css", "app/kevelle/kevelle.css", "app/kevelle/typeset.css"]
+      .map((file) => readFileSync(join(root, file), "utf8"))
+      .flatMap((text) => [...text.matchAll(/(--spacing-[\w-]+)\s*:/g)])
+      .map((match) => match[1])
+  );
+  // The site's own code. Installed blocks read only Kevelle's tokens.
+  const installed = /^components\/(ui|waveform|wave-player)\//;
+  const sources = ["app", "components", "lib"]
+    .flatMap((dir) =>
+      readdirSync(join(root, dir), { recursive: true, encoding: "utf8" })
+        .filter((file) => /\.tsx?$/.test(file))
+        .map((file) => join(dir, file))
+    )
+    .filter((file) => !installed.test(file))
+    .map((file) => [file, readFileSync(join(root, file), "utf8")] as const);
+
+  // A class that reads a removed token compiles to an invalid declaration,
+  // which the browser drops with no error.
+  test.fails("every spacing token the site's classes read is defined", () => {
+    const missing = sources.flatMap(([file, text]) =>
+      [...text.matchAll(/\((--spacing-[\w-]+)\)/g)]
+        .map((match) => match[1])
+        .filter((name) => !defined.has(name))
+        .map((name) => `${file}: ${name}`)
+    );
+    expect(missing).toEqual([]);
   });
 });
 
