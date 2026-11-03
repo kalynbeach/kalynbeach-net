@@ -104,7 +104,8 @@ function PlayerScreen() {
 
 /**
  * The Home stage's keys edit a local copy of the look that nothing saves and
- * a reload drops.
+ * a reload drops. setLocal takes the exact object onConfigChange gives, since
+ * the keys know their own commits by identity.
  */
 function PublicWaveform({ children }: { children: ReactNode }) {
   // An audio restart replaces the feed, so read it on every render.
@@ -193,7 +194,8 @@ function Sections({ children }: { children: ReactNode }) {
               data-slot="waveform-stage"
               className="max-desktop:w-stage-compact desktop:w-stage max-desktop:my-auto aspect-square self-center"
             >
-              <Waveform form="stage" className="size-full" />
+              {/* Page-wide keys: a visitor plays the figure with nothing focused. */}
+              <Waveform form="stage" keys="page" className="size-full" />
             </div>
           )}
           {page?.title && <PageHeader title={page.title} />}
