@@ -170,8 +170,9 @@ export function useWaveformControls(active: boolean): WaveformControlsApi {
       );
 
       if (!pageKeys && !near) return;
+      // Every ?, so the block never sees one, but a held ? toggles once.
       event.preventDefault();
-      send({ type: "toggle" });
+      if (!event.repeat) send({ type: "toggle" });
 
       return;
     }
