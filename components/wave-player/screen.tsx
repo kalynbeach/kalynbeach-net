@@ -1,43 +1,21 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { cn } from "cn";
+
+import {
+  STILL_STROKE,
+  STILL_VIEWBOX,
+  stillPaths,
+  type WavePlayerStill,
+} from "./look";
 
 export type ScreenSize = "card" | "mini" | "bar";
 
+/** The card's box squares to its content width; the mini player's is 72px and the bar's 36px. */
 const BOX = {
-  card: "size-77",
-  mini: "aspect-square w-full",
+  card: "aspect-square w-full",
+  mini: "size-18",
   bar: "size-9",
 } as const satisfies Record<ScreenSize, string>;
-
-/** The figure's viewBox side, the Paper card's 316px screen. Every box scales it to fit. */
-const FIGURE = 316;
-
-/** Samples around one period, as the Paper figure has. */
-const STEPS = 220;
-
-/**
- * The Paper card frame's figure: x = 158 + 118 sin(5t + phase) and
- * y = 158 + 118 sin(4t), so it sits 40 units inside each edge. The afterglow
- * runs 0.12 rad behind the trace.
- */
-function lissajous(phase: number): string {
-  const center = FIGURE / 2;
-  const radius = center - 40;
-
-  const points = Array.from({ length: STEPS + 1 }, (_, step) => {
-    const t = (2 * Math.PI * step) / STEPS;
-    const x = center + radius * Math.sin(5 * t + phase);
-    const y = center + radius * Math.sin(4 * t);
-
-    return `${x.toFixed(1)} ${y.toFixed(1)}`;
-  });
-
-  return `M${points.join("L")}Z`;
-}
-
-const TRACE = lissajous(0.9);
-
-const AFTERGLOW = lissajous(0.78);
 
 /**
  * The slot's content fills the box and stays mounted in every status, so a
@@ -46,13 +24,16 @@ const AFTERGLOW = lissajous(0.78);
  */
 export function Screen({
   size,
+  still,
   overlay,
   children,
 }: {
   readonly size: ScreenSize;
+  /** The current look's still, drawn while the slot is empty. */
+  readonly still: WavePlayerStill;
   /** Absolutely placed content over the slot, such as a spinner or a failure. */
   readonly overlay?: ReactNode;
-  /** The site's slot content. Absent: the still figure. */
+  /** What the box shows, such as a live frame's dock of the provider's screen. Absent: the still figure. */
   readonly children?: ReactNode;
 }) {
   return (
@@ -64,9 +45,9 @@ export function Screen({
       )}
     >
       {children == null ? (
-        <Figure afterglow={size !== "bar"} />
+        <Figure still={still} afterglow={size !== "bar"} />
       ) : (
-        // Absolute, so size-full content fills the mini's measured square too.
+        // Absolute, so size-full content fills the measured square.
         <div className="absolute inset-0">{children}</div>
       )}
       {overlay}
@@ -75,27 +56,36 @@ export function Screen({
 }
 
 /**
- * The still figure. A non-scaling stroke keeps the line 1px in the 308,
- * 176, and 36px boxes, which is what the frames' stroke widths render to.
- * The 36px bar drops the afterglow, as its frame does.
+ * The still figure, in the look's trace color. A non-scaling stroke keeps
+ * the line 1px in every box, which is what the frames' stroke widths render
+ * to. The 36px bar drops the afterglow, as its frame does.
  */
-function Figure({ afterglow }: { readonly afterglow: boolean }) {
+function Figure({
+  still,
+  afterglow,
+}: {
+  readonly still: WavePlayerStill;
+  readonly afterglow: boolean;
+}) {
+  const paths = useMemo(() => stillPaths(still), [still]);
+  const stroke = STILL_STROKE[still.color];
+
   return (
     <svg
       aria-hidden="true"
-      viewBox={`0 0 ${FIGURE} ${FIGURE}`}
+      viewBox={`0 0 ${STILL_VIEWBOX} ${STILL_VIEWBOX}`}
       className="absolute inset-0 size-full fill-none"
     >
       {afterglow ? (
         <path
-          d={AFTERGLOW}
-          className="stroke-signal-dim"
+          d={paths.afterglow}
+          className={stroke.afterglow}
           vectorEffect="non-scaling-stroke"
         />
       ) : null}
       <path
-        d={TRACE}
-        className="stroke-signal"
+        d={paths.trace}
+        className={stroke.trace}
         vectorEffect="non-scaling-stroke"
       />
     </svg>

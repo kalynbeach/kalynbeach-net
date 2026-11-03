@@ -1,5 +1,6 @@
 import { toSeconds, type Seconds } from "@/lib/audio";
 
+import { checkLook, type WavePlayerLook } from "./look";
 import { toPeaks, type Peaks } from "./peaks";
 
 /** One track as a site passes it. */
@@ -15,12 +16,14 @@ export type WavePlayerTrack = {
   readonly artist?: string;
   /** The album, shown after the artist and sent to Media Session as the album. */
   readonly record?: string;
-  /** The mini player's short label, such as "Sample". */
+  /** The card's short label, such as "Sample". */
   readonly tag?: string;
   /** Seconds, when known ahead. Saves a metadata request per track. */
   readonly duration?: number;
   /** An amplitude overview, 0 to 1, any length. Saves a download and a decode. */
   readonly peaks?: readonly number[];
+  /** The track's waveform look. Absent or null: the block's default player look. */
+  readonly look?: WavePlayerLook | null;
 };
 
 /** A checked track. Optional fields are null, never undefined. */
@@ -33,6 +36,8 @@ export type Track = {
   readonly tag: string | null;
   readonly duration: Seconds | null;
   readonly peaks: Peaks | null;
+  /** The site's look object, checked. */
+  readonly look: WavePlayerLook | null;
 };
 
 export type Playlist = {
@@ -53,7 +58,8 @@ export type PlaylistIssue =
   | { readonly kind: "duplicate-id"; readonly at: number; readonly id: string }
   | { readonly kind: "bad-src"; readonly id: string }
   | { readonly kind: "bad-duration"; readonly id: string }
-  | { readonly kind: "bad-peaks"; readonly id: string };
+  | { readonly kind: "bad-peaks"; readonly id: string }
+  | { readonly kind: "bad-look"; readonly id: string };
 
 /** A fixed base, so the server and the client accept the same src strings. */
 const PARSE_BASE = "https://wave-player.invalid/";
@@ -111,6 +117,11 @@ export function parsePlaylist(
     if (record.peaks !== undefined && peaks === null)
       issues.push({ kind: "bad-peaks", id });
 
+    const given = record.look ?? null;
+    const look = given === null ? null : checkLook(given);
+
+    if (given !== null && look === null) issues.push({ kind: "bad-look", id });
+
     indexOf.set(id, tracks.length);
     tracks.push({
       id,
@@ -121,6 +132,7 @@ export function parsePlaylist(
       tag: record.tag?.trim() || null,
       duration,
       peaks,
+      look,
     });
   });
 

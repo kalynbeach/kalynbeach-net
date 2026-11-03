@@ -9,6 +9,7 @@ import {
   type StationSnapshot,
 } from "@/lib/audio";
 
+import { currentLook, type WavePlayerLook } from "./look";
 import type { Peaks } from "./peaks";
 import type { Playlist } from "./playlist";
 import { STATUS_VIEW } from "./status-view";
@@ -129,6 +130,12 @@ export type PlayerState = {
    * Hosts mount the mini player and the bar by it, through useWavePlayer().
    */
   readonly active: boolean;
+  /**
+   * The current track's look, else the block's default player look, never
+   * a site's. The same object until its content changes. The screen box
+   * draws its still, and useWavePlayer() hands it to the site.
+   */
+  readonly look: WavePlayerLook;
 };
 
 /** Everything deriveState() reads. The store assembles it; the states workbench builds it by hand. */
@@ -198,6 +205,11 @@ export function deriveState(
   const active =
     inputs.station !== null && current !== null && status.kind !== "ended";
 
+  const look = currentLook(
+    inputs.index === null ? null : inputs.playlist.tracks[inputs.index].look,
+    previous?.look ?? null
+  );
+
   if (
     previous &&
     previous.tracks === tracks &&
@@ -205,11 +217,12 @@ export function deriveState(
     previous.status === status &&
     previous.feed === feed &&
     previous.summary === summary &&
-    previous.active === active
+    previous.active === active &&
+    previous.look === look
   )
     return previous;
 
-  return { tracks, current, status, feed, summary, active };
+  return { tracks, current, status, feed, summary, active, look };
 }
 
 function sameRow(a: TrackInfo, b: TrackInfo): boolean {
@@ -531,7 +544,7 @@ export type Load =
 /**
  * What the mounted views need. "durations": every track's duration (the
  * Library). "current": the current track's duration (every other view).
- * "peaks": the current track's peaks (the seek bars).
+ * "peaks": the current track's peaks (the card's seek bar).
  */
 export type Need = "durations" | "current" | "peaks";
 

@@ -49,7 +49,7 @@ function ToggleGroup({
         }) as React.CSSProperties
       }
       className={cn(
-        "group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-none data-[size=sm]:rounded-none data-vertical:flex-col data-vertical:items-stretch",
+        "group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-none data-[size=sm]:rounded-none data-[spacing=0]:alloy-housing data-vertical:flex-col data-vertical:items-stretch",
         className
       )}
       {...props}
@@ -82,7 +82,7 @@ function ToggleGroupItem({
         // Group values are type-pixel. The variant sorts the role after
         // toggleVariants' text sizes and font-medium, which cn() cannot
         // merge with a type role.
-        "shrink-0 group-data-[spacing=0]/toggle-group:rounded-none group-data-[spacing=0]/toggle-group:px-2 focus:z-10 focus-visible:z-10 in-data-[slot=toggle-group]:type-pixel group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:pr-1.5 group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:pl-1.5 group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-none group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-none group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-none group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-none group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t",
+        "shrink-0 group-data-[spacing=0]/toggle-group:rounded-none group-data-[spacing=0]/toggle-group:px-2 focus:z-10 focus-visible:z-10 in-data-[slot=toggle-group]:type-pixel group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:pr-1.5 group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:pl-1.5 group-data-horizontal/toggle-group:data-[spacing=0]:not-first:-ml-px group-data-vertical/toggle-group:data-[spacing=0]:not-first:-mt-px group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-none group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-none group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-none group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-none data-[spacing=0]:hover:z-[1] data-[spacing=0]:focus-visible:z-10! data-[spacing=0]:aria-pressed:z-[2]",
         toggleVariants({
           variant: context.variant || variant,
           size: context.size || size,

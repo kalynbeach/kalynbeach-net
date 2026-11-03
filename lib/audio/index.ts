@@ -47,6 +47,28 @@ export {
  * host in media-src, and blob: for local files. ./strip.ts draws the graph,
  * and ./file.ts covers the element and CORS.
  *
+ * Input choice. station.inputs lists the page's inputs and holds the
+ * person's choice, one per origin, remembered in localStorage as the
+ * device's id and the browser's own label, so a choice made in one block
+ * holds in every block, on every page, and in the next session. A strip
+ * plays it with play({ kind: "input" }), which takes no device. Pick a
+ * device with station.inputs.choose(id), or choose(null) for the browser
+ * default, and every strip playing input moves to it. A strip still
+ * capturing the old choice drops that capture and takes the new one, so
+ * only the newest choice is captured and remembered. The snapshot's
+ * `chosen` matches the memory by id, then by label, since Safari and
+ * Firefox rotate ids between sessions. It reads "unresolved" while the
+ * browser hides labels before permission, and "missing" when a labeled list
+ * holds nothing that matches. Capture always asks for the exact device. A
+ * missing one fails as device-not-found and never opens the default in its
+ * place, and an unresolved one that rotated takes one default capture to
+ * reveal the labels, then the matching device. A play() while the strip's
+ * stream of the chosen device is live reuses it, so a repeat Listen asks the
+ * browser for nothing. A browser's own one-time grant, such as Chrome's
+ * "Allow this time" or Safari's "Ask", still prompts on its own schedule.
+ * Where storage throws, as in a blocked frame, the choice lasts the page.
+ * ./input.ts covers capture and matching.
+ *
  * Feeds. A strip opened with `tap` feeds the signal after the envelope and
  * before the level. strip.getFeed() returns the feed on the strip's current
  * context, an error when the tap cannot load there, or null while it loads
@@ -118,7 +140,14 @@ export { NOISE_PEAK } from "./worklet-source";
 
 export type { NoiseColor, NoiseSettings } from "./noise";
 
-export type { InputDevice, InputHandle, DeviceList } from "./input";
+export type {
+  InputDevice,
+  InputHandle,
+  InputChoice,
+  InputSnapshot,
+  RememberedInput,
+  DeviceList,
+} from "./input";
 
 export type { FileHandle, FilePlayback } from "./file";
 

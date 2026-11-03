@@ -1,13 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import {
-  desktopMedia,
-  place,
-  type Layout,
-  type Placement,
-  type Playback,
-} from "@/lib/layout";
+import { desktopMedia, place, type Layout, type Placement } from "@/lib/layout";
 import { resolve, routes } from "@/lib/site";
 
 const css = readFileSync(
@@ -30,109 +24,80 @@ describe("desktop breakpoint", () => {
 });
 
 describe("placement", () => {
-  test.each<[string, Playback, Layout | null, Placement]>([
-    ["/", "idle", "desktop", { live: "stage", frame: null, mark: null }],
-    ["/", "active", "desktop", { live: "stage", frame: "mini", mark: null }],
-    ["/", "active", "narrow", { live: "stage", frame: "bar", mark: null }],
-    ["/", "ended", "desktop", { live: "stage", frame: null, mark: null }],
-    ["/", "active", null, { live: "stage", frame: null, mark: null }],
+  test.each<[string, boolean, Layout | null, Placement]>([
+    ["/", false, "desktop", { stage: true, frame: null, mark: null }],
+    ["/", true, "desktop", { stage: true, frame: "mini", mark: null }],
+    ["/", true, "narrow", { stage: true, frame: "bar", mark: null }],
+    ["/", true, null, { stage: true, frame: null, mark: null }],
     [
       "/music",
-      "idle",
+      false,
       "desktop",
-      { live: null, frame: "card", mark: "desktop" },
+      { stage: false, frame: "card", mark: "desktop" },
     ],
     [
       "/music",
-      "active",
+      true,
       "desktop",
-      { live: "screen", frame: "card", mark: "desktop" },
+      { stage: false, frame: "card", mark: "desktop" },
     ],
-    [
-      "/music",
-      "active",
-      "narrow",
-      { live: "screen", frame: "card", mark: "narrow" },
-    ],
-    [
-      "/music",
-      "ended",
-      "desktop",
-      { live: "screen", frame: "card", mark: "desktop" },
-    ],
-    [
-      "/music",
-      "ended",
-      "narrow",
-      { live: "screen", frame: "card", mark: "narrow" },
-    ],
-    ["/music", "idle", null, { live: null, frame: "card", mark: null }],
-    ["/about", "idle", "desktop", { live: null, frame: null, mark: "desktop" }],
+    ["/music", true, "narrow", { stage: false, frame: "card", mark: "narrow" }],
+    ["/music", false, null, { stage: false, frame: "card", mark: null }],
     [
       "/about",
-      "active",
+      false,
       "desktop",
-      { live: "screen", frame: "mini", mark: "desktop" },
+      { stage: false, frame: null, mark: "desktop" },
     ],
     [
       "/about",
-      "active",
-      "narrow",
-      { live: "screen", frame: "bar", mark: "narrow" },
-    ],
-    [
-      "/about",
-      "ended",
+      true,
       "desktop",
-      { live: null, frame: null, mark: "desktop" },
+      { stage: false, frame: "mini", mark: "desktop" },
     ],
-    ["/about", "active", null, { live: null, frame: null, mark: null }],
+    ["/about", true, "narrow", { stage: false, frame: "bar", mark: "narrow" }],
+    ["/about", true, null, { stage: false, frame: null, mark: null }],
     [
       "/software/agents",
-      "active",
+      true,
       "desktop",
-      { live: "screen", frame: "mini", mark: "desktop" },
+      { stage: false, frame: "mini", mark: "desktop" },
     ],
     [
       "/dashboard",
-      "active",
+      true,
       "desktop",
-      { live: null, frame: null, mark: "desktop" },
+      { stage: false, frame: null, mark: "desktop" },
     ],
     [
       "/no-such-page",
-      "active",
+      true,
       "narrow",
-      { live: null, frame: null, mark: "narrow" },
+      { stage: false, frame: null, mark: "narrow" },
     ],
-  ])("%s, %s, %s", (path, playback, layout, expected) => {
-    expect(place(resolve(path), playback, layout)).toEqual(expected);
+  ])("%s, active %s, %s", (path, active, layout, expected) => {
+    expect(place(resolve(path), active, layout)).toEqual(expected);
   });
 
   const cases = routes.flatMap((route) =>
-    (["idle", "active", "ended"] as const).flatMap((playback) =>
+    [false, true].flatMap((active) =>
       (["desktop", "narrow", null] as const).map((layout) => ({
         route,
-        playback,
+        active,
         layout,
         entry: resolve(route),
-        placement: place(resolve(route), playback, layout),
+        placement: place(resolve(route), active, layout),
       }))
     )
   );
 
-  test("gives a screen the live waveform once playback starts, and after the end only the card's", () => {
-    for (const { route, playback, placement } of cases) {
-      if (placement.live !== "screen") continue;
-      expect(playback, route).not.toBe("idle");
-      if (playback === "ended") expect(placement.frame, route).toBe("card");
-    }
-  });
-
-  test("gives Music's card the live waveform from the first play on, ended included", () => {
-    for (const { route, playback, entry, placement } of cases) {
-      if (entry.kind !== "page" || entry.player !== "full") continue;
-      expect(placement.live, route).toBe(playback === "idle" ? null : "screen");
+  test("shows the stage exactly on Home, never beside the card or a mark", () => {
+    for (const { route, entry, placement } of cases) {
+      expect(placement.stage, route).toBe(entry.kind === "stage");
+      if (placement.stage) {
+        expect(placement.frame, route).not.toBe("card");
+        expect(placement.mark, route).toBeNull();
+      }
     }
   });
 
@@ -144,9 +109,20 @@ describe("placement", () => {
   });
 
   test("shows no player view outside playback except Music's card", () => {
-    for (const { route, playback, placement } of cases) {
-      if (playback !== "active") {
-        expect([null, "card"], route).toContain(placement.frame);
+    for (const { route, active, placement } of cases) {
+      if (!active) expect([null, "card"], route).toContain(placement.frame);
+    }
+  });
+
+  test("shows the mini player or the bar on every page with a player while playback is active", () => {
+    for (const { route, active, layout, entry, placement } of cases) {
+      const follows =
+        entry.kind === "stage" ||
+        (entry.kind === "page" && entry.player === "follow");
+      if (follows && active && layout) {
+        expect(placement.frame, route).toBe(
+          layout === "desktop" ? "mini" : "bar"
+        );
       }
     }
   });

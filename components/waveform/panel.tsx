@@ -3,18 +3,38 @@
 /*
  * WaveformPanel: every setting of the provider's waveform, presets first as
  * chips, then one collapsible section per group of the settings table.
- * Nothing here lists a control by name, so a new control in ./settings.ts
- * appears with no edit here. A control that can't change the picture now is
+ * Only the source control is named here, for `input` below, so a new
+ * control in ./settings.ts appears with no edit here. A control that can't change the picture now is
  * disabled and says why, or hidden when it belongs to the other display
- * mode. The panel fits a 320 px column with no sideways scroll, and its
- * targets grow to 44 px under a coarse pointer.
+ * mode. Each section's Reset, its first row, returns its controls to
+ * DEFAULT_WAVEFORM_CONFIG, and stays disabled while they hold it. The Forms
+ * section's Reset covers the shown form only. With `input`, the Source
+ * section shows its WaveformInputPicker in place of the source control, so
+ * the picker is the one source choice: Tones writes the config's source
+ * "tones", and Input or File writes "audio". A reset that covers the
+ * source, Reset source or WaveformResetAllButton, also stops the input, as
+ * picking Tones does, so a visit's resume that answers later can't undo
+ * it. Without it, the source control stays. The panel fits a 320 px column
+ * with no sideways scroll, and its targets grow to 44 px under a coarse
+ * pointer. Its first child is always Presets.
  *
- *   <WaveformProvider config={config} onConfigChange={setConfig}>
- *     <WaveformPanel form={form} onFormChange={setForm} />
+ * WaveformResetAllButton and WaveformRandomizeButton sit outside the panel,
+ * in the page's own toolbar, since a page may keep the panel in a sheet
+ * away from it. Reset all returns every control to the default and stays
+ * disabled at it. Randomize draws randomFigure() in ./settings.ts. Both
+ * need the provider's onConfigChange.
+ *
+ *   const input = useWaveformInput(config, setConfig)
+ *
+ *   <WaveformProvider config={config} onConfigChange={setConfig} audio={input.feed}>
+ *     <WaveformRandomizeButton />
+ *     <WaveformResetAllButton input={input} />
+ *     <WaveformPanel form={form} onFormChange={setForm} input={input} />
  *   </WaveformProvider>
  */
 
 import * as React from "react";
+import { ArrowCounterClockwiseIcon, ShuffleIcon } from "@phosphor-icons/react";
 import { cn } from "cn";
 
 import {
@@ -23,6 +43,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
@@ -49,6 +70,8 @@ import {
   activePreset,
   applyPreset,
   formOf,
+  randomFigure,
+  resetControls,
   unmetNeed,
   writeChoice,
   writeNumber,
@@ -62,6 +85,7 @@ import {
   type SwitchControl,
   type WaveformConfig,
 } from "./settings";
+import { WaveformInputPicker, type WaveformInput } from "./input";
 import { useWaveformConfig } from "./waveform";
 
 export type WaveformPanelProps = {
@@ -69,6 +93,8 @@ export type WaveformPanelProps = {
   readonly form?: Form;
   /** Called when the Forms section picks a form, so a page can show it. */
   readonly onFormChange?: (form: Form) => void;
+  /** The host's useWaveformInput(), whose picker the Source section shows in place of the source control. */
+  readonly input?: WaveformInput;
   /** Layout classes only. */
   readonly className?: string;
 };
@@ -98,6 +124,10 @@ const GROUP_IDS = new Map<ControlGroup, ControlId[]>(
 );
 
 for (const id of CONTROL_IDS) GROUP_IDS.get(CONTROLS[id].group)?.push(id);
+
+/** The controls a section shows and resets: its group's, and in Forms only the shown form's. */
+const sectionIds = (group: ControlGroup, form: Form) =>
+  (GROUP_IDS.get(group) ?? []).filter((id) => (formOf(id) ?? form) === form);
 
 /** A log control's slider spreads its range over this many positions by ratio. */
 const TAPER_STEPS = 1000;
@@ -138,12 +168,20 @@ function useHdrDisplay(): boolean {
   return React.useSyncExternalStore(subscribe, hdrQuery, () => false);
 }
 
-type FieldProps<C> = {
+/** Applies `write` to the provider's latest config. The panel keeps one for its life, so a memoized field skips a render while its own value holds. */
+type Edit = (write: (config: WaveformConfig) => WaveformConfig) => void;
+
+/*
+ * A field takes its control's value and reason, not the config, so React.memo
+ * skips it while those hold. A drag then renders its own field and leaves
+ * the panel's other fields alone.
+ */
+type FieldProps<C, V> = {
   readonly control: C;
-  readonly config: WaveformConfig;
+  readonly value: V;
   /** Why it is disabled, or null when it applies. */
   readonly reason: string | null;
-  readonly onConfig: (config: WaveformConfig) => void;
+  readonly edit: Edit;
 };
 
 function Description({
@@ -164,13 +202,12 @@ function Description({
   );
 }
 
-function NumberField({
+const NumberField = React.memo(function NumberField({
   control,
-  config,
+  value,
   reason,
-  onConfig,
-}: FieldProps<NumberControl>) {
-  const value = control.read(config);
+  edit,
+}: FieldProps<NumberControl, number>) {
   const log = control.scale === "log";
 
   return (
@@ -193,7 +230,7 @@ function NumberField({
           control.format(fromPosition(control, position))
         }
         onValueChange={(next) =>
-          onConfig(
+          edit((config) =>
             writeNumber(
               config,
               control,
@@ -205,22 +242,21 @@ function NumberField({
       <Description effect={control.effect} reason={reason} />
     </Field>
   );
-}
+});
 
-function ChoiceField({
+/** A choice field's value is its option's value as a string, as Select and ToggleGroup take it. */
+const ChoiceField = React.memo(function ChoiceField({
   control,
-  config,
+  value,
   reason,
-  onConfig,
-}: FieldProps<ChoiceControl>) {
-  const value = String(control.read(config));
-
+  edit,
+}: FieldProps<ChoiceControl, string>) {
   const pick = (picked: string | null) => {
     const option = control.options.find(
       (item) => String(item.value) === picked
     );
 
-    if (option) onConfig(writeChoice(config, control, option.value));
+    if (option) edit((config) => writeChoice(config, control, option.value));
   };
 
   if (!control.chips && control.options.length > 4)
@@ -285,14 +321,14 @@ function ChoiceField({
       <Description effect={control.effect} reason={reason} />
     </Field>
   );
-}
+});
 
-function SwitchField({
+const SwitchField = React.memo(function SwitchField({
   control,
-  config,
+  value,
   reason,
-  onConfig,
-}: FieldProps<SwitchControl>) {
+  edit,
+}: FieldProps<SwitchControl, boolean>) {
   return (
     <Field disabled={reason !== null}>
       <div className="flex min-h-8 items-center justify-between gap-3 pointer-coarse:min-h-11">
@@ -300,27 +336,27 @@ function SwitchField({
         <Switch
           aria-label={control.label}
           disabled={reason !== null}
-          checked={control.read(config)}
+          checked={value}
           onCheckedChange={(checked) =>
-            onConfig(writeSwitch(config, control, checked))
+            edit((config) => writeSwitch(config, control, checked))
           }
         />
       </div>
       <Description effect={control.effect} reason={reason} />
     </Field>
   );
-}
+});
 
 function ControlField({
   id,
   config,
   context,
-  onConfig,
+  edit,
 }: {
   id: ControlId;
   config: WaveformConfig;
   context: ControlContext;
-  onConfig: (config: WaveformConfig) => void;
+  edit: Edit;
 }) {
   const control = CONTROLS[id];
   const need = unmetNeed(control, config, context);
@@ -333,9 +369,9 @@ function ControlField({
       return (
         <NumberField
           control={control}
-          config={config}
+          value={control.read(config)}
           reason={reason}
-          onConfig={onConfig}
+          edit={edit}
         />
       );
 
@@ -343,9 +379,9 @@ function ControlField({
       return (
         <ChoiceField
           control={control}
-          config={config}
+          value={String(control.read(config))}
           reason={reason}
-          onConfig={onConfig}
+          edit={edit}
         />
       );
 
@@ -353,9 +389,9 @@ function ControlField({
       return (
         <SwitchField
           control={control}
-          config={config}
+          value={control.read(config)}
           reason={reason}
-          onConfig={onConfig}
+          edit={edit}
         />
       );
   }
@@ -364,6 +400,7 @@ function ControlField({
 export function WaveformPanel({
   form,
   onFormChange,
+  input,
   className,
 }: WaveformPanelProps) {
   const { config, onConfigChange } = useWaveformConfig();
@@ -373,8 +410,27 @@ export function WaveformPanel({
   const shownForm = form ?? ownForm;
   const active = activePreset(config, context);
 
-  const onConfig = (next: WaveformConfig) => {
-    if (next !== config) onConfigChange?.(next);
+  // The config of the last commit, which edits build on, as the render's
+  // own config would. A field's handlers outlive the render that made them.
+  const latest = React.useRef(config);
+
+  React.useLayoutEffect(() => {
+    latest.current = config;
+  }, [config]);
+
+  const edit = React.useCallback<Edit>(
+    (write) => {
+      const next = write(latest.current);
+
+      if (next !== latest.current) onConfigChange?.(next);
+    },
+    [onConfigChange]
+  );
+
+  const reset = (ids: readonly ControlId[]) => {
+    if (input && ids.includes("source")) input.stop();
+
+    edit((current) => resetControls(current, ids));
   };
 
   return (
@@ -392,7 +448,7 @@ export function WaveformPanel({
           onValueChange={(values) => {
             const id = PRESET_ORDER.find((item) => item === values[0]);
 
-            if (id) onConfig(applyPreset(config, id));
+            if (id) edit((current) => applyPreset(current, id));
           }}
           className="w-full flex-wrap"
         >
@@ -408,62 +464,144 @@ export function WaveformPanel({
         </ToggleGroup>
       </Field>
       <Accordion multiple defaultValue={["figure"]}>
-        {SECTIONS.map((section) => (
-          <AccordionItem key={section.group} value={section.group}>
-            <AccordionTrigger className="items-center pointer-coarse:min-h-11">
-              {/* A group's name, so the machine's voice, like a sidebar group label. */}
-              <span className="type-label text-muted-foreground">
-                {section.label}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent>
-              <FieldGroup>
-                {section.group === "forms" ? (
-                  <Field>
-                    <FieldLabel>Form</FieldLabel>
-                    <ToggleGroup
-                      aria-label="Form"
-                      variant="outline"
-                      size="sm"
-                      spacing={0}
-                      value={[shownForm]}
-                      onValueChange={(values) => {
-                        const next = FORMS.find((item) => item === values[0]);
+        {SECTIONS.map((section) => {
+          const ids = sectionIds(section.group, shownForm);
+          const sectionReset = resetControls(config, ids);
+          const shown = input ? ids.filter((id) => id !== "source") : ids;
 
-                        if (!next) return;
-                        setOwnForm(next);
-                        onFormChange?.(next);
-                      }}
-                      className="w-full"
-                    >
-                      {FORMS.map((item) => (
-                        <ToggleGroupItem
-                          key={item}
-                          value={item}
-                          className="flex-1 pointer-coarse:h-11"
-                        >
-                          {FORM_LABELS[item]}
-                        </ToggleGroupItem>
-                      ))}
-                    </ToggleGroup>
-                  </Field>
-                ) : null}
-                {GROUP_IDS.get(section.group)?.map((id) =>
-                  (formOf(id) ?? shownForm) === shownForm ? (
+          const name =
+            section.group === "forms"
+              ? FORM_LABELS[shownForm].toLowerCase()
+              : section.label.toLowerCase();
+
+          return (
+            <AccordionItem key={section.group} value={section.group}>
+              <AccordionTrigger className="items-center pointer-coarse:min-h-11">
+                <span className="type-heading-1 text-foreground">
+                  {section.label}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <FieldGroup>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={sectionReset === config}
+                    onClick={() => reset(ids)}
+                    className="self-start pointer-coarse:h-11"
+                  >
+                    {`Reset ${name}`}
+                  </Button>
+                  {section.group === "source" && input ? (
+                    <WaveformInputPicker input={input} />
+                  ) : null}
+                  {section.group === "forms" ? (
+                    <Field>
+                      <FieldLabel>Form</FieldLabel>
+                      <ToggleGroup
+                        aria-label="Form"
+                        variant="outline"
+                        size="sm"
+                        spacing={0}
+                        value={[shownForm]}
+                        onValueChange={(values) => {
+                          const next = FORMS.find((item) => item === values[0]);
+
+                          if (!next) return;
+                          setOwnForm(next);
+                          onFormChange?.(next);
+                        }}
+                        className="w-full"
+                      >
+                        {FORMS.map((item) => (
+                          <ToggleGroupItem
+                            key={item}
+                            value={item}
+                            className="flex-1 pointer-coarse:h-11"
+                          >
+                            {FORM_LABELS[item]}
+                          </ToggleGroupItem>
+                        ))}
+                      </ToggleGroup>
+                    </Field>
+                  ) : null}
+                  {shown.map((id) => (
                     <ControlField
                       key={id}
                       id={id}
                       config={config}
                       context={context}
-                      onConfig={onConfig}
+                      edit={edit}
                     />
-                  ) : null
-                )}
-              </FieldGroup>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
+                  ))}
+                </FieldGroup>
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
       </Accordion>
     </section>
+  );
+}
+
+/**
+ * Returns every control to DEFAULT_WAVEFORM_CONFIG through the provider's
+ * onConfigChange, and stays disabled while they hold it. With `input`, it
+ * also stops the input, as picking Tones does, since it resets the source.
+ * Its label is a child with data-label, so a narrow toolbar can show the
+ * icon alone and keep the label as the button's name, as with
+ * max-sm:*:data-label:sr-only.
+ */
+export function WaveformResetAllButton({
+  input,
+  className,
+}: {
+  readonly input?: WaveformInput;
+  readonly className?: string;
+}) {
+  const { config, onConfigChange } = useWaveformConfig();
+  const reset = resetControls(config, CONTROL_IDS);
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={!onConfigChange || reset === config}
+      onClick={() => {
+        input?.stop();
+        onConfigChange?.(reset);
+      }}
+      className={className}
+    >
+      <ArrowCounterClockwiseIcon data-icon="inline-start" aria-hidden="true" />
+      <span data-label="">Reset all</span>
+    </Button>
+  );
+}
+
+/**
+ * A new figure from randomFigure() in ./settings.ts through the provider's
+ * onConfigChange, in one edit, as a preset is: the tones, the motion, and
+ * the light's shape. Its label is a child with data-label, as
+ * WaveformResetAllButton's is.
+ */
+export function WaveformRandomizeButton({
+  className,
+}: {
+  readonly className?: string;
+}) {
+  const { config, onConfigChange } = useWaveformConfig();
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={!onConfigChange}
+      onClick={() => onConfigChange?.(randomFigure(config))}
+      className={className}
+    >
+      <ShuffleIcon data-icon="inline-start" aria-hidden="true" />
+      <span data-label="">Randomize</span>
+    </Button>
   );
 }
