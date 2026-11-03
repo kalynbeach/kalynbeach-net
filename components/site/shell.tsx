@@ -83,7 +83,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <main
           data-slot="site-primary"
           className={cn(
-            "max-desktop:mx-edge max-desktop:p-5 flex min-w-0 flex-1 flex-col gap-8",
+            // 64 from a page's header to what follows it here: Music's player row, a system page's body.
+            "max-desktop:mx-edge max-desktop:p-5 gap-opening flex min-w-0 flex-1 flex-col",
             // The frame's height, so the stage centers on the window.
             home && "desktop:min-h-frame desktop:justify-center"
           )}

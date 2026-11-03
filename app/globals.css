@@ -32,6 +32,7 @@
   --spacing-top: 6rem; /* 96: the top line, the sections' top and bottom padding, the sticky top */
   --spacing-header: 3.25rem; /* 52: the mobile top bar, the sheet header, the player's header rows */
   --spacing-row: 1.75rem; /* 28: nav, list and timeline rows */
+  --spacing-opening: 4rem; /* 64: a page's header to its content, on every page */
   --spacing-edge: 0.75rem; /* 12: below 1200px, section 1, the sheet and the bar sit this far in */
   --spacing-safe-top: env(safe-area-inset-top);
   --spacing-safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
@@ -287,6 +288,10 @@
     }
     & :where(h2 + *):not(:where(.typeset-site [data-slot] *)) {
       margin-block-start: 0.75rem;
+    }
+    /* Last, so it wins over the h2 and block gaps above. */
+    & > :where([data-slot="page-header"] + *) {
+      margin-block-start: var(--spacing-opening);
     }
   }
 }
