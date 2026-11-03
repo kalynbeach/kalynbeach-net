@@ -10,11 +10,13 @@
  * takes `?` first, in a capturing listener that calls preventDefault, so the
  * block stands down (keys.ts standsDown) and its guide never opens. Escape
  * passes through after closing the controls, so the block still glides the
- * figure back to the saved look. A key the block played arrives on window,
- * after the block's listeners, with defaultPrevented set. Other widgets set
- * it too, such as the mini player's seek bar on the arrows, so the capturing
- * listener first notes whether the block may take the key at all, and only
- * that event counts as played.
+ * figure back to the saved look. The block leaves Escape to a focused
+ * control, so focus on the ghost or in the controls steps off for that
+ * keydown and returns to the ghost after. A key the block played arrives
+ * on window, after the block's listeners, with defaultPrevented set. Other
+ * widgets set it too, such as the mini player's seek bar on the arrows, so
+ * the capturing listener first notes whether the block may take the key at
+ * all, and only that event counts as played.
  *
  * Page-wide keys: the controls carry the switch that turns them off (WCAG
  * 2.1.4). Off, the stage takes keys="focus", and `?` works only with focus
@@ -176,11 +178,27 @@ export function useWaveformControls(active: boolean): WaveformControlsApi {
 
     // A focused control keeps Escape from the block, but it still closes these.
     if (
-      event.key === HOME_KEY &&
-      state.panel.kind === "open" &&
-      !standsDown({ ...input, focus: input.focus === "text" ? "text" : "page" })
+      event.key !== HOME_KEY ||
+      state.panel.kind !== "open" ||
+      standsDown({ ...input, focus: input.focus === "text" ? "text" : "page" })
     )
+      return;
+    const ours = [ghost.current, panel.current].some((element) =>
+      element?.contains(document.activeElement)
+    );
+
+    if (!ours) {
       send({ type: "close" });
+
+      return;
+    }
+
+    // With nothing focused, the block's page listener takes this Escape and
+    // glides the figure home. Focus comes back once the keydown is done.
+    if (document.activeElement instanceof HTMLElement)
+      document.activeElement.blur();
+    dispatch({ type: "close" });
+    setTimeout(() => ghost.current?.focus());
   });
 
   const onPlayed = useEffectEvent((event: KeyboardEvent) => {
