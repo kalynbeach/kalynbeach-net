@@ -151,7 +151,10 @@
   --font-pixel: "Departure Mono", "Paper Mono", ui-monospace, monospace;
   --font-brand: "Departure Mono", "Paper Mono", ui-monospace, monospace;
 
-  /* Hairline system: inputs and outline buttons draw edges, not shadows. */
+  /*
+   * shadcn's xs shadows stay empty, because edges are hairlines and raised
+   * controls take the alloy.
+   */
   --shadow-2xs: 0 0 transparent;
   --shadow-xs: 0 0 transparent;
   --shadow-sm:
@@ -221,13 +224,16 @@
   --primary: var(--neutral-10);
   --primary-foreground: var(--neutral-1);
   /*
-   * A hover fill moves one step toward its own foreground, so hover never
-   * lowers the contrast of the text on it below the rest state's minimum.
+   * A primary hover fill moves two steps toward its own foreground. A
+   * secondary key keeps its fill and catches the alloy glint instead, and
+   * --secondary-hover is that lit face as one color, the glint over the
+   * fill as srgb alpha blends it. bun run contrast holds the label on every
+   * hover fill to 4.5:1.
    */
   --primary-hover: var(--neutral-8);
   --secondary: var(--neutral-3);
   --secondary-foreground: var(--neutral-10);
-  --secondary-hover: var(--neutral-4);
+  --secondary-hover: color-mix(in srgb, var(--secondary) 60%, oklch(1 0 0));
   --muted: var(--neutral-3);
   --muted-foreground: var(--neutral-7);
   /* Ink for graphics such as dither tracks: 3:1 on the canvas, not for text. */
@@ -332,26 +338,34 @@
   --shadow-color: var(--neutral-10);
 
   /*
-   * Machined alloy. A raised control takes a sheen over its fill, a 1px
-   * highlight along its top edge, the key line 1px below it, and a small
-   * soft drop. The sheen is one translucent gradient, white at the top and
+   * Machined alloy. A raised control is one part inside a 1px edge. It takes
+   * a sheen over its fill, a lit lip along its top edge, a dark lip along its
+   * bottom edge, and a tight contact shadow: the line right under it and a
+   * short drop. The sheen is one translucent gradient, white at the top and
    * black at the bottom, so it shades any fill without a gradient per
    * variant. A light primary key runs from about L 0.27 down to its fill.
    * The stops are as strong as the destructive labels allow, and bun run
-   * contrast measures every key label under both. The key line is the ink
-   * end of the ramp at 20% in both modes, so in dark it reads as a lit
-   * lower rim, and the press lands on it. The shade is a soft inset along
-   * the top of a recessed field. The line follows the ramp, so .dark sets
-   * the rest.
+   * contrast measures every key label under both. The lips are 1px insets,
+   * clear of any label. A pressed key and a recessed field take the inverse
+   * bevel: the shade along the top and a lit sill along the bottom. The glint
+   * is the hover light, laid under the sheen of a secondary or outline key
+   * so the face brightens while its edge darkens to the input role.
+   * --secondary-hover is the secondary fill under the glint, so bun run
+   * contrast measures the hovered label. Shadows mix the shadow color, so
+   * .dark sets each value.
    */
   --alloy-sheen: linear-gradient(oklch(1 0 0 / 0.15), oklch(0 0 0 / 0.03));
-  --alloy-highlight: inset 0 1px 0 0 oklch(1 0 0 / 0.16);
-  --alloy-line: 0 1px 0 0
-    color-mix(in oklch, var(--neutral-10) 20%, transparent);
-  --alloy-drop: 0 2px 3px -1px
-    color-mix(in oklch, var(--shadow-color) 20%, transparent);
+  --alloy-highlight: inset 0 1px 0 0 oklch(1 0 0 / 0.7);
+  --alloy-lip: inset 0 -1px 0 0
+    color-mix(in oklch, var(--shadow-color) 8%, transparent);
+  --alloy-line: 0 1px 1px 0
+    color-mix(in oklch, var(--shadow-color) 10%, transparent);
+  --alloy-drop: 0 2px 4px -2px
+    color-mix(in oklch, var(--shadow-color) 18%, transparent);
   --alloy-shade: inset 0 1px 2px 0
     color-mix(in oklch, var(--shadow-color) 10%, transparent);
+  --alloy-sill: inset 0 -1px 0 0 oklch(1 0 0 / 0.6);
+  --alloy-glint: oklch(1 0 0 / 0.4);
 
   /*
    * Elevation is smooth layered shadows, never dither, so shaders can sit
@@ -403,7 +417,7 @@
   --primary-hover: var(--neutral-8);
   --secondary: var(--neutral-3);
   --secondary-foreground: var(--neutral-10);
-  --secondary-hover: var(--neutral-4);
+  --secondary-hover: color-mix(in srgb, var(--secondary) 94%, oklch(1 0 0));
   --muted: var(--neutral-3);
   --muted-foreground: var(--neutral-7);
   --faint-foreground: var(--neutral-6);
@@ -488,15 +502,22 @@
   /*
    * In dark a secondary key runs from about L 0.27 down to its fill, and a
    * primary key falls from its fill to about L 0.92. Black text on the
-   * destructive hover fill holds the bottom stop at 8%. The drop and the
-   * shade need far more black to read.
+   * destructive hover fill holds the bottom stop at 8%. On the near-black
+   * canvas the shadows need far more black to read, and the lit lip and
+   * the glint far less white.
    */
   --alloy-sheen: linear-gradient(oklch(1 0 0 / 0.08), oklch(0 0 0 / 0.08));
-  --alloy-highlight: inset 0 1px 0 0 oklch(1 0 0 / 0.12);
-  --alloy-drop: 0 2px 4px -1px
+  --alloy-highlight: inset 0 1px 0 0 oklch(1 0 0 / 0.14);
+  --alloy-lip: inset 0 -1px 0 0
+    color-mix(in oklch, var(--shadow-color) 50%, transparent);
+  --alloy-line: 0 1px 1px 0
     color-mix(in oklch, var(--shadow-color) 70%, transparent);
+  --alloy-drop: 0 2px 4px -2px
+    color-mix(in oklch, var(--shadow-color) 60%, transparent);
   --alloy-shade: inset 0 1px 2px 0
     color-mix(in oklch, var(--shadow-color) 60%, transparent);
+  --alloy-sill: inset 0 -1px 0 0 oklch(1 0 0 / 0.05);
+  --alloy-glint: oklch(1 0 0 / 0.06);
 
   /*
    * Shadows barely read on the near-black canvas, so a white top highlight
@@ -830,22 +851,25 @@
 
 /*
  * Machined surfaces ride on Tailwind's shadow slots so they compose with
- * ring-* edges and focus rings. The key line and the drop sit in
+ * ring-* edges and focus rings. The contact line and the drop sit in
  * --tw-shadow, the last layer, so a 2px focus ring covers the line,
  * shadow-none drops both, and a shadow-* utility replaces them. The
- * highlight and the shade sit in --tw-inset-shadow and compose with
- * shadow-* elevation as well. The sheen is the background image over the
- * bg-* fill, so a raised control takes no dither utility.
+ * lips, the shade, and the sill sit in --tw-inset-shadow and
+ * compose with shadow-* elevation as well. The sheen is the background
+ * image over the bg-* fill, so a raised control takes no dither utility.
  */
 
 /*
- * Raised action: filled buttons. The key line and drop, dropped while
- * pressed so the button lands on the line with its 1px move. Popup
+ * Raised control: every button and toggle, the checkbox, radio, and switch
+ * and slider thumbs, the select triggers, and the questionnaire choice. The
+ * sheen, both lips, the line, and the drop. Pressed, it takes the inverse
+ * bevel and loses its shadow, so a button lands with its 1px move. Popup
  * triggers keep their place on press, as active:not-aria-[haspopup] in
- * button.tsx says, so they keep the line too.
+ * button.tsx says, so they stay raised. Switch and slider thumbs add
+ * shadow-none, where the line would hide under the track or the ring.
  */
-@utility alloy-action {
-  --tw-inset-shadow: var(--alloy-highlight);
+@utility alloy-raised {
+  --tw-inset-shadow: var(--alloy-highlight), var(--alloy-lip);
   --tw-shadow: var(--alloy-line), var(--alloy-drop);
   background-image: var(--alloy-sheen);
   box-shadow:
@@ -854,26 +878,35 @@
 
   @variant active {
     &:not([aria-haspopup]) {
+      --tw-inset-shadow: var(--alloy-shade), var(--alloy-sill);
       --tw-shadow: 0 0 #0000;
     }
   }
 }
 
 /*
- * Raised control: checkbox, radio, switch and slider thumbs, select
- * trigger, native select, and the questionnaire choice. The same sheen,
- * highlight, line, and drop as alloy-action. Switch and slider thumbs add
- * shadow-none, where the line would hide under the track or the ring.
+ * Hovered secondary or outline key: the glint under the sheen. The fill
+ * stays put, so the hover reads as light on the face, and the key's edge
+ * darkens to the input role beside it.
  */
-@utility alloy-raised {
-  --tw-inset-shadow: var(--alloy-highlight);
-  --tw-shadow: var(--alloy-line), var(--alloy-drop);
-  background-image: var(--alloy-sheen);
-  box-shadow:
-    var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
-    var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+@utility alloy-lit {
+  background-image:
+    var(--alloy-sheen), linear-gradient(var(--alloy-glint), var(--alloy-glint));
+}
 
-  @variant active {
+/*
+ * Housing: a joined button or toggle group is one raised part. The group
+ * casts the line and drop, and its items keep only their lips. Items
+ * overlap by 1px, so each seam is one edge, and the item on top shows its
+ * whole edge: focused over selected over hovered. A group separator sits on
+ * the seam itself, over both facing edges.
+ */
+@utility alloy-housing {
+  box-shadow: var(--alloy-line), var(--alloy-drop);
+
+  /* --tw-shadow does not inherit, so a wrapped native select clears its own. */
+  & > [data-slot],
+  & > [data-slot] > [data-slot="native-select"] {
     --tw-shadow: 0 0 #0000;
   }
 }
@@ -891,9 +924,43 @@
   outline-offset: -1px;
 }
 
-/* Recessed field: a soft inset shade along the top edge. */
+/*
+ * Selected key: a latched toggle. alloy-raised inverted onto the primary
+ * fill, black in light and white in dark, so selection is the strongest
+ * mark in a grayscale group. Its edge takes the fill too, so the key reads
+ * as one part and covers the seams beside it in a housing; an invalid key
+ * keeps its destructive edge. Forced colors would
+ * erase the fill, so the key opts out of forcing, takes the system's
+ * Highlight pair, and drops the sheen and the shadows the way forcing
+ * would. The focus ring is a shadow too, so keyboard focus there draws a
+ * system-colored outline instead.
+ */
+@utility alloy-selected {
+  @apply alloy-raised;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+
+  &:not([aria-invalid="true"]) {
+    border-color: var(--primary);
+  }
+
+  @media (forced-colors: active) {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    background-image: none;
+    box-shadow: none;
+    color: HighlightText;
+
+    &:focus-visible {
+      outline: 2px solid CanvasText;
+      outline-offset: 2px;
+    }
+  }
+}
+
+/* Recessed field: the inverse bevel, a soft shade along the top edge and a lit sill along the bottom. */
 @utility alloy-recessed {
-  --tw-inset-shadow: var(--alloy-shade);
+  --tw-inset-shadow: var(--alloy-shade), var(--alloy-sill);
   box-shadow:
     var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
     var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -1049,7 +1116,7 @@
  * trace and text-chart-3 glow a flame one. Four layers follow the measured
  * trace: a 1px core mixed 40% toward white, the 2px trace itself, an 8px
  * halo, and a 16px afterglow at 60%. It takes the shadow slot, so it
- * composes with the focus ring and the alloy shade. The key line lives in
+ * composes with the focus ring and the alloy shade. The contact line lives in
  * the same slot, so a raised control drops its line while it glows; the
  * slider thumb already drops it with shadow-none. Dark mode only, on
  * keyboard focus and drag. Nothing glows at rest, and light stays plain.

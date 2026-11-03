@@ -1,18 +1,21 @@
 "use client";
 
 /*
- * The mini player: the card at the side column's width, on a small Kevelle
- * Card. It fills its container (200px in the frame, as narrow as 192px).
- * The title wraps beside the expand control instead of truncating. A
- * status Badge sits between the times, so a status change never moves the
- * rows below it.
+ * The mini player, laid out for a narrow column rather than shrunk from the
+ * card. It fills its container up to 240 wide, on a small Kevelle Card.
+ *
+ * A masthead spans the card: the title, which wraps and never truncates,
+ * beside the expand control, then the artist and the status. Under it a
+ * deck sets the 72px screen beside a large elapsed reading over the
+ * duration, with the transport under the reading. A thin seek line closes
+ * the card. Below 240 the deck's reading and transport wrap under the
+ * screen, so a narrower column never scrolls sideways.
  */
 
 import type { ReactElement, ReactNode } from "react";
 import { ArrowsOutSimpleIcon } from "@phosphor-icons/react";
 import { cn } from "cn";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,10 +25,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { formatOrdinal } from "./format";
+import { Clock } from "./readouts";
 import { Screen } from "./screen";
-import { SeekBar } from "./seek-bar";
+import { SeekLine } from "./seek-bar";
 import { ScreenOverlay, StatusBadge } from "./status";
+import { STATUS_VIEW } from "./status-view";
 import { PlayerRegion, Transport, type ViewInput } from "./transport";
 
 export function MiniView({
@@ -36,6 +40,7 @@ export function MiniView({
   expand,
   className,
 }: ViewInput & {
+  /** What the screen box shows, such as a live frame's dock. Absent: the current look's still figure. */
   readonly screen?: ReactNode;
   /** The link the expand control renders as, such as <Link href="/music" />. Absent: no control. */
   readonly expand?: ReactElement;
@@ -43,76 +48,74 @@ export function MiniView({
   readonly className?: string;
 }) {
   const current = state.current;
+  const view = STATUS_VIEW[state.status.kind];
 
   return (
     <PlayerRegion
       state={state}
       onCommand={onCommand}
       className={cn(
-        "flex w-full outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "flex w-full max-w-60 outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className
       )}
     >
       <Card size="sm" className="w-full">
-        {/* Paper's 52px header row, measured from the card's top edge. */}
-        <CardHeader className="min-h-10">
+        <CardHeader>
           <CardTitle>{current?.track.title ?? "No tracks"}</CardTitle>
           {expand ? (
             <CardAction>
               {/* Button's render prop keeps the site's router element, so a
-               * Next Link navigates on the client and playback carries on. */}
+                  Next Link navigates on the client and playback carries on. */}
               <Button
-                variant="ghost"
-                size="icon-xs"
+                variant="outline"
+                size="icon"
                 render={expand}
                 nativeButton={false}
                 aria-label="Open player"
               >
-                <ArrowsOutSimpleIcon
-                  aria-hidden="true"
-                  className="text-muted-foreground group-hover/button:text-foreground"
-                />
+                <ArrowsOutSimpleIcon aria-hidden="true" />
               </Button>
             </CardAction>
           ) : null}
+          <div className="flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="type-caption text-muted-foreground min-w-0">
+              {current?.track.artist}
+            </p>
+            <StatusBadge state={state} />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-3">
-            <Screen
-              size="mini"
-              overlay={
-                <ScreenOverlay
+            <div className="flex flex-wrap items-stretch gap-3">
+              <Screen
+                size="mini"
+                still={state.look.still}
+                overlay={
+                  <ScreenOverlay
+                    state={state}
+                    onCommand={onCommand}
+                    fit="spinner"
+                  />
+                }
+              >
+                {screen}
+              </Screen>
+              <div className="flex flex-1 flex-col justify-between gap-2">
+                <Clock
+                  playhead={playhead}
+                  known={view.times}
+                  duration={current?.track.duration ?? null}
+                  size="mini"
+                />
+                <Transport
                   state={state}
                   onCommand={onCommand}
-                  fit="compact"
+                  size="mini"
+                  className="justify-start"
                 />
-              }
-            >
-              {screen}
-            </Screen>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-start justify-between gap-2">
-                <p className="type-caption text-muted-foreground min-w-0">
-                  {current?.track.artist}
-                </p>
-                <span className="type-pixel text-muted-foreground shrink-0 tabular-nums">
-                  {current
-                    ? formatOrdinal(current.index, state.tracks.length)
-                    : null}
-                </span>
               </div>
-              {current?.track.tag ? (
-                <Badge variant="outline">{current.track.tag}</Badge>
-              ) : null}
             </div>
-            <SeekBar
-              state={state}
-              playhead={playhead}
-              onCommand={onCommand}
-              size="mini"
-              status={<StatusBadge state={state} />}
-            />
-            <Transport state={state} onCommand={onCommand} size="mini" />
+            <SeekLine state={state} playhead={playhead} onCommand={onCommand} />
           </div>
         </CardContent>
       </Card>

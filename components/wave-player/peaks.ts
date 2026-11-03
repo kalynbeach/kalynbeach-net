@@ -94,18 +94,11 @@ export function playedBars(
 }
 
 /**
- * Bar geometry per view, from the Paper frames. Each bar's top rounds up to
- * a whole pixel, so the unplayed bars' 1px dither stays on the pixel grid.
+ * The card's bar geometry, from the Paper frame. Each bar's top rounds up
+ * to a whole pixel, so the unplayed bars' 1px dither stays on the pixel
+ * grid.
  */
-export const SEEK_GEOMETRY = {
-  card: { height: 36, min: 5, max: 35 },
-  mini: { height: 24, min: 4, max: 20 },
-} as const satisfies Record<
-  string,
-  { readonly height: number; readonly min: number; readonly max: number }
->;
-
-export type SeekSize = keyof typeof SEEK_GEOMETRY;
+export const SEEK_GEOMETRY = { height: 36, min: 5, max: 35 } as const;
 
 export type Bar = {
   readonly x: number;
@@ -114,21 +107,78 @@ export type Bar = {
 };
 
 /** One square rect per level, vertically centered, left to right on the pitch. */
-export function layoutBars(
-  levels: readonly number[],
-  size: SeekSize
-): readonly Bar[] {
-  const geometry = SEEK_GEOMETRY[size];
+export function layoutBars(levels: readonly number[]): readonly Bar[] {
+  const { height: box, min, max } = SEEK_GEOMETRY;
 
   return levels.map((level, index) => {
-    const height = Math.round(
-      geometry.min + level * (geometry.max - geometry.min)
-    );
+    const height = Math.round(min + level * (max - min));
 
     return {
       x: index * BAR_PITCH,
-      y: Math.ceil((geometry.height - height) / 2),
+      y: Math.ceil((box - height) / 2),
       height,
     };
+  });
+}
+
+/**
+ * Kevelle's progress ramp, the dither-ramp fill in tools/aura.ts: 30% lit
+ * where the played run starts, rising to solid at its leading edge as
+ * from + (to - from) · t ^ gamma.
+ */
+const RAMP = { from: 0.3, to: 1, gamma: 1.2 } as const;
+
+/** The densities a played bar steps through. 100 is solid. */
+const DENSITIES = [25, 50, 75, 100] as const;
+
+export type PlayedDensity = (typeof DENSITIES)[number];
+
+/**
+ * Where the ramp steps up a density, as shares of the played run: where
+ * its lit share crosses halfway between two densities, about 0.16, 0.53,
+ * and 0.85.
+ */
+const RAMP_STEPS = DENSITIES.slice(1).map((density) => {
+  const lit = (density - 12.5) / 100;
+
+  return ((lit - RAMP.from) / (RAMP.to - RAMP.from)) ** (1 / RAMP.gamma);
+});
+
+/**
+ * A played bar's dither density, sparse where the played run starts and
+ * solid at its leading edge, as DESIGN.md's progress fill steps through
+ * densities rather than fading. `index` counts from 0 among `played` bars,
+ * and the last one is always solid.
+ */
+export function playedDensity(index: number, played: number): PlayedDensity {
+  const t = played <= 1 ? 1 : index / (played - 1);
+
+  return DENSITIES[RAMP_STEPS.filter((step) => t >= step).length];
+}
+
+export type RampBand = {
+  readonly x: number;
+  readonly width: number;
+  readonly density: PlayedDensity;
+};
+
+/**
+ * The no-peaks groove's played `width` in whole px, split where the ramp
+ * steps. The leading pixel is always solid, as the leading bar is.
+ */
+export function rampBands(width: number): readonly RampBand[] {
+  const lead = Math.max(0, width - 1);
+
+  const edges = [
+    0,
+    ...RAMP_STEPS.map((t) => Math.min(lead, Math.round(t * width))),
+    width,
+  ];
+
+  return DENSITIES.flatMap((density, band) => {
+    const x = edges[band];
+    const end = edges[band + 1];
+
+    return end > x ? [{ x, width: end - x, density }] : [];
   });
 }

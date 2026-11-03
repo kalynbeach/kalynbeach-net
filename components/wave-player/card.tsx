@@ -1,13 +1,17 @@
 "use client";
 
 /*
- * The card: a Kevelle Card, 340 wide and at least 550 tall, as in the Paper
- * frame. The title wraps rather than truncates, and the card grows with it.
+ * The card, on a Kevelle Card. It fills its container up to 340 wide, as in
+ * the Paper frame, and shrinks below that without overflowing. Its rows are
+ * the title, the status and duration, the screen, the byline, the tag, the
+ * bar-waveform seek bar, and the transport. Titles wrap rather than
+ * truncate, and the card grows with them.
  */
 
 import type { ReactNode } from "react";
 import { cn } from "cn";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardAction,
@@ -30,6 +34,7 @@ export function CardView({
   screen,
   className,
 }: ViewInput & {
+  /** What the screen box shows, such as a live frame's dock. Absent: the current look's still figure. */
   readonly screen?: ReactNode;
   /** Layout classes only. */
   readonly className?: string;
@@ -46,15 +51,15 @@ export function CardView({
       state={state}
       onCommand={onCommand}
       className={cn(
-        "flex w-85 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "flex w-full max-w-85 outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className
       )}
     >
-      <Card className="min-h-137.5 w-full">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>{current?.track.title ?? "No tracks"}</CardTitle>
           <CardAction>
-            <div className="flex h-5 items-center gap-2">
+            <div className="flex min-h-5 items-center gap-2">
               <StatusBadge state={state} />
               <span className="type-pixel text-muted-foreground tabular-nums">
                 {formatClock(
@@ -68,29 +73,32 @@ export function CardView({
           <div className="flex flex-col gap-3">
             <Screen
               size="card"
+              still={state.look.still}
               overlay={
                 <ScreenOverlay state={state} onCommand={onCommand} fit="full" />
               }
             >
               {screen}
             </Screen>
-            <div className="flex min-h-5 items-start justify-between gap-2">
-              <p className="type-caption text-muted-foreground">{byline}</p>
-              <span className="type-pixel text-muted-foreground shrink-0 tabular-nums">
-                {current
-                  ? formatOrdinal(current.index, state.tracks.length)
-                  : null}
-              </span>
+            <div className="flex flex-col gap-1">
+              <div className="flex min-h-5 items-start justify-between gap-2">
+                <p className="type-caption text-muted-foreground min-w-0">
+                  {byline}
+                </p>
+                <span className="type-pixel text-muted-foreground shrink-0 tabular-nums">
+                  {current
+                    ? formatOrdinal(current.index, state.tracks.length)
+                    : null}
+                </span>
+              </div>
+              {current?.track.tag ? (
+                <Badge variant="outline">{current.track.tag}</Badge>
+              ) : null}
             </div>
-            <SeekBar
-              state={state}
-              playhead={playhead}
-              onCommand={onCommand}
-              size="card"
-            />
+            <SeekBar state={state} playhead={playhead} onCommand={onCommand} />
           </div>
         </CardContent>
-        <CardContent className="mt-auto">
+        <CardContent>
           <Transport state={state} onCommand={onCommand} size="card" />
         </CardContent>
       </Card>

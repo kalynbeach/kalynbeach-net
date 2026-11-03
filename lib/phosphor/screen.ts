@@ -89,6 +89,8 @@ export function createPhosphorScreen(
   let lastNow: number | null = null;
   let needsComposite = false;
   let losses: readonly number[] = [];
+  /** True while a trace change waits for the canvas to rejoin the document. */
+  let tracesStale = false;
   let retry: ReturnType<typeof setTimeout> | undefined;
   let resolutionQuery: MediaQueryList | null = null;
   const listeners = new Set<() => void>();
@@ -120,9 +122,26 @@ export function createPhosphorScreen(
     }
   };
 
+  /**
+   * Reads the trace colors from the canvas's CSS custom properties into the
+   * renderer. A canvas out of the document, such as a player screen parked
+   * between frames, has no computed style and would read every token empty,
+   * so the read waits for it to return: its box gets a size, and sync() runs.
+   */
+  const applyTraces = (renderer: Renderer) => {
+    tracesStale = !canvas.isConnected;
+
+    if (tracesStale) return;
+    renderer.setTraces(
+      resolveTraces(canvas, look.traces, SCREEN_PRESETS[look.screen])
+    );
+  };
+
   /** Reconciles the frame callback and the status with the current state. Safe to call any time. */
   const sync = () => {
     if (phase.kind === "destroyed") return;
+
+    if (tracesStale && phase.kind === "ready") applyTraces(phase.renderer);
     const pause = pauseReason(hidden, deviceSize, intersecting);
     const run = phase.kind === "ready" && pause === null;
 
@@ -228,9 +247,7 @@ export function createPhosphorScreen(
 
   const adopt = (renderer: Renderer, acquire: AcquireRenderer) => {
     phase = { kind: "ready", renderer, acquire };
-    renderer.setTraces(
-      resolveTraces(canvas, look.traces, SCREEN_PRESETS[look.screen])
-    );
+    applyTraces(renderer);
     hdr = renderer.setOutput(output());
     renderer.clear(historyLevel());
     needsComposite = true;
@@ -404,11 +421,8 @@ export function createPhosphorScreen(
           look.screen !== previous.screen ||
           look.ground !== previous.ground ||
           !sameTraces(look.traces, previous.traces)
-        ) {
-          phase.renderer.setTraces(
-            resolveTraces(canvas, look.traces, SCREEN_PRESETS[look.screen])
-          );
-        }
+        )
+          applyTraces(phase.renderer);
 
         if (look.hdr !== previous.hdr || look.ground !== previous.ground)
           hdr = phase.renderer.setOutput(output());

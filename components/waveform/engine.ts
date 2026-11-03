@@ -14,15 +14,22 @@ import {
   type Producer,
   type ScreenStatus,
 } from "@/lib/phosphor";
-import { createScopeProducer, type ScopeProducer } from "@/lib/scope";
+import {
+  createScopeProducer,
+  type DisplaySettings,
+  type ScopeProducer,
+} from "@/lib/scope";
 
+import { drawnAt, type Play } from "./keys";
 import {
   MOVE_MS,
   QUIET,
   STILL_MS,
+  STILL_QUIET_MS,
   copiesOf,
   createPose,
   createRecorder,
+  drawsOwnTones,
   easeForm,
   figureFor,
   figureSide,
@@ -46,7 +53,12 @@ import {
   type Stillness,
   type Theme,
 } from "./figure";
-import type { Form, FormSettings, WaveformConfig } from "./settings";
+import {
+  yHzOf,
+  type Form,
+  type FormSettings,
+  type WaveformConfig,
+} from "./settings";
 
 /** What a Waveform asks of its form. */
 export type FormState = {
@@ -55,6 +67,8 @@ export type FormState = {
   readonly present: boolean;
   /** Forces the still. The engine also stills every form under prefers-reduced-motion. */
   readonly still: boolean;
+  /** Keyboard focus: the bloom lifts by LIT_BLOOM, eased over MOVE_MS, at once when still, and nothing settles again. Default false. */
+  readonly lit?: boolean;
 };
 
 /**
@@ -116,12 +130,21 @@ export type Roaming = {
 };
 
 export type WaveformEngine = {
-  /** Idempotent: an unchanged config or feed changes nothing. */
+  /**
+   * Idempotent: an unchanged config, feed, and play change nothing. A
+   * config change with a play is that play's commit and never restarts the
+   * tones. Any other config change restarts them by restartsTones, judged
+   * against what the last frame drew. The provider is the only caller that
+   * sets a play.
+   */
   set(next: {
     readonly config: WaveformConfig;
     readonly audio: SampleFeed | null;
+    readonly play: Play | null;
   }): void;
   strike(): void;
+  /** A press's touch: the punch rises to at least `punch`, 0 to 0.9, as a strike raises it to 0.9. */
+  touch(punch: number): void;
   /** Draws a form on `canvas` until destroy(). The glow and the mark draw this way. */
   attach(canvas: HTMLCanvasElement, state: FormState): AttachedForm;
   /**
@@ -146,7 +169,14 @@ type Moment = {
   readonly envelope: Envelope;
   /** What live forms of the shared figure draw: the audio while it carries signal under source "audio", the tones otherwise. */
   readonly feed: SampleFeed;
+  /** The config live forms of the shared figure draw: the play's, or the config. */
+  readonly drawn: WaveformConfig;
+  /** The shared figure's spin so far, in turns. */
+  readonly turns: number;
 };
+
+/** Keyboard focus lifts a form's bloom by this, so the figure itself shows it. */
+const LIT_BLOOM = 0.6;
 
 /** The level reads at most this many recent frames per animation frame. */
 const LEVEL_FRAMES = 4096;
@@ -176,8 +206,36 @@ type FormRuntime = {
   struck(): void;
 };
 
+/** Whether two figures draw Y at one ratio to X, past rounding. */
+const sameRatio = (a: WaveformConfig, b: WaveformConfig) =>
+  Math.abs(yHzOf(a.tones) / a.tones.x.hz - yHzOf(b.tones) / b.tones.x.hz) <
+  1e-9;
+
 const singleSweep = (config: WaveformConfig) =>
   config.display.mode === "yt" && config.display.yt.trigger.mode === "single";
+
+/**
+ * The share of a form's side that keeps every copy of its figure inside its
+ * square. The scope's figure fills the square edge to edge, and a unit
+ * square turned by θ reaches |cos θ| + |sin θ| along either axis, so the
+ * side shrinks by the widest reach among the copies, each 1 / symmetry of a
+ * turn past `turns`. Mirrored twins reach as far as their copies. An
+ * unturned figure keeps its size.
+ */
+function fitOf(turns: number, symmetry: number): number {
+  let reach = 1;
+
+  for (let copy = 0; copy < symmetry; copy += 1) {
+    const angle = 2 * Math.PI * (turns + copy / symmetry);
+
+    reach = Math.max(
+      reach,
+      Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle))
+    );
+  }
+
+  return 1 / reach;
+}
 
 /**
  * Whether a change starts the oscillators again: anything in the tones but a
@@ -213,11 +271,19 @@ export function createWaveform(init: {
 }): WaveformEngine {
   let config = init.config;
   let audio = init.audio;
+  let play: Play | null = null;
   let theme: Theme = "dark";
   let reducedMotion = false;
   let envelope = QUIET;
   let moment: Moment | null = null;
   let lastNow: number | null = null;
+  /** The shared figure's spin and its wander's cycles so far. */
+  let turns = 0;
+  let wandered = 0;
+  /** The cut the preview last made, so each play's cut happens once. */
+  let cut: number | null = null;
+  /** Set when a config from outside starts the tones again, until the next frame. */
+  let restarted = false;
   let tones = toneSourceAt(config, 0);
   const startTones = () => createPreviewFeed(() => tones);
   let preview = startTones();
@@ -290,17 +356,40 @@ export function createWaveform(init: {
   function momentAt(now: number): Moment {
     if (moment?.now === now) return moment;
 
+    const cutAt = play?.cutAt ?? null;
+    const cutting = cutAt !== null && now >= cutAt && cut !== cutAt;
+
+    const anchored = lastNow === null || restarted || cutting;
     const dt = lastNow === null ? 0 : Math.max(0, (now - lastNow) / 1000);
     lastNow = now;
-    tones = toneSourceAt(config, now / 1000);
+    restarted = false;
+
+    const drawn = play ? drawnAt(play, now) : config;
+    const { spin, wanderRate } = drawn.motion;
+
+    // The first frame, and each frame the tones start together again, start
+    // where the page's clock stands, as an absolute clock would draw. So a
+    // constant rate draws what it always has, and a figure that comes home
+    // after a spin lands on its own turn.
+    turns = anchored ? (spin * now) / 1000 : turns + spin * dt;
+    wandered = anchored
+      ? (wanderRate * now) / 1000
+      : wandered + wanderRate * dt;
+    tones = toneSourceAt(drawn, wandered / wanderRate);
+
+    if (cutting) {
+      cut = cutAt;
+      preview = startTones();
+    }
+
     envelope = stepEnvelope(envelope, audioLevel(now), dt);
 
     const live =
-      config.source === "audio" && audio && now - signalAt < SIGNAL_HOLD_MS
+      drawn.source === "audio" && audio && now - signalAt < SIGNAL_HOLD_MS
         ? audio
         : null;
 
-    moment = { now, envelope, feed: live ?? preview };
+    moment = { now, envelope, feed: live ?? preview, drawn, turns };
 
     return moment;
   }
@@ -320,20 +409,29 @@ export function createWaveform(init: {
     let interrupted = false;
     const pose = createPose();
     const recorder = createRecorder();
-    /** The config this form draws: the engine's, or its own figure's. */
+    /** The config this form follows: the engine's while still, what the play draws while live. */
+    let source = config;
+    /** The config this form draws: its source, or its own figure of it. */
     let drawn = config;
     let ownTones = tones;
     /** The preview of the form's own figure, or null while it draws the shared one. */
     let own: SampleFeed | null = null;
+    /** The focus lift, 0 to 1. */
+    let lift = 0;
+    /** Set by a config change, until the form's next frame stamps it in `stirredAt`. */
+    let stirred = false;
+    /** The first frame after the latest config a still form hasn't followed yet, or null once it follows the config. */
+    let stirredAt: number | null = null;
 
-    /** Follows the config and the form to the figure this form draws. */
+    /** Follows the source and the form to the figure this form draws. */
     function redraw() {
-      const next = figureFor(config, state.form);
+      const next = figureFor(source, state.form);
 
       // A new ratio starts both oscillators together again, as the engine's
-      // own preview does.
-      if (config.forms[state.form].figure === "shared") own = null;
-      else if (!own || next.tones.ratio !== drawn.tones.ratio)
+      // own preview does, so an X sweep keeps the phase and a new fraction
+      // closes.
+      if (!drawsOwnTones(source, state.form)) own = null;
+      else if (!own || !sameRatio(next, drawn))
         own = createPreviewFeed(() => ownTones);
 
       drawn = next;
@@ -342,8 +440,41 @@ export function createWaveform(init: {
 
     redraw();
 
-    // The mark is the static figure: always still.
-    const isStill = () => state.still || reducedMotion || state.form === "mark";
+    /** The waves and phases the producer last read, and the display it read them through. */
+    let table = drawn.tones;
+    let display = drawn.display;
+    let shownDisplay = display;
+
+    /**
+     * The display the producer reads. A new wave or phase between frames
+     * hands XY a new xy object, which drops its join to the last frame's
+     * final point, so a phase sweep never draws a chord across the figure.
+     * YT keeps its object, so its sweep carries on.
+     */
+    function displayNow(): DisplaySettings {
+      if (drawn.display !== display) {
+        display = drawn.display;
+        shownDisplay = display;
+      }
+
+      const { x, y } = drawn.tones;
+
+      if (
+        x.wave !== table.x.wave ||
+        x.phase !== table.x.phase ||
+        y.wave !== table.y.wave ||
+        y.phase !== table.y.phase
+      ) {
+        table = drawn.tones;
+
+        if (display.mode === "xy")
+          shownDisplay = { ...display, xy: { ...display.xy } };
+      }
+
+      return shownDisplay;
+    }
+
+    const isStill = () => state.still || reducedMotion;
 
     /** Framed by the anchor in CSS pixels, or by the canvas's backing size without one. */
     function framingNow(width: number, height: number) {
@@ -370,7 +501,7 @@ export function createWaveform(init: {
     const fresh = (): ScopeProducer =>
       createScopeProducer({
         getFeed: feedNow,
-        settings: () => drawn.display,
+        settings: displayNow,
         frozen: () => false,
         onSingleDone: () => {},
         budget: () => Math.floor(MAX_POINTS / copiesOf(drawn)) - JOIN_POINTS,
@@ -399,12 +530,14 @@ export function createWaveform(init: {
       if (isStill()) stillness = { kind: "settling", start: null };
     };
 
-    /** The form's look, and the bloom the punch adds to it now. */
+    /** The form's look, and the bloom the punch and the focus add to it now. */
     let look = lookFor(config, state.form, theme);
     let flare = 0;
 
+    // The mark never flares: at 20 px, bloom fills its figure's gaps. The
+    // punch still swells it.
     const flared = (): PhosphorLook =>
-      flare > 0
+      flare > 0 && state.form !== "mark"
         ? {
             ...look,
             bloom: Math.min(LOOK_LIMITS.bloom.max, look.bloom + flare),
@@ -412,17 +545,30 @@ export function createWaveform(init: {
         : look;
 
     const restyle = () => {
-      look = lookFor(config, state.form, theme);
+      look = lookFor(source, state.form, theme);
       surface.setLook(flared());
     };
 
-    const runtime: FormRuntime = {
-      configured() {
-        redraw();
-        restyle();
-        resettle();
+    function follow(next: WaveformConfig) {
+      if (next === source) return;
+      source = next;
+      redraw();
+      restyle();
+    }
 
-        if (singleSweep(drawn) && !isStill()) producer = fresh();
+    const runtime: FormRuntime = {
+      // A live form follows what the shared figure draws on its next frame. A
+      // still form waits for the configs to stop, in produce. A config with a
+      // play is the play's own commit, which comes every frame while the
+      // play moves, so only a config from outside re-arms a single sweep: a
+      // fresh producer each frame would never draw one.
+      configured() {
+        stirred = true;
+
+        if (play || isStill()) return;
+        follow(config);
+
+        if (singleSweep(drawn)) producer = fresh();
       },
       // A held still keeps its history, drawn in the old theme's color, so
       // it draws its second again.
@@ -441,6 +587,24 @@ export function createWaveform(init: {
       const { now } = frame;
       const shared = momentAt(now);
       const still = isStill();
+
+      if (stirred) stirredAt = now;
+      stirred = false;
+
+      // A still form keeps what it holds while configs keep coming, from a
+      // drag, a held key, or the play of another provider, and settles once
+      // on the last after STILL_QUIET_MS without one, so a gesture never
+      // blanks it.
+      if (!still) {
+        follow(shared.drawn);
+        stirredAt = null;
+      } else if (stirredAt === null) follow(config);
+      else if (now - stirredAt >= STILL_QUIET_MS) {
+        follow(config);
+        resettle();
+        stirredAt = null;
+      }
+
       const toggled = togglePresence(presence, state.present, now);
 
       if (toggled !== presence && toggled.kind === "arriving") {
@@ -448,7 +612,7 @@ export function createWaveform(init: {
         else producer = fresh();
       }
 
-      // The static mark shows its figure as soon as it draws, so a view
+      // The mark shows its figure as soon as it draws, so a view
       // transition into it lands on the mark and not an empty box.
       presence =
         state.form === "mark" && toggled.kind === "arriving"
@@ -498,7 +662,7 @@ export function createWaveform(init: {
       // still partway through a move, so its settling second draws that pose.
       if (still) move = null;
 
-      const target = config.forms[state.form];
+      const target = source.forms[state.form];
       const t = move ? (now - move.since) / MOVE_MS : 1;
 
       shown = move ? easeForm(move.from, target, t) : target;
@@ -516,8 +680,18 @@ export function createWaveform(init: {
 
       surface.paint(opacity, shown.depth);
 
+      const lit = state.lit ? 1 : 0;
+      const stride = (frame.dt * 1000) / MOVE_MS;
+
+      lift = still
+        ? lit
+        : lift < lit
+          ? Math.min(lit, lift + stride)
+          : Math.max(lit, lift - stride);
+
+      const lifted = LIT_BLOOM * lift * lift * (3 - 2 * lift);
       const reaction = reactionOf(reactivity, shared.envelope.punch);
-      const bloom = Math.round(reaction.bloom * 100) / 100;
+      const bloom = Math.round((reaction.bloom + lifted) * 100) / 100;
 
       if (bloom !== flare) {
         flare = bloom;
@@ -530,11 +704,17 @@ export function createWaveform(init: {
 
       const { motion } = drawn;
 
+      // A still form holds the turn its second ends on. A live one turns by
+      // the shared spin, its own figure included.
+      const turn =
+        motion.rotation +
+        (still ? (motion.spin * STILL_MS) / 1000 : shared.turns);
+
       poseInto(
         pose,
         framing,
-        figureSide(state.form, framing, scale),
-        motion.rotation + (motion.spin * (still ? STILL_MS : now)) / 1000,
+        figureSide(state.form, framing, scale) * fitOf(turn, motion.symmetry),
+        turn,
         motion.symmetry,
         motion.mirror
       );
@@ -705,7 +885,7 @@ export function createWaveform(init: {
   /**
    * The one place view-transition-names change. The live roaming canvas
    * carries the engine's name while a slot holds it. Otherwise the newest
-   * mark borrows it, so leaving the live figure for the static mark morphs
+   * mark borrows it, so leaving the live figure for the mark morphs
    * one into the other. Each glow carries the name with "-glow". Under
    * reduced motion nothing carries a name, so nothing of the waveform pairs
    * or animates. Names come off before any goes on. A name another canvas
@@ -796,20 +976,37 @@ export function createWaveform(init: {
     set(next) {
       audio = next.audio;
 
-      if (next.config === config) return;
+      if (next.config === config && next.play === play) return;
 
-      // A new ratio, wave, detune, phase, drift, or wander starts both
-      // oscillators together again, as the Oscilloscope replays its tones, so
-      // a closed figure draws its own shape and not the phase the last figure
-      // left. A frequency retunes in place. The forms' producers see a new feed and resync by
-      // themselves.
-      if (restartsTones(config, next.config)) preview = startTones();
+      const changed = next.config !== config;
+
+      // A config from outside with a new ratio, wave, detune, phase, drift,
+      // or wander starts both oscillators together again, as the
+      // Oscilloscope replays its tones, so a closed figure draws its own
+      // shape and not the phase the last figure left. A frequency retunes in
+      // place. The forms' producers see a new feed and resync by themselves.
+      // The play's own commits never restart: the figure already shows them.
+      if (
+        changed &&
+        !next.play &&
+        restartsTones(moment?.drawn ?? config, next.config)
+      ) {
+        preview = startTones();
+        restarted = true;
+      }
+
       config = next.config;
+      play = next.play;
 
-      for (const form of forms) form.configured();
+      if (changed) for (const form of forms) form.configured();
     },
     strike() {
       envelope = strike(envelope);
+
+      for (const form of forms) form.struck();
+    },
+    touch(punch) {
+      envelope = { punch: Math.max(envelope.punch, punch) };
 
       for (const form of forms) form.struck();
     },
@@ -833,6 +1030,9 @@ export function createWaveform(init: {
         set: mounted.set,
         destroy() {
           shown.stop();
+          // React runs this layout cleanup before it removes the canvas, so
+          // rename() would still find the name on it and skip the next holder.
+          canvas.style.removeProperty("view-transition-name");
           own.splice(own.indexOf(canvas), 1);
           rename();
         },

@@ -23,6 +23,9 @@ export const HDR_HEADROOM = 2;
  */
 export const BEAM_ENERGY = 1;
 
+/** The narrowest sigma a look's referenceSize fits to, in backing pixels. The gaussian quad needs some width to rasterize. */
+const MIN_FIT_SIGMA = 0.5;
+
 /** f32 slots in the Screen uniform block: 8 vec4f. */
 export const SCREEN_UNIFORM_FLOATS = 32;
 
@@ -190,6 +193,16 @@ export type FrameExposure = {
  * beam deposits exactly what the predecessor did at 60 Hz. The parity
  * harness overrides lineExposure only, so its uniforms cannot drift from
  * the screen's.
+ *
+ * look.referenceSize fits the light to a canvas whose shorter side is
+ * smaller. The bloom's spread and the sigma narrow by the ratio. The
+ * gaussian beam's energy falls with its square, because the figure's length
+ * and the beam's width both shrink by the ratio. The line beam's exposure
+ * falls by the ratio: its one pixel can't narrow, and a strand moves the
+ * ratio as many pixels a second, so each pixel it lights would otherwise
+ * hold it that much longer and a drifting figure's trail would saturate.
+ * Each lit pixel then keeps the deposit it gets at the tuned size. A fit of
+ * 1 leaves every value as it is.
  */
 export function frameUniforms(
   look: PhosphorLook,
@@ -206,24 +219,34 @@ export function frameUniforms(
     frame.dt
   );
 
+  const shorter = Math.max(1, Math.min(frame.width, frame.height));
+
+  const fit =
+    look.referenceSize === undefined
+      ? 1
+      : Math.min(1, shorter / look.referenceSize);
+
+  const sigma = look.focus * frame.devicePixelRatio;
+
   return {
-    classic,
+    classic: { ...classic, glowSpread: classic.glowSpread * fit },
     fade: channelFade(classic.retained60, frame.dt, preset.decay),
     toneK: preset.toneK,
     headroom: HDR_HEADROOM,
     tint: preset.tint,
     core: preset.core,
     floor: preset.floor,
-    sigma: look.focus * frame.devicePixelRatio,
-    beamPower: beamPower(
-      look.persistence,
-      look.intensity,
-      frame.devicePixelRatio
-    ),
+    // A sigma the look already sets below the floor stays as it is.
+    sigma: Math.max(Math.min(MIN_FIT_SIGMA, sigma), sigma * fit),
+    beamPower:
+      beamPower(look.persistence, look.intensity, frame.devicePixelRatio) *
+      fit *
+      fit,
     width: frame.width,
     height: frame.height,
     rates: ageRates(classic.retained60, preset.decay),
-    lineExposure: lineExposure(look.persistence, frame.meanDt) * look.intensity,
+    lineExposure:
+      lineExposure(look.persistence, frame.meanDt) * look.intensity * fit,
   };
 }
 

@@ -1,10 +1,11 @@
-import { toHz, type ToneSource } from "@/lib/audio";
+import { toHz, type ToneSource, type Wave } from "@/lib/audio";
 import {
   LOOK_LIMITS,
   MAX_POINTS,
   MAX_STRIPS,
   type FrameWriter,
   type PhosphorLook,
+  type TraceColor,
   type TraceIndex,
 } from "@/lib/phosphor";
 
@@ -18,18 +19,86 @@ import {
 /** What the page sits on, from the theme. */
 export type Theme = "dark" | "light";
 
+/** How fast a figure of its own drifts Y, in Hz: through its whole family about every 20 s. */
+export const OWN_DRIFT = 0.05;
+
+/** A figure of its own keeps a short trail, so its drift draws one shape at a time and never smears into a solid square at 20 px. */
+const OWN_PERSISTENCE = 32;
+
+/** The most copies the mark draws, so its copies' crossings stay apart at 20 px. */
+const MARK_COPIES = 3;
+
+/** The most cycles either axis of the mark's figure draws: about as many lobes as a 20 px box holds apart. */
+const MARK_CYCLES = 5;
+
+/** The fastest the mark's folded precession moves Y, in Hz. */
+export const MARK_DRIFT = 0.1;
+
+/**
+ * The page's figure at the mark's scale. Y over X becomes the nearest
+ * fraction whose terms are at most MARK_CYCLES, in tune, so Golden's 1:φ
+ * draws 3:5. What the page's figure turns by beyond that, its leftover
+ * ratio, detune, and drift, folds into one drift of Y clamped to
+ * MARK_DRIFT, so a closed figure stays still and a golden or free one
+ * precesses slowly. The wander goes, and the copies stop at MARK_COPIES,
+ * a mirrored figure in one pair. It keeps X's frequency, both waves and
+ * phases, the turns, the display, and the look.
+ */
+function markFigure(config: WaveformConfig): WaveformConfig {
+  const { tones, motion } = config;
+  const x = tones.x.hz;
+  const heard = x * 2 ** (tones.x.detuneCents / 1200);
+
+  const ratio =
+    (yHzOf(tones) * 2 ** (tones.y.detuneCents / 1200) + motion.drift) / heard;
+
+  const [xCycles, yCycles] = nearestFraction(ratio, MARK_CYCLES);
+  const y = (x * yCycles) / xCycles;
+  const leftover = ratio * x - y;
+
+  return {
+    ...config,
+    tones: {
+      ...tones,
+      x: { ...tones.x, detuneCents: 0 },
+      y: { ...tones.y, detuneCents: 0 },
+      ratio: "free",
+      yHz: y,
+    },
+    motion: {
+      ...motion,
+      drift: Math.min(MARK_DRIFT, Math.max(-MARK_DRIFT, leftover)),
+      wander: 0,
+      symmetry:
+        copiesOf(config) <= MARK_COPIES
+          ? motion.symmetry
+          : motion.mirror
+            ? 1
+            : MARK_COPIES,
+    },
+  };
+}
+
+/** Whether a form draws tones of its own rather than the shared feed: a ratio of its own, or the mark's reduced figure. */
+export function drawsOwnTones(config: WaveformConfig, form: Form): boolean {
+  return form === "mark" || config.forms[form].figure !== "shared";
+}
+
 /**
  * The config a form draws. A form whose figure is "shared" draws the config
- * itself. A form with its own ratio draws a simplified version of it, a
- * closed figure that holds still:
+ * itself, and the mark draws markFigure() of it. A form with its own ratio
+ * draws a simplified version of it, a figure that stays legible at 20 px
+ * and still moves:
  *
  * - X's frequency, both waves, and both phases, with Y locked to the ratio.
  * - No detune. A few cents turns a closed figure through its whole family
  *   every second or two, and at 20 px the trail smears that into a solid
  *   square.
- * - The tones even under source "audio", in XY, with no drift, wander,
- *   rotation, spin, symmetry, or mirror.
- * - The longest trail, no bloom, and intensity 1. The bloom spreads in
+ * - The tones even under source "audio", in XY, in one copy, with no
+ *   wander or mirror. It keeps the config's rotation and spin, so it turns
+ *   with the page's figure, and drifts Y by OWN_DRIFT, so it never stands
+ *   still.
+ * - A short trail, no bloom, and intensity 1. The bloom spreads in
  *   backing pixels, about 2.5 of them at Golden's 0.9, and the presets'
  *   intensity 2 widens the lit core, so either fills the gaps of a figure
  *   40 backing pixels across, the mark's at a device pixel ratio of 2.
@@ -41,7 +110,7 @@ export type Theme = "dark" | "light";
 export function figureFor(config: WaveformConfig, form: Form): WaveformConfig {
   const { figure } = config.forms[form];
 
-  if (figure === "shared") return config;
+  if (figure === "shared") return form === "mark" ? markFigure(config) : config;
 
   const { tones } = config;
 
@@ -56,10 +125,8 @@ export function figureFor(config: WaveformConfig, form: Form): WaveformConfig {
     },
     motion: {
       ...config.motion,
-      drift: 0,
+      drift: OWN_DRIFT,
       wander: 0,
-      rotation: 0,
-      spin: 0,
       symmetry: 1,
       mirror: false,
     },
@@ -67,7 +134,7 @@ export function figureFor(config: WaveformConfig, form: Form): WaveformConfig {
     display: { ...config.display, mode: "xy" },
     look: {
       ...config.look,
-      persistence: LOOK_LIMITS.persistence.max,
+      persistence: OWN_PERSISTENCE,
       bloom: LOOK_LIMITS.bloom.min,
       intensity: 1,
     },
@@ -421,6 +488,13 @@ export const DEPART_MS = 2600;
 export const STILL_MS = 1000;
 
 /**
+ * A still form follows a config once it has held this long: past the gap
+ * between configs a drag or a held key sends each frame, and short of the
+ * delay a single click feels.
+ */
+export const STILL_QUIET_MS = 150;
+
+/**
  * Form changes ease strength, depth, and size over this long: Kevelle's
  * large duration, about as long as the view transition that moves the
  * roaming canvas between slots, so the figure settles as the morph lands.
@@ -559,6 +633,33 @@ function shortestTrail(copies: number): number {
   return LOOK_LIMITS.persistence.min + 8 * Math.max(0, copies - 4);
 }
 
+/** The widest spot the mark draws, in backing pixels, so a gaussian beam leaves gaps a few pixels wide. */
+const MARK_FOCUS = 0.5;
+
+/**
+ * The mark's light: the light of the page's figure, simplified for a box 20
+ * px across, which keeps the geometry and drops what fills the gaps. The
+ * trail is at most OWN_PERSISTENCE, never under the copies' flash floor.
+ * No bloom, since it spreads about 2.5 backing pixels at Golden's 0.9.
+ * Intensity at most 1, divided by the square root of the copies, since
+ * their light adds where they cross. A narrower gaussian spot.
+ */
+function markLight(look: PhosphorLook, copies: number): PhosphorLook {
+  return {
+    ...look,
+    persistence: Math.max(
+      Math.min(look.persistence, OWN_PERSISTENCE),
+      shortestTrail(copies)
+    ),
+    bloom: LOOK_LIMITS.bloom.min,
+    intensity: Math.max(
+      LOOK_LIMITS.intensity.min,
+      Math.min(look.intensity, 1) / Math.sqrt(copies)
+    ),
+    focus: Math.min(look.focus, MARK_FOCUS),
+  };
+}
+
 /** The glow draws at half resolution: it is large and blurred, so the backing store costs a quarter. */
 const RESOLUTION = {
   stage: 1,
@@ -568,12 +669,27 @@ const RESOLUTION = {
 } as const satisfies { readonly [F in Form]: number };
 
 /**
+ * The shorter side, in backing pixels, the screen form's light is tuned at:
+ * the player card's 308 px screen at a device pixel ratio of 2, where the
+ * player's looks are judged.
+ */
+const SCREEN_REFERENCE = 616;
+
+/**
  * The phosphor look one form draws with, from the figure it draws: the
- * config's look, with the longest trail and no bloom for a figure of its
- * own. The canvas is transparent over either theme. "auto" color is astral
+ * config's look, with a short trail and no bloom for a figure of its own,
+ * and markLight() on the mark. The canvas is transparent over either
+ * theme. "auto" color is astral
  * on a light page. On a dark one it is the screen's own green on P31 and
  * the phosphor token on any other screen, since a pick of either color
  * moves the screen to Neutral, whose own emission is white.
+ *
+ * The screen form is a player's lit screen, so it draws for a dark ground
+ * whatever the page's theme is. Its host must be a dark box in both themes,
+ * as kevelle/wave-player's Screen is. Its light is tuned at
+ * SCREEN_REFERENCE, so a smaller screen, such as the bar's 36 px one,
+ * narrows its bloom and beam and draws the same figure, not a pale tile. The
+ * other forms keep their light's pixel sizes.
  */
 export function lookFor(
   config: WaveformConfig,
@@ -582,25 +698,97 @@ export function lookFor(
 ): PhosphorLook {
   const drawn = figureFor(config, form);
   const { look } = drawn;
+  const ground: Theme = form === "screen" ? "dark" : theme;
 
   const auto =
-    theme === "light"
+    ground === "light"
       ? "astral"
       : look.screen === "p31"
         ? "screen"
         : "phosphor";
 
-  return {
+  const copies = copiesOf(drawn);
+
+  const light: PhosphorLook = {
     screen: look.screen,
     beam: look.beam,
-    persistence: Math.max(look.persistence, shortestTrail(copiesOf(drawn))),
+    persistence: Math.max(look.persistence, shortestTrail(copies)),
     bloom: look.bloom,
     background: 0,
     focus: look.focus,
     intensity: look.intensity,
     traces: [look.color === "auto" ? auto : look.color, look.color2],
     hdr: look.hdr,
-    ground: theme,
+    ground,
     resolution: RESOLUTION[form],
+    ...(form === "screen" && { referenceSize: SCREEN_REFERENCE }),
   };
+
+  return form === "mark" ? markLight(light, copies) : light;
+}
+
+/** One axis of a still figure: wave(2π · cycles · t + phase) for t over one period. */
+export type StillAxis = {
+  readonly wave: Wave;
+  /** Whole cycles over the period, 1 to STILL_MAX_CYCLES. */
+  readonly cycles: number;
+  /** Radians, as the oscillator's phase. */
+  readonly phase: number;
+};
+
+/**
+ * The screen form's figure as plain data, for an SVG that stands in for the
+ * live canvas: one closed figure in one trace color. kevelle/wave-player's
+ * WavePlayerStill has the same fields, so app code can pass one as the
+ * other.
+ */
+export type StillFigure = {
+  readonly x: StillAxis;
+  readonly y: StillAxis;
+  readonly color: TraceColor;
+};
+
+/** The most cycles either axis of a still draws, so the figure stays legible in a player's box. */
+export const STILL_MAX_CYCLES = 16;
+
+/**
+ * The closed figure the screen form draws, held still: figureFor()'s
+ * figure for the screen, with Y over X as the nearest fraction whose terms
+ * are both at most STILL_MAX_CYCLES, and the color the screen draws in its
+ * dark box. A harmonic ratio is exact. A golden ratio or a free Y becomes
+ * the nearest closed figure, so 1:φ draws 8:13. Detune, motion, symmetry,
+ * YT mode, bloom, and trail stay out, as they do for a form's own ratio.
+ * Pure and server-safe, so a site can compute it beside the config it
+ * stores.
+ */
+export function stillFigure(config: WaveformConfig): StillFigure {
+  const { tones } = figureFor(config, "screen");
+  const [xCycles, yCycles] = nearestFraction(yHzOf(tones) / tones.x.hz);
+
+  return {
+    x: { wave: tones.x.wave, cycles: xCycles, phase: tones.x.phase },
+    y: { wave: tones.y.wave, cycles: yCycles, phase: tones.y.phase },
+    color: lookFor(config, "screen", "dark").traces[0],
+  };
+}
+
+/** [x, y] cycles, each 1 to `most`, whose y / x is nearest `ratio`. Ties keep the smaller terms. */
+function nearestFraction(
+  ratio: number,
+  most = STILL_MAX_CYCLES
+): readonly [number, number] {
+  let best: readonly [number, number] = [1, 1];
+  let error = Number.POSITIVE_INFINITY;
+
+  for (let x = 1; x <= most; x += 1) {
+    const y = Math.min(most, Math.max(1, Math.round(ratio * x)));
+    const off = Math.abs(y / x - ratio);
+
+    if (off < error) {
+      best = [x, y];
+      error = off;
+    }
+  }
+
+  return best;
 }
