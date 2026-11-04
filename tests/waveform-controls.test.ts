@@ -232,6 +232,12 @@ describe("the controls' states", () => {
     });
   });
 
+  test.fails("closed: a mapped key plays without opening the controls", () => {
+    expect(kind(run([pressM]))).toBe("rest");
+    const ghost = run([{ type: "pointer", to: "stage" }, { type: "dwell" }]);
+    expect(kind(run([pressM], ghost))).toBe("ghost");
+  });
+
   test("leaving Home closes everything", () => {
     for (const events of [
       [pressM],
