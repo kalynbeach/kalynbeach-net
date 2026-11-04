@@ -283,7 +283,6 @@ function Sections({ children }: { children: ReactNode }) {
           >
             {placement.frame === "mini" && (
               <RailPlayer
-                live={!placement.stage}
                 first={!miniShown}
                 onShown={() => setMiniShown(true)}
               />
@@ -311,10 +310,7 @@ function Sections({ children }: { children: ReactNode }) {
           // Sticky and last in the column: it rests on the window's bottom
           // edge and takes its own height at the end of the page, so nothing
           // ends up under it however its title wraps.
-          <WavePlayerBar
-            live={!placement.stage}
-            className="bottom-safe-bottom mx-edge mb-safe-bottom desktop:hidden sticky w-auto"
-          />
+          <WavePlayerBar className="bottom-safe-bottom mx-edge mb-safe-bottom desktop:hidden sticky w-auto" />
         )}
       </div>
       <CommandMenu />
@@ -331,11 +327,9 @@ function Sections({ children }: { children: ReactNode }) {
  * this fade shows only where no transition runs, as under reduced motion.
  */
 function RailPlayer({
-  live,
   first,
   onShown,
 }: {
-  live: boolean;
   /** No mini player has appeared yet this visit. Read when it mounts. */
   first: boolean;
   onShown: () => void;
@@ -357,7 +351,7 @@ function RailPlayer({
 
   return (
     <div ref={box} data-slot="rail-player">
-      <WavePlayerMini live={live} expand={<Link href="/music" />} />
+      <WavePlayerMini expand={<Link href="/music" />} />
     </div>
   );
 }
