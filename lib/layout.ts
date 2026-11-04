@@ -19,14 +19,16 @@ export type Frame = "card" | "mini" | "bar";
  * each, so a page can't show two frames.
  *
  * The site's waveform lives on the stage and in the mark and never enters
- * a player view: the player draws its own waveform in its frames. The
- * union keeps the stage the page's one live figure. On Home a frame draws
- * the player's still (live={false}) and the card never shows. Elsewhere a
- * frame draws the player's live screen. The mark draws on every page but
- * Home, where the stage is the figure. It has a canvas of its own and takes
- * the waveform's view-transition name while no stage holds the live figure,
- * so leaving Home morphs the stage into the mark, and coming back morphs
- * the mark into the stage.
+ * a player view: the player draws its own waveform in its frames, the
+ * player's live screen, on every page, so the mini player and the bar look
+ * the same on Home as anywhere else. On Home that makes two live figures,
+ * the stage and the player's screen, and the union keeps the card off Home,
+ * so the stage never shares the page with the full player.
+ *
+ * The mark draws on every page but Home, where the stage is the figure. It
+ * has a canvas of its own and takes the waveform's view-transition name
+ * while no stage holds the live figure, so leaving Home morphs the stage
+ * into the mark, and coming back morphs the mark into the stage.
  */
 export type Placement =
   | {
