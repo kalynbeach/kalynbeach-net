@@ -31,14 +31,14 @@
   /*
    * Font roles. ui: titles, nav, labels, values, dates and code; all site
    * text that isn't the name, a heading or prose. text: the name, headings
-   * and body. readout: the player's time readouts, and nothing else. long:
-   * long-form writing. --font-mono and --font-label follow ui, so code and
-   * Kevelle's labels (type-label, such as the player's Library heading) set
-   * in TX-02.
+   * and body. long: long-form writing. --font-mono and --font-label follow
+   * ui, so code and Kevelle's labels (type-label, such as the player's
+   * Library heading) set in TX-02. The site sets no Departure Mono of its
+   * own; installed Kevelle parts, such as the player's time readouts, keep
+   * it.
    */
   --font-ui: "TX-02", "Paper Mono", ui-monospace, monospace;
   --font-text: var(--font-sans);
-  --font-readout: var(--font-pixel);
   --font-long: var(--font-serif);
   --font-mono: var(--font-ui);
   --font-label: var(--font-ui);
@@ -188,10 +188,9 @@
  * The type scale. Each role sets family, size, weight, line height and
  * tracking together, and steps down below 1200px where the phone needs it,
  * so call sites never repeat a breakpoint. Sizes are rem so the reader's
- * browser size applies; Departure Mono stays in px on its 11px grid. Line
- * heights are unitless, each the role's whole-pixel line over its size,
- * rounded up at four places. The role- prefix keeps them apart from
- * Kevelle's type- utilities.
+ * browser size applies. Line heights are unitless, each the role's
+ * whole-pixel line over its size, rounded up at four places. The role-
+ * prefix keeps them apart from Kevelle's type- utilities.
  *
  * Content system B, "Column" (V4's boards, Kalyn's pick), on Layout E's
  * scale, with the ink each role takes in dark:
@@ -213,11 +212,10 @@
  *                                                    captions, stat labels, dates,
  *                                                    years (500, ink 9), tags
  *   meta        ABC Areal 12/16                 7    small Areal text
- *   readout     Departure Mono 11/16                 the player's time readouts
  *
  * TX-02 sets all site text but the name, headings and prose; Departure Mono
- * only the player's time readouts (Kalyn, 2026-11-03). No text at 12px or
- * smaller uses an ink below ramp 7.
+ * only the player's time readouts, which installed Kevelle parts draw
+ * (Kalyn, 2026-11-03). No text at 12px or smaller uses an ink below ramp 7.
  */
 
 /*
@@ -350,16 +348,6 @@
   font-size: 0.75rem;
   font-weight: 400;
   line-height: 1.3334;
-  letter-spacing: 0;
-}
-
-/* The player's time readouts. Departure Mono renders crisply only at multiples of 11px. */
-@utility role-readout {
-  font-family: var(--font-readout);
-  font-size: 11px;
-  font-weight: 400;
-  font-synthesis-weight: none;
-  line-height: 1.4546;
   letter-spacing: 0;
 }
 

@@ -182,7 +182,7 @@ function TrackRow({ track }: { track: AdminTrack }) {
   return (
     <li className="border-ramp-4 flex flex-col gap-3 border-b py-3">
       <div className="flex items-start gap-3">
-        <span className="role-readout text-ramp-6 pt-0.5">
+        <span className="role-mono-sm text-ramp-7 pt-0.5">
           {formatCount(track.id)}
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
@@ -204,7 +204,7 @@ function TrackRow({ track }: { track: AdminTrack }) {
               {audio.src === null && (
                 <Badge variant="destructive">Missing</Badge>
               )}
-              <span className="role-readout text-ramp-7">
+              <span className="role-mono-sm text-ramp-7">
                 {formatClock(audio.duration)}
               </span>
             </>
@@ -302,9 +302,7 @@ function UploadStatus({ view, send }: { view: UploadView; send: Send }) {
     <div className="flex flex-col gap-2">
       <p className="role-mono-sm text-ramp-7 flex gap-2">
         <span className="min-w-0 break-all">{file.name}</span>
-        {file.duration !== null && (
-          <span className="role-readout">{formatClock(file.duration)}</span>
-        )}
+        {file.duration !== null && <span>{formatClock(file.duration)}</span>}
       </p>
       <FieldError>{view.rejection}</FieldError>
       {progress && (
