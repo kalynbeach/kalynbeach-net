@@ -3,6 +3,7 @@ import {
   previewSamples,
   renderSampleWav,
   repositorySeedData,
+  seedsSampleLook,
   SAMPLE_PEAKS,
   SAMPLE_RATE,
   SAMPLE_SECONDS,
@@ -175,5 +176,20 @@ describe("preview samples", () => {
       expect(lookNameProblem(sample.look.name)).toBeNull();
       expect(planCreate(null, sample.look, 0).kind).toBe("insert");
     }
+  });
+});
+
+describe("seedPreview's look for an existing sample track", () => {
+  it("gives the look in the run that creates it, to a track with none", () => {
+    expect(seedsSampleLook({}, true)).toBe(true);
+  });
+
+  it("keeps a look cleared on the dashboard when the seed reruns", () => {
+    expect(seedsSampleLook({}, false)).toBe(false);
+  });
+
+  it("never replaces a look chosen on the dashboard", () => {
+    expect(seedsSampleLook({ look: "chosen" }, true)).toBe(false);
+    expect(seedsSampleLook({ look: "chosen" }, false)).toBe(false);
   });
 });
