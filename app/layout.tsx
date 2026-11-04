@@ -9,9 +9,11 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SiteShell } from "@/components/site/shell";
 import "./globals.css";
 
+// Every page sets text in these two. Departure Mono loads on use, since no
+// page text sets in it; only installed Kevelle parts, such as the player's
+// readouts, draw it.
 const fonts = [
   "/fonts/abc-areal/ABCArealVariable.woff2",
-  "/fonts/departure-mono/DepartureMono-Regular.woff2",
   "/fonts/tx-02/TX-02-Variable.woff2",
 ];
 
