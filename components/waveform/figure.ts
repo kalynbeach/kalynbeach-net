@@ -1,11 +1,10 @@
-import { toHz, type ToneSource, type Wave } from "@/lib/audio";
+import { toHz, type ToneSource } from "@/lib/audio";
 import {
   LOOK_LIMITS,
   MAX_POINTS,
   MAX_STRIPS,
   type FrameWriter,
   type PhosphorLook,
-  type TraceColor,
   type TraceIndex,
 } from "@/lib/phosphor";
 
@@ -376,6 +375,8 @@ export type Recorder = {
   readonly writer: FrameWriter;
   reset(): void;
   replay(out: FrameWriter, pose: Pose): void;
+  /** Whether the frame since the last reset holds a point. */
+  drew(): boolean;
 };
 
 export function createRecorder(): Recorder {
@@ -384,6 +385,7 @@ export function createRecorder(): Recorder {
   const b = new Float64Array(MAX_OPS);
   let count = 0;
   let opened = false;
+  let pointed = false;
 
   const push = (op: number, first: number, second: number) => {
     if (count === MAX_OPS) return;
@@ -414,13 +416,16 @@ export function createRecorder(): Recorder {
         // The screen starts a strip for a point written before any strip,
         // and each copy needs its own, so a copy never joins the one before.
         if (!opened) strip(0);
+        pointed = true;
         push(OP_POINT, x, y);
       },
     },
     reset() {
       count = 0;
       opened = false;
+      pointed = false;
     },
+    drew: () => pointed,
     replay(out, pose) {
       // Walk back to the oldest of the newest strips that fit one copy's
       // share, counting what they hold.
@@ -573,21 +578,124 @@ export function togglePresence(
 }
 
 /**
- * A still form's motion. It settles by drawing STILL_MS of figure time from
- * its own clock, then holds. A config, form, anchor, or theme change, a new
- * framing, a recovered device, or an arrival starts it settling again. Audio
- * and strikes never do.
+ * What a provider asks of every form under it. Null: they move. "frozen"
+ * stops each where it stands. "still" draws one second of the look and
+ * holds it.
+ */
+export type WaveformHold = "frozen" | "still";
+
+/** What a form is asked for this frame. */
+export type Mode = "live" | "frozen" | "still";
+
+/** Reduced motion stills a moving figure only. A frozen or still one moves already as little as it can. */
+export const modeOf = (
+  hold: WaveformHold | null,
+  reducedMotion: boolean
+): Mode => hold ?? (reducedMotion ? "still" : "live");
+
+/**
+ * A form's motion.
+ *
+ * - settling draws STILL_MS of its look's tones from its own clock, then
+ *   holds. A null start clears the history on the next frame.
+ * - held holds that settled second.
+ * - frozen holds what live drawing left, in place. `punch` is the envelope
+ *   it froze under, so its brightness and bloom hold too. `detail` is the
+ *   smallest backing side the history has been resampled to.
+ *
+ * A config, form, anchor, or light change, a recovered device, or an
+ * arrival starts a holding form settling again, and so does a new framing
+ * that reframe() can't carry. Audio and strikes never do.
  */
 export type Stillness =
   | { readonly kind: "live" }
   | { readonly kind: "settling"; readonly start: number | null }
-  | { readonly kind: "held" };
+  | { readonly kind: "held" }
+  | {
+      readonly kind: "frozen";
+      readonly punch: number;
+      readonly detail: number;
+    };
+
+export const LIVE: Stillness = { kind: "live" };
+
+export const SETTLE: Stillness = { kind: "settling", start: null };
+
+/** A frozen history resampled into a larger box stays sharp up to this upscale of the smallest side it passed through. */
+export const SHARP_UPSCALE = 1.25;
+
+/**
+ * The stillness a frame starts in, under `mode`. `inked` says live drawing
+ * has left a figure since the screen last cleared, and `punch` and `side`
+ * are the envelope and the framing's side this frame. A form that freezes
+ * with nothing drawn settles the look's second instead. Idempotent: entering
+ * again under the same mode changes nothing.
+ */
+export function enter(
+  stillness: Stillness,
+  mode: Mode,
+  facts: {
+    readonly inked: boolean;
+    readonly punch: number;
+    readonly side: number;
+  }
+): Stillness {
+  if (mode === "live") return stillness.kind === "live" ? stillness : LIVE;
+
+  switch (stillness.kind) {
+    case "live":
+      return mode === "frozen" && facts.inked
+        ? { kind: "frozen", punch: facts.punch, detail: facts.side }
+        : SETTLE;
+
+    case "frozen":
+      return mode === "still" ? SETTLE : stillness;
+
+    case "settling":
+    case "held":
+      return stillness;
+  }
+}
+
+/** A change the history can't carry. A live form ignores it. */
+export const resettle = (stillness: Stillness): Stillness =>
+  stillness.kind === "live" ? stillness : SETTLE;
+
+/**
+ * The stillness after the framing moves `from` one `to` another: the box
+ * resized, the canvas moved to another box, or the anchor moved. The screen
+ * resamples its history into a new size, so a frozen figure without an
+ * anchor keeps a box of the same aspect up to SHARP_UPSCALE times the
+ * smallest side it has shown in. Anything else settles a holding form.
+ */
+export function reframe(
+  stillness: Stillness,
+  from: Framing,
+  to: Framing,
+  anchored: boolean
+): Stillness {
+  switch (stillness.kind) {
+    case "live":
+      return stillness;
+
+    case "frozen":
+      return !anchored &&
+        from.width * to.height === to.width * from.height &&
+        to.side <= stillness.detail * SHARP_UPSCALE
+        ? { ...stillness, detail: Math.min(stillness.detail, to.side) }
+        : SETTLE;
+
+    case "settling":
+    case "held":
+      return SETTLE;
+  }
+}
 
 /** The figure time a settling form has reached at `now`, in ms, up to STILL_MS. */
 export function settledMs(stillness: Stillness, now: number): number {
   if (stillness.kind === "held") return STILL_MS;
 
-  if (stillness.kind === "live" || stillness.start === null) return 0;
+  if (stillness.kind !== "settling" || stillness.start === null) return 0;
 
   return Math.min(STILL_MS, Math.max(0, now - stillness.start));
 }
@@ -727,55 +835,10 @@ export function lookFor(
   return form === "mark" ? markLight(light, copies) : light;
 }
 
-/** One axis of a still figure: wave(2π · cycles · t + phase) for t over one period. */
-export type StillAxis = {
-  readonly wave: Wave;
-  /** Whole cycles over the period, 1 to STILL_MAX_CYCLES. */
-  readonly cycles: number;
-  /** Radians, as the oscillator's phase. */
-  readonly phase: number;
-};
-
-/**
- * The screen form's figure as plain data, for an SVG that stands in for the
- * live canvas: one closed figure in one trace color. kevelle/wave-player's
- * WavePlayerStill has the same fields, so app code can pass one as the
- * other.
- */
-export type StillFigure = {
-  readonly x: StillAxis;
-  readonly y: StillAxis;
-  readonly color: TraceColor;
-};
-
-/** The most cycles either axis of a still draws, so the figure stays legible in a player's box. */
-export const STILL_MAX_CYCLES = 16;
-
-/**
- * The closed figure the screen form draws, held still: figureFor()'s
- * figure for the screen, with Y over X as the nearest fraction whose terms
- * are both at most STILL_MAX_CYCLES, and the color the screen draws in its
- * dark box. A harmonic ratio is exact. A golden ratio or a free Y becomes
- * the nearest closed figure, so 1:φ draws 8:13. Detune, motion, symmetry,
- * YT mode, bloom, and trail stay out, as they do for a form's own ratio.
- * Pure and server-safe, so a site can compute it beside the config it
- * stores.
- */
-export function stillFigure(config: WaveformConfig): StillFigure {
-  const { tones } = figureFor(config, "screen");
-  const [xCycles, yCycles] = nearestFraction(yHzOf(tones) / tones.x.hz);
-
-  return {
-    x: { wave: tones.x.wave, cycles: xCycles, phase: tones.x.phase },
-    y: { wave: tones.y.wave, cycles: yCycles, phase: tones.y.phase },
-    color: lookFor(config, "screen", "dark").traces[0],
-  };
-}
-
 /** [x, y] cycles, each 1 to `most`, whose y / x is nearest `ratio`. Ties keep the smaller terms. */
 function nearestFraction(
   ratio: number,
-  most = STILL_MAX_CYCLES
+  most: number
 ): readonly [number, number] {
   let best: readonly [number, number] = [1, 1];
   let error = Number.POSITIVE_INFINITY;

@@ -40,7 +40,7 @@ export function MiniView({
   expand,
   className,
 }: ViewInput & {
-  /** What the screen box shows, such as a live frame's dock. Absent: the current look's still figure. */
+  /** What the screen box shows, such as a frame's dock of the provider's screen. Absent: an empty box. */
   readonly screen?: ReactNode;
   /** The link the expand control renders as, such as <Link href="/music" />. Absent: no control. */
   readonly expand?: ReactElement;
@@ -89,7 +89,6 @@ export function MiniView({
             <div className="flex flex-wrap items-stretch gap-3">
               <Screen
                 size="mini"
-                still={state.look.still}
                 overlay={
                   <ScreenOverlay
                     state={state}

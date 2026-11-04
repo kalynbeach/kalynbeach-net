@@ -6,6 +6,9 @@ export type StatusBadge = {
   readonly variant: "secondary" | "outline" | "warning" | "destructive";
 };
 
+/** What the screen's figure does. kevelle/waveform's WaveformHold; tools/wave-player/look.test.ts pins the two both ways. */
+export type WavePlayerHold = "frozen" | "still";
+
 export type StatusView = {
   /** The center button's glyph. */
   readonly glyph: "play" | "pause" | "retry";
@@ -26,6 +29,12 @@ export type StatusView = {
    * failure's Alert. The slot's content stays mounted under it.
    */
   readonly overlay: "spinner" | "failure" | null;
+  /**
+   * What the screen's figure does, for kevelle/waveform's provider `hold`.
+   * Null: it draws the audio. "frozen": it stops where it stands. "still":
+   * it draws the current look at rest.
+   */
+  readonly hold: WavePlayerHold | null;
 };
 
 export const STATUS_VIEW = {
@@ -38,6 +47,7 @@ export const STATUS_VIEW = {
     session: "none",
     badge: null,
     overlay: null,
+    hold: "still",
   },
   loading: {
     glyph: "pause",
@@ -48,6 +58,7 @@ export const STATUS_VIEW = {
     session: "playing",
     badge: { label: "LOADING", variant: "secondary" },
     overlay: "spinner",
+    hold: "still",
   },
   playing: {
     glyph: "pause",
@@ -58,6 +69,7 @@ export const STATUS_VIEW = {
     session: "playing",
     badge: null,
     overlay: null,
+    hold: null,
   },
   paused: {
     glyph: "play",
@@ -68,6 +80,7 @@ export const STATUS_VIEW = {
     session: "paused",
     badge: null,
     overlay: null,
+    hold: "frozen",
   },
   blocked: {
     glyph: "play",
@@ -78,6 +91,7 @@ export const STATUS_VIEW = {
     session: "paused",
     badge: { label: "HOLD", variant: "warning" },
     overlay: null,
+    hold: "frozen",
   },
   ended: {
     glyph: "play",
@@ -88,6 +102,7 @@ export const STATUS_VIEW = {
     session: "paused",
     badge: { label: "ENDED", variant: "outline" },
     overlay: null,
+    hold: "still",
   },
   failed: {
     glyph: "retry",
@@ -98,6 +113,7 @@ export const STATUS_VIEW = {
     session: "none",
     badge: { label: "FAULT", variant: "destructive" },
     overlay: "failure",
+    hold: "still",
   },
 } as const satisfies Record<StatusKind, StatusView>;
 

@@ -19,9 +19,9 @@
  *   <WavePlayerTracks />                                 the Library list
  *   <WavePlayerMini expand={<Link href="/music" />} />   the mini player, up to 240 wide
  *   <WavePlayerBar className="fixed inset-x-3 bottom-8" />
- *   <WavePlayerCard morph={false} live={false} />        a style guide's extra frame
+ *   <WavePlayerCard specimen />                          a style guide's extra frame
  *
- *   const { feed, status, active, look } = useWavePlayer()
+ *   const { feed, status, active, look, hold } = useWavePlayer()
  *
  * Views. The card fills its container up to 340 wide: the title, the
  * status and duration, the screen, the byline, the tag, a bar-waveform seek
@@ -45,55 +45,53 @@
  * it decodes an overview of the current track once it has played. Use one
  * provider per page, since it owns navigator.mediaSession.
  *
- * Looks. A track's `look` is its waveform look, { config, still }. `config`
- * is kevelle/waveform's WaveformConfig as stored JSON. A look is a
- * visualizer for its track, so the block sets the config's source to
- * "audio", and moves a screen form's own ratio into the tones, since a
- * form with its own ratio draws only tones: the player screen draws the
- * playing audio in the look's style, and the look's tones while the audio
- * is silent or paused. The look sets everything else, its motion, display,
- * light, and forms. `still` is the same look's idle figure, from
- * kevelle/waveform's stillFigure(config): one closed figure in one trace
- * color, which the screen box draws as an SVG. Pass both or neither.
- * A look whose still the box can't draw is dropped with the console
- * warning, and the track draws the default. Absent or null, a track draws
- * the block's default player look, the Paper card's 5:4 figure on the P31
- * screen, never the site's own look.
- *
- *   const look = { config: stored, still: stillFigure(parseWaveformConfig(stored)) }
+ * Looks. A track's `look` is its waveform look: kevelle/waveform's
+ * WaveformConfig as stored JSON. A look is a visualizer for its track, so
+ * the block sets its source to "audio", and moves a screen form's own ratio
+ * into the tones, since a form with its own ratio draws only tones: the
+ * player screen draws the playing audio in the look's style. The look sets
+ * everything else, its motion, display, light, and forms. A look that isn't
+ * an object is dropped with the console warning, and the track draws the
+ * default. Absent or null, a track draws the block's default player look,
+ * the Paper card's 5:4 figure on the P31 screen, never the site's own look.
  *
  * useWavePlayer().look is the current track's look, else that default, and
  * never null, with source "audio". It keeps its object until the current
  * look's content changes, even across a fresh tracks array or a move
  * between two tracks with the same look, so a site memoizes
- * parseWaveformConfig(look.config) on it and parses nothing again.
+ * parseWaveformConfig(look) on it and parses nothing again.
  *
  * Screen. The card, the mini player, and the bar each own a square box that
- * stays dark in both themes. `screen` on the provider is what a live frame's
- * box shows while playback is under way. It is one element for the
- * provider's life: the block mounts it when the first live frame needs it,
- * after the first play, and moves that element into whichever live frame is
- * mounted, so the figure keeps its canvas and its history across the card,
- * the mini player, the bar, and pages with no frame. With no live frame on
- * the page it sits outside the document, where a canvas draws nothing.
- * Before the first play, after the last track ends, without `screen`, and
- * in a frame with live={false}, the box draws the current look's still. A
- * spinner while a track loads and an alert after it fails cover the box
- * without replacing it. `screen` renders under the provider, outside every
- * frame, so it sees the contexts above WavePlayerProvider and
- * useWavePlayer(), and none set between the provider and a frame.
+ * stays dark in both themes. `screen` on the provider is what every frame's
+ * box shows, from the first frame that mounts on the client, before the
+ * first play included. It is one element for the provider's life: the block
+ * mounts it with the first frame and moves it into whichever frame is
+ * mounted, never remounting it, so the figure keeps its canvas and its
+ * history across the card, the mini player, the bar, and pages with no
+ * frame, where it sits outside the document and draws nothing. Without
+ * `screen` every box is empty. The server renders the empty box, and the
+ * figure fades in once its canvas starts. A spinner while a track loads and
+ * an alert after it fails cover the box without replacing it. `screen`
+ * renders under the provider, outside every frame, so it sees the contexts
+ * above WavePlayerProvider and useWavePlayer(), and none set between the
+ * provider and a frame.
  *
- * With kevelle/waveform, `screen` is a client component that gives the
- * player a WaveformProvider of its own, in the current track's look and
- * fed by the playing audio, so the site's own waveform keeps the site's
- * look:
+ * Hold. useWavePlayer().hold is what the screen's figure does, and the
+ * block alone decides it from the status: null while a track plays, so it
+ * draws the audio; "frozen" while it is paused or the system holds it, so
+ * it stops where it stands; "still" before the first play, while a track
+ * loads, after the last track ends, and after a failure, so it draws the
+ * current look at rest. With kevelle/waveform, `screen` is a client
+ * component that gives the player a WaveformProvider of its own, in the
+ * current track's look, fed by the playing audio and held by `hold`, so the
+ * site's own waveform keeps the site's look:
  *
  *   export function PlayerScreen() {
- *     const { feed, look } = useWavePlayer()
- *     const config = useMemo(() => parseWaveformConfig(look.config), [look])
+ *     const { feed, look, hold } = useWavePlayer()
+ *     const config = useMemo(() => parseWaveformConfig(look), [look])
  *
  *     return (
- *       <WaveformProvider config={config} audio={feed} viewTransitionName={null}>
+ *       <WaveformProvider config={config} audio={feed} hold={hold} viewTransitionName={null}>
  *         <Waveform form="screen" className="size-full" />
  *       </WaveformProvider>
  *     )
@@ -104,10 +102,12 @@
  * worklet fails, and a new one replaces it after an audio restart, so read
  * it on every render.
  *
- * Live. A frame shows the screen by default. Pass live={false} where
- * another waveform holds the page's one live figure, such as a home stage
- * beside the mini player or the bar, and on a style guide's extra frames.
- * Its box keeps the still.
+ * Specimens. A page that shows several frames, such as a style guide,
+ * passes `specimen` to all but one. A specimen never morphs and never takes
+ * the provider's screen. Its box renders a copy of `screen` of its own,
+ * where useWavePlayer().hold is "still" and feed is null, so it draws the
+ * current look at rest. Each copy is another waveform with its own canvas
+ * and GPU device, so only pages that show specimens pay for them.
  *
  * Active. useWavePlayer().active is true once the first play opens the
  * audio, while a track is current, until the last track ends. A pause, a
@@ -141,8 +141,7 @@
  * useDeferredValue so a breakpoint change runs as a transition and the
  * frame morphs.
  * A page that shows several frames, such as a style guide, passes
- * morph={false} and live={false} to all but one. The props-only views carry
- * no transition.
+ * `specimen` to all but one. The props-only views carry no transition.
  *
  * Reduced motion. A frame that mounts under prefers-reduced-motion renders
  * no <ViewTransition>, so mounting it starts no view transition. A frame
@@ -197,28 +196,36 @@ import {
   type MountMotion,
 } from "./morph";
 import type { WavePlayerTrack } from "./playlist";
-import { announcement } from "./status-view";
+import { STATUS_VIEW, announcement, type WavePlayerHold } from "./status-view";
 import { createPlayerStore, type PlayerStore } from "./store";
 import { TrackListView } from "./track-list";
 
-export type { LookRecord, WavePlayerLook, WavePlayerStill } from "./look";
+export type { WavePlayerLook } from "./look";
 
 export type { WavePlayerStatus } from "./model";
+
+export type { WavePlayerHold } from "./status-view";
 
 export type { WavePlayerTrack } from "./playlist";
 
 const PlayerContext = React.createContext<PlayerStore | null>(null);
 
-/** The provider's screen dock, or null when the provider has no `screen`. */
-const DockContext = React.createContext<ScreenDock | null>(null);
+/** The provider's screen element and its dock, or null when the provider has no `screen`. */
+const ScreenContext = React.createContext<{
+  readonly dock: ScreenDock;
+  readonly element: React.ReactNode;
+} | null>(null);
+
+/** True inside a specimen's own copy of the screen. */
+const SpecimenContext = React.createContext(false);
 
 export type WavePlayerProviderProps = {
   readonly tracks: readonly WavePlayerTrack[];
   /**
-   * What a live frame's box shows while playback is under way, such as the
-   * site's own waveform. One element for the provider's life: mounted with
-   * the first live frame, moved between frames, never remounted. Absent:
-   * every box draws the current look's still figure.
+   * What every frame's box shows, such as the site's own waveform. One
+   * element for the provider's life: mounted with the first frame, moved
+   * between frames, never remounted. A specimen renders a copy of its own.
+   * Absent: every box is empty.
    */
   readonly screen?: React.ReactNode;
   readonly children: React.ReactNode;
@@ -232,12 +239,17 @@ export function WavePlayerProvider({
   const [store] = React.useState(() => createPlayerStore(tracks));
   const [dock] = React.useState(() => createScreenDock(screenElement));
 
+  const shown = React.useMemo(
+    () => (screen == null ? null : { dock, element: screen }),
+    [dock, screen]
+  );
+
   React.useEffect(() => store.setTracks(tracks), [store, tracks]);
   React.useEffect(() => () => store.release(), [store]);
 
   return (
     <PlayerContext value={store}>
-      <DockContext value={screen == null ? null : dock}>{children}</DockContext>
+      <ScreenContext value={shown}>{children}</ScreenContext>
       {screen == null ? null : (
         <ScreenPortal dock={dock}>{screen}</ScreenPortal>
       )}
@@ -257,7 +269,7 @@ function screenElement(): HTMLElement {
 
 /**
  * The site's screen, rendered into the dock's element: nothing until the
- * first live frame holds it, then mounted for good. It renders here, under
+ * first frame holds it, then mounted for good. It renders here, under
  * the provider and outside every frame, so a frame's mount, unmount, or
  * remount never reaches it.
  */
@@ -291,14 +303,21 @@ type WavePlayer = {
   /**
    * The current track's look, else the block's default player look, never
    * the site's. The same object until its content changes, so memoize
-   * parseWaveformConfig(look.config) on it.
+   * parseWaveformConfig(look) on it.
    */
   readonly look: WavePlayerLook;
+  /**
+   * For kevelle/waveform's provider `hold`: null while a track plays,
+   * "frozen" where it stopped, "still" at rest. It changes in the render
+   * `status` does. "still" in a specimen's copy of the screen.
+   */
+  readonly hold: WavePlayerHold | null;
 };
 
-/** The feed, the status, whether playback is under way, and the current look, for site components under the provider. */
+/** The feed, the status, whether playback is under way, the current look, and the screen's hold, for site components under the provider. */
 export function useWavePlayer(): WavePlayer {
   const store = useStore();
+  const specimen = React.use(SpecimenContext);
 
   const feed = React.useSyncExternalStore(
     store.subscribe,
@@ -318,14 +337,26 @@ export function useWavePlayer(): WavePlayer {
     () => store.getServerSnapshot().look
   );
 
-  return { feed, status, active: useActive(store), look };
+  const hold = React.useSyncExternalStore(
+    store.subscribe,
+    () => STATUS_VIEW[store.getSnapshot().status.kind].hold,
+    () => STATUS_VIEW[store.getServerSnapshot().status.kind].hold
+  );
+
+  return {
+    feed: specimen ? null : feed,
+    status,
+    active: useActive(store),
+    look,
+    hold: specimen ? "still" : hold,
+  };
 }
 
 /**
  * The store notifies through useSyncExternalStore, whose renders are
  * synchronous and never start a view transition. The deferred copy
  * re-renders its readers in a transition lane, which does, so a host's
- * frame and a frame's dock that follow it change in that lane together.
+ * frame that follows it enters and exits in that lane.
  */
 function useActive(store: PlayerStore): boolean {
   return React.useDeferredValue(
@@ -339,19 +370,11 @@ function useActive(store: PlayerStore): boolean {
 
 type FrameProps = {
   /**
-   * The frame morphs to and from the other frame views through a view
-   * transition named wave-player. Mount one morphing frame at a time; pass
-   * false on extra frames, such as a style guide's. Read when the frame
-   * mounts. Default true.
+   * An extra frame, such as a style guide's. It never morphs, never takes
+   * the provider's screen, and draws its own copy of `screen`, held still
+   * on the current look. Read when the frame mounts. Default false.
    */
-  readonly morph?: boolean;
-  /**
-   * The frame shows the provider's screen while playback is under way.
-   * Pass false where another waveform holds the page's one live figure,
-   * such as a home stage, and on a style guide's extra frames: the box
-   * keeps the still figure. Default true.
-   */
-  readonly live?: boolean;
+  readonly specimen?: boolean;
 };
 
 export type WavePlayerCardProps = FrameProps & {
@@ -359,8 +382,7 @@ export type WavePlayerCardProps = FrameProps & {
 };
 
 export function WavePlayerCard({
-  morph = true,
-  live = true,
+  specimen = false,
   className,
 }: WavePlayerCardProps) {
   const store = useStore();
@@ -369,12 +391,12 @@ export function WavePlayerCard({
   useNeed(store, "peaks");
 
   return (
-    <Frame kind="card" morph={morph}>
+    <Frame kind="card" specimen={specimen}>
       <CardView
         state={useSnapshot(store)}
         playhead={store.playhead}
         onCommand={store.send}
-        screen={useLiveScreen(store, live)}
+        screen={useScreen(specimen)}
         className={className}
       />
     </Frame>
@@ -406,8 +428,7 @@ export type WavePlayerMiniProps = FrameProps & {
 
 export function WavePlayerMini({
   expand,
-  morph = true,
-  live = true,
+  specimen = false,
   className,
 }: WavePlayerMiniProps) {
   const store = useStore();
@@ -415,12 +436,12 @@ export function WavePlayerMini({
   useNeed(store, "current");
 
   return (
-    <Frame kind="mini" morph={morph}>
+    <Frame kind="mini" specimen={specimen}>
       <MiniView
         state={useSnapshot(store)}
         playhead={store.playhead}
         onCommand={store.send}
-        screen={useLiveScreen(store, live)}
+        screen={useScreen(specimen)}
         expand={expand}
         className={className}
       />
@@ -433,8 +454,7 @@ export type WavePlayerBarProps = FrameProps & {
 };
 
 export function WavePlayerBar({
-  morph = true,
-  live = true,
+  specimen = false,
   className,
 }: WavePlayerBarProps) {
   const store = useStore();
@@ -442,12 +462,12 @@ export function WavePlayerBar({
   useNeed(store, "current");
 
   return (
-    <Frame kind="bar" morph={morph}>
+    <Frame kind="bar" specimen={specimen}>
       <MobileBarView
         state={useSnapshot(store)}
         playhead={store.playhead}
         onCommand={store.send}
-        screen={useLiveScreen(store, live)}
+        screen={useScreen(specimen)}
         className={className}
       />
     </Frame>
@@ -479,15 +499,21 @@ function useNeed(store: PlayerStore, need: Need): void {
 }
 
 /**
- * A live frame's dock while playback is under way, else nothing, so the box
- * draws the still. It follows the deferred `active`, the one hosts mount
- * frames by, so a frame and its dock arrive and leave in one commit.
+ * The box's content: the dock in a frame, a still copy of the screen in a
+ * specimen, and nothing without `screen`. Which one is read when the frame
+ * mounts, so a mounted frame never swaps its box's content.
  */
-function useLiveScreen(store: PlayerStore, live: boolean): React.ReactNode {
-  const dock = React.use(DockContext);
-  const active = useActive(store);
+function useScreen(specimen: boolean): React.ReactNode {
+  const screen = React.use(ScreenContext);
+  const [copy] = React.useState(specimen);
 
-  return dock !== null && live && active ? <Dock dock={dock} /> : undefined;
+  if (screen === null) return undefined;
+
+  return copy ? (
+    <SpecimenContext value>{screen.element}</SpecimenContext>
+  ) : (
+    <Dock dock={screen.dock} />
+  );
 }
 
 /**
@@ -515,22 +541,22 @@ function Dock({ dock }: { readonly dock: ScreenDock }) {
 
 /**
  * A frame view inside its <ViewTransition>, or bare where it may not
- * animate (#208). The wrapper is chosen once, from `morph` and the
+ * animate (#208). The wrapper is chosen once, from `specimen` and the
  * preference the frame mounted under, so a mounted frame never changes
  * element type and never remounts its view. Its triggers follow the live
  * preference.
  */
 function Frame({
   kind,
-  morph,
+  specimen,
   children,
 }: {
   readonly kind: FrameKind;
-  readonly morph: boolean;
+  readonly specimen: boolean;
   readonly children: React.ReactElement;
 }) {
   const motion = useMotion();
-  const [wraps] = React.useState(() => frameWraps(morph, motion));
+  const [wraps] = React.useState(() => frameWraps(!specimen, motion));
 
   return wraps ? (
     <React.ViewTransition {...frameTransition(kind, motion !== "full")}>

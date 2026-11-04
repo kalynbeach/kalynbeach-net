@@ -144,11 +144,17 @@
    * titles, text, and controls. serif carries long-form text, mono carries
    * code only, and brand carries the wordmark. Brand shares Departure Mono
    * with pixel but stays a separate role.
+   *
+   * label sets type-label and the typeset labels, and defaults to pixel. A
+   * host sets it to give labels its own face while values keep pixel. These
+   * roles live in Tailwind's theme layer, so a host's unlayered
+   * :root { --font-label: ... } wins, and so does a later @theme.
    */
   --font-sans: "ABC Areal", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Timeless Serif", ui-serif, Georgia, serif;
   --font-mono: "Paper Mono", ui-monospace, monospace;
   --font-pixel: "Departure Mono", "Paper Mono", ui-monospace, monospace;
+  --font-label: var(--font-pixel);
   --font-brand: "Departure Mono", "Paper Mono", ui-monospace, monospace;
 
   /*
@@ -625,10 +631,11 @@
 /*
  * Every label: field, group, and menu labels, tabs, table heads, calendar
  * weekdays, and machine report labels. A normal-case span keeps a unit's
- * case inside one.
+ * case inside one. The face is --font-label, Departure Mono unless the host
+ * sets it.
  */
 @utility type-label {
-  font-family: var(--font-pixel);
+  font-family: var(--font-label);
   font-size: 11px;
   font-weight: 400;
   font-synthesis-weight: none;

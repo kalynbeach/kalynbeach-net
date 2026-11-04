@@ -49,7 +49,6 @@ export function MobileBarView({
             <div className="flex min-w-0 items-center gap-3">
               <Screen
                 size="bar"
-                still={state.look.still}
                 overlay={
                   <ScreenOverlay
                     state={state}

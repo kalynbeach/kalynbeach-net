@@ -34,7 +34,7 @@ export function CardView({
   screen,
   className,
 }: ViewInput & {
-  /** What the screen box shows, such as a live frame's dock. Absent: the current look's still figure. */
+  /** What the screen box shows, such as a frame's dock of the provider's screen. Absent: an empty box. */
   readonly screen?: ReactNode;
   /** Layout classes only. */
   readonly className?: string;
@@ -73,7 +73,6 @@ export function CardView({
           <div className="flex flex-col gap-3">
             <Screen
               size="card"
-              still={state.look.still}
               overlay={
                 <ScreenOverlay state={state} onCommand={onCommand} fit="full" />
               }

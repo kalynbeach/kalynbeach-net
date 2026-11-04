@@ -45,8 +45,8 @@ export type FrameTransition = Pick<
  * Whether a frame renders a <ViewTransition> at all, decided once when it
  * mounts (#208). React starts a browser view transition for every
  * <ViewTransition> a transition commit places, whatever its triggers, so a
- * frame that mounts under reduced motion renders none, and so does an
- * extra frame with morph off. A frame the server rendered mounts as
+ * frame that mounts under reduced motion renders none, and so does a
+ * specimen, which passes morph false. A frame the server rendered mounts as
  * "unknown" and wraps, so hydration matches the server's markup. The
  * answer never changes for a mounted frame, because a change of element
  * type would remount its view.

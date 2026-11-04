@@ -22,6 +22,7 @@ import {
 
 import { drawnAt, type Play } from "./keys";
 import {
+  LIVE,
   MOVE_MS,
   QUIET,
   STILL_MS,
@@ -31,14 +32,18 @@ import {
   createRecorder,
   drawsOwnTones,
   easeForm,
+  enter,
   figureFor,
   figureSide,
   framingOf,
   lookFor,
+  modeOf,
   opacityOf,
   poseInto,
   presenceLevel,
   reactionOf,
+  reframe,
+  resettle,
   sameFraming,
   settlePresence,
   settledMs,
@@ -52,6 +57,7 @@ import {
   type Presence,
   type Stillness,
   type Theme,
+  type WaveformHold,
 } from "./figure";
 import {
   yHzOf,
@@ -65,8 +71,6 @@ export type FormState = {
   readonly form: Form;
   readonly anchor: Element | null;
   readonly present: boolean;
-  /** Forces the still. The engine also stills every form under prefers-reduced-motion. */
-  readonly still: boolean;
   /** Keyboard focus: the bloom lifts by LIT_BLOOM, eased over MOVE_MS, at once when still, and nothing settles again. Default false. */
   readonly lit?: boolean;
 };
@@ -90,7 +94,7 @@ export type MountedForm = {
   /**
    * Follows the screen's status. A recovered device starts with an empty
    * history, and a pause stops the settling second short, so after either a
-   * still form settles again.
+   * holding form settles again.
    */
   status(status: ScreenStatus): void;
   detach(): void;
@@ -142,6 +146,8 @@ export type WaveformEngine = {
     readonly audio: SampleFeed | null;
     readonly play: Play | null;
   }): void;
+  /** What every form under the engine does, from its next frame. Idempotent. */
+  hold(next: WaveformHold | null): void;
   strike(): void;
   /** A press's touch: the punch rises to at least `punch`, 0 to 0.9, as a strike raises it to 0.9. */
   touch(punch: number): void;
@@ -266,6 +272,8 @@ function restartsTones(
 export function createWaveform(init: {
   readonly config: WaveformConfig;
   readonly audio: SampleFeed | null;
+  /** The hold the first frame draws under. Default null. */
+  readonly hold?: WaveformHold | null;
   /** The roaming canvas's view-transition-name, or null for none. The glow takes it with "-glow". */
   readonly viewTransitionName?: string | null;
 }): WaveformEngine {
@@ -274,6 +282,7 @@ export function createWaveform(init: {
   let play: Play | null = null;
   let theme: Theme = "dark";
   let reducedMotion = false;
+  let holding = init.hold ?? null;
   let envelope = QUIET;
   let moment: Moment | null = null;
   let lastNow: number | null = null;
@@ -397,7 +406,9 @@ export function createWaveform(init: {
   function mount(surface: FormSurface, initial: FormState): MountedForm {
     let state = initial;
     let presence: Presence = { kind: "absent" };
-    let stillness: Stillness = { kind: "live" };
+    let stillness: Stillness = LIVE;
+    /** Set once live drawing leaves a figure on the screen, until the screen clears. A form frozen without one settles instead. */
+    let inked = false;
     let cleared = false;
     let moved = false;
     let move: Move | null = null;
@@ -409,7 +420,7 @@ export function createWaveform(init: {
     let interrupted = false;
     const pose = createPose();
     const recorder = createRecorder();
-    /** The config this form follows: the engine's while still, what the play draws while live. */
+    /** The config this form follows: what the play draws while live, the engine's from a settle on. */
     let source = config;
     /** The config this form draws: its source, or its own figure of it. */
     let drawn = config;
@@ -420,7 +431,7 @@ export function createWaveform(init: {
     let lift = 0;
     /** Set by a config change, until the form's next frame stamps it in `stirredAt`. */
     let stirred = false;
-    /** The first frame after the latest config a still form hasn't followed yet, or null once it follows the config. */
+    /** The first frame after the latest config a holding form hasn't followed yet, or null once it follows the config. */
     let stirredAt: number | null = null;
 
     /** Follows the source and the form to the figure this form draws. */
@@ -474,7 +485,7 @@ export function createWaveform(init: {
       return shownDisplay;
     }
 
-    const isStill = () => state.still || reducedMotion;
+    const mode = () => modeOf(holding, reducedMotion);
 
     /** Framed by the anchor in CSS pixels, or by the canvas's backing size without one. */
     function framingNow(width: number, height: number) {
@@ -488,7 +499,7 @@ export function createWaveform(init: {
 
     /** The feed this form draws now. Null turns the beam off, so the afterglow fades. */
     function feedNow(): SampleFeed | null {
-      if (isStill()) return stillFeed;
+      if (stillness.kind !== "live") return stillFeed;
 
       if (presence.kind === "departing" || presence.kind === "absent")
         return null;
@@ -526,10 +537,6 @@ export function createWaveform(init: {
       };
     }
 
-    const resettle = () => {
-      if (isStill()) stillness = { kind: "settling", start: null };
-    };
-
     /** The form's look, and the bloom the punch and the focus add to it now. */
     let look = lookFor(config, state.form, theme);
     let flare = 0;
@@ -549,6 +556,17 @@ export function createWaveform(init: {
       surface.setLook(flared());
     };
 
+    /** The settle a frame starts: the latest config, a clear screen, and the look's second from this frame. */
+    function settleAt(now: number) {
+      follow(config);
+      stirredAt = null;
+      stillness = { kind: "settling", start: now };
+      stillFeed = settleFeed();
+      producer = fresh();
+      surface.clear();
+      inked = false;
+    }
+
     function follow(next: WaveformConfig) {
       if (next === source) return;
       source = next;
@@ -565,19 +583,23 @@ export function createWaveform(init: {
       configured() {
         stirred = true;
 
-        if (play || isStill()) return;
+        if (play || mode() !== "live") return;
         follow(config);
 
         if (singleSweep(drawn)) producer = fresh();
       },
-      // A held still keeps its history, drawn in the old theme's color, so
-      // it draws its second again.
+      // A holding form keeps its history, drawn in the old theme's light, so
+      // it settles again once that light changes. The screen form draws on
+      // the dark ground in both themes, so its light never does.
       restyled() {
+        const next = lookFor(source, state.form, theme);
+
+        if (JSON.stringify(next) === JSON.stringify(look)) return;
         restyle();
-        resettle();
+        stillness = resettle(stillness);
       },
       struck() {
-        if (singleSweep(drawn) && !isStill()) producer = fresh();
+        if (singleSweep(drawn) && stillness.kind === "live") producer = fresh();
       },
     };
 
@@ -585,31 +607,36 @@ export function createWaveform(init: {
 
     const produce: Producer = (frame, out) => {
       const { now } = frame;
-      const shared = momentAt(now);
-      const still = isStill();
+      const moving = mode() === "live";
+
+      // A moving form reads the moment, and so does a live form on the frame
+      // it stops, for the punch it freezes under. A settling, held, frozen,
+      // or absent holding form reads neither the moment nor the audio.
+      const shared =
+        moving || (stillness.kind === "live" && state.present)
+          ? momentAt(now)
+          : null;
 
       if (stirred) stirredAt = now;
       stirred = false;
 
-      // A still form keeps what it holds while configs keep coming, from a
+      // A holding form keeps what it holds while configs keep coming, from a
       // drag, a held key, or the play of another provider, and settles once
       // on the last after STILL_QUIET_MS without one, so a gesture never
       // blanks it.
-      if (!still) {
-        follow(shared.drawn);
+      if (moving) {
+        if (shared) follow(shared.drawn);
         stirredAt = null;
-      } else if (stirredAt === null) follow(config);
-      else if (now - stirredAt >= STILL_QUIET_MS) {
-        follow(config);
-        resettle();
+      } else if (stirredAt !== null && now - stirredAt >= STILL_QUIET_MS) {
+        stillness = resettle(stillness);
         stirredAt = null;
       }
 
       const toggled = togglePresence(presence, state.present, now);
 
       if (toggled !== presence && toggled.kind === "arriving") {
-        if (still) resettle();
-        else producer = fresh();
+        if (moving) producer = fresh();
+        else stillness = resettle(stillness);
       }
 
       // The mark shows its figure as soon as it draws, so a view
@@ -622,6 +649,7 @@ export function createWaveform(init: {
       if (presence.kind === "absent") {
         if (!cleared) surface.clear();
         cleared = true;
+        inked = false;
         surface.paint(0, shown.depth);
 
         return "hold";
@@ -629,38 +657,39 @@ export function createWaveform(init: {
 
       cleared = false;
 
-      // A still form's history holds the figure where the last framing put
-      // it, so a new framing, from the canvas's size or the anchor's box,
-      // settles it again.
+      // A holding form's history holds the figure where the last framing put
+      // it. reframe() decides whether a new framing, from the canvas's size
+      // or the anchor's box, keeps it.
       const framing = framingNow(frame.width, frame.height);
 
-      if (framed && !sameFraming(framed, framing)) resettle();
+      if (framed && !sameFraming(framed, framing))
+        stillness = reframe(stillness, framed, framing, state.anchor !== null);
       framed = framing;
 
-      if (!still && stillness.kind !== "live") {
-        stillness = { kind: "live" };
+      const was = stillness;
+
+      stillness = enter(stillness, mode(), {
+        inked,
+        punch: shared?.envelope.punch ?? 0,
+        side: framing.side,
+      });
+
+      if (stillness.kind === "live" && was.kind !== "live") {
         stillFeed = null;
         producer = fresh();
       }
 
-      if (still && stillness.kind === "live")
-        stillness = { kind: "settling", start: null };
-
-      if (stillness.kind === "settling" && stillness.start === null) {
-        stillness = { kind: "settling", start: now };
-        stillFeed = settleFeed();
-        producer = fresh();
-        surface.clear();
-      }
+      if (stillness.kind === "settling" && stillness.start === null)
+        settleAt(now);
 
       if (moved) {
         move = { from: shown, since: now };
         moved = false;
       }
 
-      // A still form takes its target pose at once, including one that turns
-      // still partway through a move, so its settling second draws that pose.
-      if (still) move = null;
+      // A holding form takes its target pose at once, including one that
+      // stops partway through a move, so its settling second draws that pose.
+      if (stillness.kind !== "live") move = null;
 
       const target = source.forms[state.form];
       const t = move ? (now - move.since) / MOVE_MS : 1;
@@ -669,13 +698,23 @@ export function createWaveform(init: {
 
       if (t >= 1) move = null;
 
-      const reactivity = still ? 0 : shown.reactivity;
+      // A settled second never reacts. A frozen figure keeps the punch it
+      // froze under, so its brightness and bloom hold where they stood.
+      const reactivity =
+        stillness.kind === "settling" || stillness.kind === "held"
+          ? 0
+          : shown.reactivity;
+
+      const punch =
+        stillness.kind === "frozen"
+          ? stillness.punch
+          : (shared?.envelope.punch ?? 0);
 
       const opacity = opacityOf(
         shown.strength,
         presenceLevel(presence, now),
         reactivity,
-        shared.envelope.punch
+        punch
       );
 
       surface.paint(opacity, shown.depth);
@@ -683,14 +722,15 @@ export function createWaveform(init: {
       const lit = state.lit ? 1 : 0;
       const stride = (frame.dt * 1000) / MOVE_MS;
 
-      lift = still
-        ? lit
-        : lift < lit
-          ? Math.min(lit, lift + stride)
-          : Math.max(lit, lift - stride);
+      lift =
+        stillness.kind !== "live"
+          ? lit
+          : lift < lit
+            ? Math.min(lit, lift + stride)
+            : Math.max(lit, lift - stride);
 
       const lifted = LIT_BLOOM * lift * lift * (3 - 2 * lift);
-      const reaction = reactionOf(reactivity, shared.envelope.punch);
+      const reaction = reactionOf(reactivity, punch);
       const bloom = Math.round((reaction.bloom + lifted) * 100) / 100;
 
       if (bloom !== flare) {
@@ -698,17 +738,20 @@ export function createWaveform(init: {
         surface.setLook(flared());
       }
 
-      if (stillness.kind === "held") return "hold";
+      if (stillness.kind === "held" || stillness.kind === "frozen")
+        return "hold";
 
       const scale = shown.size * reaction.scale;
 
       const { motion } = drawn;
 
-      // A still form holds the turn its second ends on. A live one turns by
-      // the shared spin, its own figure included.
+      // A settling form draws the turn its second ends on. A live one turns
+      // by the shared spin, its own figure included.
       const turn =
         motion.rotation +
-        (still ? (motion.spin * STILL_MS) / 1000 : shared.turns);
+        (shared && stillness.kind === "live"
+          ? shared.turns
+          : (motion.spin * STILL_MS) / 1000);
 
       poseInto(
         pose,
@@ -722,6 +765,8 @@ export function createWaveform(init: {
       recorder.reset();
       const result = producer.produce(frame, recorder.writer);
       recorder.replay(out, pose);
+
+      if (stillness.kind === "live" && recorder.drew()) inked = true;
 
       if (
         stillness.kind === "settling" &&
@@ -738,11 +783,7 @@ export function createWaveform(init: {
         const previous = state;
         state = next;
 
-        if (
-          next.form === previous.form &&
-          next.anchor === previous.anchor &&
-          next.still === previous.still
-        )
+        if (next.form === previous.form && next.anchor === previous.anchor)
           return;
 
         if (next.form !== previous.form) {
@@ -751,9 +792,11 @@ export function createWaveform(init: {
           moved = true;
         }
 
-        resettle();
+        stillness = resettle(stillness);
       },
       status(next) {
+        if (next.kind === "recovering") inked = false;
+
         if (
           next.kind === "recovering" ||
           (next.kind === "paused" && stillness.kind === "settling")
@@ -761,7 +804,7 @@ export function createWaveform(init: {
           interrupted = true;
         else if (next.kind === "running" && interrupted) {
           interrupted = false;
-          resettle();
+          stillness = resettle(stillness);
         }
       },
       detach() {
@@ -999,6 +1042,9 @@ export function createWaveform(init: {
       play = next.play;
 
       if (changed) for (const form of forms) form.configured();
+    },
+    hold(next) {
+      holding = next;
     },
     strike() {
       envelope = strike(envelope);

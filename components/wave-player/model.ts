@@ -132,8 +132,8 @@ export type PlayerState = {
   readonly active: boolean;
   /**
    * The current track's look, else the block's default player look, never
-   * a site's. The same object until its content changes. The screen box
-   * draws its still, and useWavePlayer() hands it to the site.
+   * a site's. The same object until its content changes. useWavePlayer()
+   * hands it to the site's screen.
    */
   readonly look: WavePlayerLook;
 };

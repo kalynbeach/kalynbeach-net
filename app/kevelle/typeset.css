@@ -11,8 +11,9 @@
  * Kevelle mapping, in the machine and human system. Authored headings are
  * the human's voice: ABC Areal (--font-sans) sets text and h1 to h4 at 700,
  * and the serif preset sets Timeless Serif on its ladder. Departure Mono
- * (--font-pixel), the machine's voice, sets h5, h6, table heads, and keys at
- * 11px in the author's case. Paper Mono (--font-mono) sets code only. Colors
+ * (--font-pixel), the machine's voice, sets keys, and --font-label, which
+ * defaults to it, sets h5, h6, and table heads. All four are 11px in the
+ * author's case. Paper Mono (--font-mono) sets code only. Colors
  * come from the semantic roles, corners are square, rules are 1px hairlines
  * in the border role, and links underline from the font. Headings, labels,
  * table cells, footnotes, and keys keep a fixed size on Kevelle's scale.
@@ -192,14 +193,14 @@
       line-height: 1.5556;
       letter-spacing: 0;
     }
-    /* Labels. h5, h6, and table heads take type-label's Departure Mono at a
+    /* Labels. h5, h6, and table heads take type-label's --font-label at a
        fixed 11/16 on the font's pixel grid, with its one font pixel of
        tracking, but keep the author's case. Markdown can't mark a unit, so a
        forced uppercase would turn dBFS into DBFS. Authors who want caps write
        caps. Leading is a ratio rather than 16px, so inline code inside a
        fixed-size element can't stretch its line. */
     &:where(h5, h6, thead th) {
-      font-family: var(--font-pixel);
+      font-family: var(--font-label);
       font-size: 11px;
       font-weight: 400;
       font-synthesis-weight: none;

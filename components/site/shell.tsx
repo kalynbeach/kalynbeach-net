@@ -100,11 +100,16 @@ export function SiteShell({ children }: { children: ReactNode }) {
  * figure already carries `waveform`.
  */
 function PlayerScreen() {
-  const { feed, look } = useWavePlayer();
-  const config = useMemo(() => parseWaveformConfig(look.config), [look]);
+  const { feed, look, hold } = useWavePlayer();
+  const config = useMemo(() => parseWaveformConfig(look), [look]);
 
   return (
-    <WaveformProvider config={config} audio={feed} viewTransitionName={null}>
+    <WaveformProvider
+      config={config}
+      audio={feed}
+      hold={hold}
+      viewTransitionName={null}
+    >
       <Waveform form="screen" className="size-full" />
     </WaveformProvider>
   );

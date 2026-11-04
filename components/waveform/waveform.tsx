@@ -42,10 +42,10 @@
  * fraction with terms up to 5, so Golden's 1:φ draws 3:5, on its own tones
  * in tune, in up to three copies, on a short trail with no bloom. It turns
  * with the page's figure, precesses as slowly as the page's figure drifts,
- * up to 0.1 Hz, and swells with the audio and strikes. It holds still
- * only under `still` or reduced motion, as the others do, and shows at full
- * strength from its first frame. It draws on a canvas of its own, so it can
- * share a page with the player.
+ * up to 0.1 Hz, and swells with the audio and strikes. It holds only
+ * under the provider's `hold` or reduced motion, as the others do, and
+ * shows at full strength from its first frame. It draws on a canvas of its
+ * own, so it can share a page with the player.
  * "glow" draws on a canvas of its own behind the page.
  *
  * View transitions. The live canvas carries view-transition-name "waveform",
@@ -178,16 +178,32 @@
  * strength, depth, and size over 280 ms, about as long as a view
  * transition, while the afterglow fades where it was.
  *
- * Still. Under prefers-reduced-motion, or with `still`, a form draws one
- * second of the figure and holds it: after it starts, after a form, anchor,
- * or theme change, after its box resizes or its anchor's x or width
- * changes, after the GPU recovers, after a pause cuts its second short, and
- * 150 ms after the config stops changing. While configs keep coming, from a
- * slider drag, a held key, or the play of another provider, it keeps the
- * second it holds, then settles once on the last.
- * Each form draws the same second of its figure, as the figure stands at its
- * end, so forms that mount at different times hold the same figure. Audio
- * and strikes never start it again, and presence fades its opacity only.
+ * Hold. The provider's `hold` says what every form under it does. Absent
+ * or null, they move, and under prefers-reduced-motion they are still.
+ *
+ *   <WaveformProvider config={config} audio={feed} hold={paused ? "frozen" : null}>
+ *
+ * "still" draws one second of the figure and holds it: after it starts,
+ * after a form or anchor change, after a theme change that changes its
+ * light, after its box resizes or its anchor's x or width changes, after
+ * the GPU recovers, after a pause cuts its second short, and 150 ms after
+ * the config stops changing. While configs keep coming, from a slider drag,
+ * a held key, or the play of another provider, it keeps the second it
+ * holds, then settles once on the last. Each form draws the same second of
+ * its figure, as the figure stands at its end, so forms that mount at
+ * different times hold the same figure. Audio and strikes never start it
+ * again, and presence fades its opacity only.
+ * "frozen" stops every form where it stands. The screen keeps what it drew,
+ * and the form's brightness and bloom stay where they froze, so audio and
+ * strikes don't move it, and it reads no audio and does no GPU work. A
+ * frozen form draws the still instead where it can't keep what it drew:
+ * when it has drawn nothing yet, once a config change settles, after a
+ * form, anchor, or light change, after the GPU recovers, after an anchored
+ * form's framing or the box's aspect changes, and when its box grows past
+ * 1.25 times the smallest it has shown the frozen figure in. A smaller box,
+ * or one a little larger, keeps it, resampled. A held still stays still
+ * under "frozen". Back to null, every form draws live from the frame heard
+ * then, with no backlog.
  *
  * Theme. The engine follows the `dark` or `light` class next-themes sets on
  * <html>, then prefers-color-scheme, and draws on a transparent canvas over
@@ -285,6 +301,7 @@ import {
   type Claim,
   type WaveformEngine,
 } from "./engine";
+import type { WaveformHold } from "./figure";
 import {
   COPY,
   GUIDE_KEY,
@@ -299,6 +316,8 @@ import {
   type Player,
 } from "./keys";
 import type { Form, WaveformConfig } from "./settings";
+
+export type { WaveformHold } from "./figure";
 
 /** The keys a stage plays, under a provider with onConfigChange. */
 type StageKeys = {
@@ -339,6 +358,13 @@ export type WaveformProviderProps = {
    * two elements with one name stop every view transition on the page.
    */
   readonly viewTransitionName?: string | null;
+  /**
+   * What every form under the provider does. Absent or null, they move.
+   * "frozen" stops them where they stand until it changes. "still" draws
+   * one second of the figure and holds it, as reduced motion does. Read
+   * every render.
+   */
+  readonly hold?: WaveformHold | null;
   readonly children: React.ReactNode;
 };
 
@@ -347,13 +373,14 @@ export function WaveformProvider({
   onConfigChange,
   audio = null,
   viewTransitionName = "waveform",
+  hold = null,
   children,
 }: WaveformProviderProps) {
   // The engine holds no resources until a form attaches or a slot claims its
   // canvas, so it is plain state for the provider's lifetime and safe to
   // create on the server.
   const [engine] = React.useState(() =>
-    createWaveform({ config, audio, viewTransitionName })
+    createWaveform({ config, audio, hold, viewTransitionName })
   );
 
   // Lambdas, so nothing touches window while rendering on the server.
@@ -366,9 +393,12 @@ export function WaveformProvider({
 
   const [pageKeys, setPageKeys] = React.useState(true);
 
+  // The hold lands in the same task as the config, so a look and a hold
+  // that change in one render reach the forms with no frame between them.
   React.useEffect(() => {
     player.sync({ config, audio, onConfigChange: onConfigChange ?? null });
-  }, [player, config, audio, onConfigChange]);
+    engine.hold(hold);
+  }, [engine, player, config, audio, onConfigChange, hold]);
 
   // The slots release in layout cleanups, before this runs.
   React.useEffect(
@@ -411,8 +441,6 @@ type Placement = {
   readonly anchor?: Element | null;
   /** Default true. false departs over 2.6 s; true arrives over 1.6 s. */
   readonly present?: boolean;
-  /** Forces the reduced-motion still. Default false, which follows the system. */
-  readonly still?: boolean;
   /** Layout classes only: size and placement. The form fills this box, with no border or shadow of its own. */
   readonly className?: string;
 };
@@ -448,13 +476,12 @@ function Own({
   form,
   anchor = null,
   present = true,
-  still = false,
   className,
 }: WaveformProps) {
   const { engine } = useWaveformContext("Waveform");
   const canvas = React.useRef<HTMLCanvasElement>(null);
   const attached = React.useRef<AttachedForm | null>(null);
-  const state = { form, anchor, present, still };
+  const state = { form, anchor, present };
   const initial = React.useEffectEvent(() => state);
 
   // Layout effects, so a mark that mounts with a view transition takes the
@@ -473,8 +500,8 @@ function Own({
   }, [engine]);
 
   React.useLayoutEffect(() => {
-    attached.current?.set({ form, anchor, present, still });
-  }, [form, anchor, present, still]);
+    attached.current?.set({ form, anchor, present });
+  }, [form, anchor, present]);
 
   return (
     <div className={cn("relative", className)}>
@@ -492,7 +519,6 @@ function Slot({
   form,
   anchor = null,
   present = true,
-  still = false,
   keys = "focus",
   className,
 }: WaveformProps) {
@@ -502,7 +528,7 @@ function Slot({
   const [focused, setFocused] = React.useState(false);
   const staged = form === "stage" && present;
   const lit = staged && focused;
-  const state = { form, anchor, present, still, lit };
+  const state = { form, anchor, present, lit };
   const initial = React.useEffectEvent(() => state);
 
   // Layout effects, so a hand-off between slots in one commit happens
@@ -521,8 +547,8 @@ function Slot({
   }, [engine]);
 
   React.useLayoutEffect(() => {
-    claim.current?.set({ form, anchor, present, still, lit });
-  }, [form, anchor, present, still, lit]);
+    claim.current?.set({ form, anchor, present, lit });
+  }, [form, anchor, present, lit]);
 
   return (
     <div ref={box} className={cn("relative", className)}>
