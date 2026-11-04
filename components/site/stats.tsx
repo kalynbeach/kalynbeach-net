@@ -5,16 +5,21 @@ type Stat = {
   value: string;
 };
 
-/** A cell in a row whose cells' top borders join into one hairline. Steps' cells use it too. */
-export const hairlineCell =
-  "border-ramp-4 desktop:not-first:pl-5 flex flex-1 flex-col gap-2 border-t pt-2.75 pb-2 not-first:pl-3";
-
-/** A row of figures in hairline cells. */
+/**
+ * A row of figures, a page's facts, in equal columns whose top borders join
+ * into one hairline, each cell's text on its column's left edge.
+ */
 export function Stats({ items }: { items: readonly Stat[] }) {
   return (
-    <dl data-slot="stats" className="flex">
+    <dl
+      data-slot="stats"
+      className="@container grid auto-cols-fr grid-flow-col"
+    >
       {items.map((stat) => (
-        <div key={stat.label} className={hairlineCell}>
+        <div
+          key={stat.label}
+          className="border-ramp-4 desktop:not-last:pr-5 flex flex-col gap-1.5 border-t pt-3 not-last:pr-3"
+        >
           <dt className="role-mono-sm text-ramp-7">
             {stat.short ? (
               <>
