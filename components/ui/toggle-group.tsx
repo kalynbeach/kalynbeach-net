@@ -12,12 +12,14 @@ const ToggleGroupContext = React.createContext<
   VariantProps<typeof toggleVariants> & {
     spacing?: number;
     orientation?: "horizontal" | "vertical";
+    face?: "value" | "label";
   }
 >({
   size: "default",
   variant: "default",
   spacing: 2,
   orientation: "horizontal",
+  face: "value",
 });
 
 function ToggleGroup({
@@ -26,6 +28,7 @@ function ToggleGroup({
   size,
   spacing = 2,
   orientation = "horizontal",
+  face = "value",
   style,
   children,
   ...props
@@ -33,6 +36,8 @@ function ToggleGroup({
   VariantProps<typeof toggleVariants> & {
     spacing?: number;
     orientation?: "horizontal" | "vertical";
+    /** Values by default. "label" keeps the size and takes --font-label. */
+    face?: "value" | "label";
   }) {
   return (
     <ToggleGroupPrimitive
@@ -55,7 +60,7 @@ function ToggleGroup({
       {...props}
     >
       <ToggleGroupContext.Provider
-        value={{ variant, size, spacing, orientation }}
+        value={{ variant, size, spacing, orientation, face }}
       >
         {children}
       </ToggleGroupContext.Provider>
@@ -87,6 +92,8 @@ function ToggleGroupItem({
           variant: context.variant || variant,
           size: context.size || size,
         }),
+        // Under type-pixel's variant, so it sorts after it and sets the face.
+        context.face === "label" && "in-data-[slot=toggle-group]:font-label",
         className
       )}
       {...props}

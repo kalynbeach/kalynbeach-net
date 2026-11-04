@@ -218,6 +218,11 @@
  * dark's "auto" color, in both themes, so its host must be a dark box in
  * both, as kevelle/wave-player's Screen is.
  *
+ * Type. The key guide's caps, the panel's value readouts, and the panel's
+ * and the source picker's choices keep the pixel size and take
+ * --font-label. It defaults to --font-pixel, so Kevelle looks the same
+ * until a host sets the label font to its own face.
+ *
  * Audio and strikes. `audio` is a kevelle/audio SampleFeed, such as a
  * player's tap, or null. Its level, and a strike, kick each form outward and
  * flare its bloom, by up to a quarter of its size and 1.5 of bloom at full
@@ -876,7 +881,7 @@ function Stage({
                 >
                   <dt className="type-caption">{row.does}</dt>
                   <dd>
-                    <Kbd>{row.label}</Kbd>
+                    <Kbd face="label">{row.label}</Kbd>
                   </dd>
                 </div>
               ))}

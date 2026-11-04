@@ -214,7 +214,7 @@ const NumberField = React.memo(function NumberField({
     <Field disabled={reason !== null}>
       <div className="flex items-baseline justify-between gap-3">
         <FieldLabel>{control.label}</FieldLabel>
-        <output className="type-pixel text-foreground tabular-nums">
+        <output className="type-pixel font-label text-foreground tabular-nums">
           {control.format(value)}
         </output>
       </div>
@@ -294,6 +294,7 @@ const ChoiceField = React.memo(function ChoiceField({
     <Field disabled={reason !== null}>
       <FieldLabel>{control.label}</FieldLabel>
       <ToggleGroup
+        face="label"
         aria-label={control.label}
         variant="outline"
         size="sm"
@@ -441,6 +442,7 @@ export function WaveformPanel({
       <Field>
         <FieldLabel>Presets</FieldLabel>
         <ToggleGroup
+          face="label"
           aria-label="Presets"
           variant="outline"
           size="sm"
@@ -499,6 +501,7 @@ export function WaveformPanel({
                     <Field>
                       <FieldLabel>Form</FieldLabel>
                       <ToggleGroup
+                        face="label"
                         aria-label="Form"
                         variant="outline"
                         size="sm"

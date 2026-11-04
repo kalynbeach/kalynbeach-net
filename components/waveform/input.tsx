@@ -374,6 +374,7 @@ export function WaveformInputPicker({
       <Field>
         <FieldLabel>{COPY.source}</FieldLabel>
         <ToggleGroup
+          face="label"
           aria-label={COPY.source}
           variant="outline"
           size="sm"
