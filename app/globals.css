@@ -15,8 +15,9 @@
   --breakpoint-desktop: 75rem;
 
   /*
-   * Font roles. ui: nav, labels, values, dates and code. text: the name,
-   * titles, headings and body. readout: years, times, counts and keys. long:
+   * Font roles. ui: titles, nav, labels, values, dates and code; all site
+   * text that isn't the name, a heading or prose. text: the name, headings
+   * and body. readout: the player's time readouts, and nothing else. long:
    * long-form writing. Paper Mono stands in for TX-02 until kkb's font
    * pipeline ships it; when it does, --font-ui is the one line to change.
    * --font-mono follows it, so code and Kevelle's heading role switch too.
@@ -156,22 +157,31 @@
  * rounded up at four places. The role- prefix keeps them apart from
  * Kevelle's type- utilities.
  *
- * Layout E's scale (D2's), with the ink each role takes in dark:
+ * Content system B, "Column" (V4's boards, Kalyn's pick), on Layout E's
+ * scale, with the ink each role takes in dark:
  *
  *   role        face and size (below 1200px)   ink  for
  *   name        ABC Areal 18/24 500             10   the name in the sidebar
- *   title       ABC Areal 44/48 500 (32/36)     10   each page's h1
+ *   title       TX-02 40/48 (32/40)             10   each page's h1
  *   lede        ABC Areal 19/28 (18/26)         7    the paragraph under the title
  *   heading     ABC Areal 22/28 500 (20/28)     10   section headings
  *   body        ABC Areal 17/28                 8    prose; 9 for timeline entries
- *   nav         TX-02 14/28                     7    step names; nav rows take
- *                                                    nav-idle (signal current)
- *   stat-value  TX-02 24/32 (16/20)             10   figures in a stat row
- *   meta        ABC Areal 12/16                 7    captions
- *   mono-sm     TX-02 12/16                     7    labels: stat labels, dates, tags
- *   readout     Departure Mono 11/16                 years, times, counts and keys
+ *   detail      ABC Areal 15/22                 8    a step's detail
+ *   nav         TX-02 14/28                     7    nav rows take nav-idle
+ *                                                    (signal current)
+ *   step        TX-02 14/20 (14/22)             7    a step's ordinal; its name
+ *                                                    is 500 in ink 10
+ *   stat-value  TX-02 24/32 (16/20)             10   figures in a stat row; 20/28
+ *                                                    in a row under 34rem
+ *   mono-sm     TX-02 12/16                     7    meta lines and labels: facts,
+ *                                                    captions, stat labels, dates,
+ *                                                    years (500, ink 9), tags
+ *   meta        ABC Areal 12/16                 7    small Areal text
+ *   readout     Departure Mono 11/16                 the player's time readouts
  *
- * No text at 12px or smaller uses an ink below ramp 7.
+ * TX-02 sets all site text but the name, headings and prose; Departure Mono
+ * only the player's time readouts (Kalyn, 2026-11-03). No text at 12px or
+ * smaller uses an ink below ramp 7.
  */
 
 /*
@@ -307,7 +317,7 @@
   letter-spacing: 0;
 }
 
-/* Readouts: years, times, counts and keys. Departure Mono renders crisply only at multiples of 11px. */
+/* The player's time readouts. Departure Mono renders crisply only at multiples of 11px. */
 @utility role-readout {
   font-family: var(--font-readout);
   font-size: 11px;

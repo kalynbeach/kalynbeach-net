@@ -143,7 +143,7 @@ export function WavePlayerMini() {
         </div>
         <p className="flex items-center justify-between">
           <span className="role-meta text-ramp-7">{view.track.artist}</span>
-          <span className="role-readout text-ramp-7">{view.counter}</span>
+          <span className="role-mono-sm text-ramp-7">{view.counter}</span>
         </p>
         <Scrubber
           size="mini"
@@ -166,7 +166,7 @@ export function WavePlayerLibrary() {
       >
         <p className="flex items-baseline gap-2">
           <span className="role-track text-ramp-10">Library</span>
-          <span className="role-readout text-ramp-7 uppercase">
+          <span className="role-mono-sm text-ramp-7 uppercase">
             {view.count}
           </span>
         </p>
@@ -223,7 +223,7 @@ export function WavePlayerCard() {
         <span className="role-meta text-ramp-7">
           {view.track.artist} · {view.track.record}
         </span>
-        <span className="role-readout text-ramp-7">{view.counter}</span>
+        <span className="role-mono-sm text-ramp-7">{view.counter}</span>
       </p>
       <Scrubber size="card" elapsed={view.elapsed} remaining={view.remaining} />
       <div className="mt-3.5">
