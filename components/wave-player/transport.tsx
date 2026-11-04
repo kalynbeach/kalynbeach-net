@@ -151,7 +151,7 @@ export function Transport({
         </TooltipTrigger>
         <TooltipContent>
           {view.label}
-          <Kbd>Space</Kbd>
+          <Kbd face="label">Space</Kbd>
         </TooltipContent>
       </Tooltip>
       <Tooltip>
