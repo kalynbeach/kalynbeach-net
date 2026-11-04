@@ -6,6 +6,7 @@ import {
   previewSamples,
   renderSampleWav,
   repositorySeedData,
+  seedsSampleLook,
   validateMigrationData,
   type PreviewSample,
 } from "./lib/migration";
@@ -78,8 +79,9 @@ async function previewLook(
  * Gives a preview the production catalog (legacy S3 tracks, a playlist) and
  * stored sample tracks it can play, each with a saved look of its own.
  * Inserts only the rows that are missing, and gives a sample track its look
- * only while it has none, so a rerun converges any preview without undoing a
- * look chosen on the dashboard. One transaction, so a failure stores nothing.
+ * only in the run that creates that look, so a rerun converges any preview
+ * without undoing a look chosen on the dashboard, the player's default
+ * included. One transaction, so a failure stores nothing.
  * Returns the rows it inserted. Run it on preview and local deployments
  * only.
  */
@@ -105,7 +107,7 @@ export const seedPreview = internalMutation({
       const track = await trackByPublicId(ctx, sample.publicId);
 
       if (track) {
-        if (track.look === undefined) {
+        if (seedsSampleLook(track, look.inserted)) {
           await ctx.db.patch("tracks", track._id, { look: look.id });
         }
         continue;

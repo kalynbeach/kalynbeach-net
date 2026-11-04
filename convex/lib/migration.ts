@@ -303,6 +303,19 @@ export const previewSamples = [
   },
 ] as const satisfies readonly PreviewSample[];
 
+/**
+ * Whether seedPreview gives a sample track it finds its look: only in the run
+ * that creates that look, and only while the track has none. A track left
+ * without a look after that was set to the player's default on the dashboard,
+ * so a rerun keeps that choice.
+ */
+export function seedsSampleLook(
+  track: { readonly look?: unknown },
+  lookInserted: boolean
+): boolean {
+  return lookInserted && track.look === undefined;
+}
+
 export const SAMPLE_RATE = 22_050;
 
 export const SAMPLE_SECONDS = 8;
