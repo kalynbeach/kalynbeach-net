@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation } from "./_generated/server";
 import {
@@ -6,12 +7,15 @@ import {
   renderSampleWav,
   repositorySeedData,
   validateMigrationData,
+  type PreviewSample,
 } from "./lib/migration";
+import { planCreate } from "./lib/looks";
 
 const migrationResultValidator = v.object({
   tracks: v.number(),
   playlists: v.number(),
   playlistTracks: v.number(),
+  looks: v.number(),
 });
 
 async function assertNoPositionConflicts(ctx: MutationCtx): Promise<void> {
@@ -36,20 +40,48 @@ async function assertNoPositionConflicts(ctx: MutationCtx): Promise<void> {
   }
 }
 
-async function hasTrack(ctx: MutationCtx, publicId: number): Promise<boolean> {
-  const track = await ctx.db
+async function trackByPublicId(ctx: MutationCtx, publicId: number) {
+  return ctx.db
     .query("tracks")
     .withIndex("by_public_id", (query) => query.eq("publicId", publicId))
     .unique();
+}
 
-  return track !== null;
+async function hasTrack(ctx: MutationCtx, publicId: number): Promise<boolean> {
+  return (await trackByPublicId(ctx, publicId)) !== null;
+}
+
+/** The sample's saved look, inserted on the first run and found by its createKey after. */
+async function previewLook(
+  ctx: MutationCtx,
+  sample: PreviewSample
+): Promise<{ id: Id<"looks">; inserted: boolean }> {
+  const existing = await ctx.db
+    .query("looks")
+    .withIndex("by_create_key", (query) =>
+      query.eq("createKey", sample.look.createKey)
+    )
+    .unique();
+  const plan = planCreate(existing, sample.look, Date.now());
+
+  switch (plan.kind) {
+    case "existing":
+      return { id: plan.id, inserted: false };
+    case "insert":
+      return { id: await ctx.db.insert("looks", plan.look), inserted: true };
+    case "refuse":
+      throw new Error(`preview look ${sample.look.name}: bad ${plan.code}`);
+  }
 }
 
 /**
  * Gives a preview the production catalog (legacy S3 tracks, a playlist) and
- * stored sample tracks it can play. Inserts only the rows that are missing,
- * so a rerun converges any preview, and one transaction, so a failure stores
- * nothing. Returns the rows it inserted.
+ * stored sample tracks it can play, each with a saved look of its own.
+ * Inserts only the rows that are missing, and gives a sample track its look
+ * only while it has none, so a rerun converges any preview without undoing a
+ * look chosen on the dashboard. One transaction, so a failure stores nothing.
+ * Returns the rows it inserted. Run it on preview and local deployments
+ * only.
  */
 export const seedPreview = internalMutation({
   args: {},
@@ -58,7 +90,7 @@ export const seedPreview = internalMutation({
     validateMigrationData(repositorySeedData);
     await assertNoPositionConflicts(ctx);
 
-    const inserted = { tracks: 0, playlists: 0, playlistTracks: 0 };
+    const inserted = { tracks: 0, playlists: 0, playlistTracks: 0, looks: 0 };
 
     for (const track of repositorySeedData.tracks) {
       if (!(await hasTrack(ctx, track.publicId))) {
@@ -68,7 +100,14 @@ export const seedPreview = internalMutation({
     }
 
     for (const sample of previewSamples) {
-      if (await hasTrack(ctx, sample.publicId)) {
+      const look = await previewLook(ctx, sample);
+      inserted.looks += Number(look.inserted);
+      const track = await trackByPublicId(ctx, sample.publicId);
+
+      if (track) {
+        if (track.look === undefined) {
+          await ctx.db.patch("tracks", track._id, { look: look.id });
+        }
         continue;
       }
 
@@ -84,6 +123,7 @@ export const seedPreview = internalMutation({
         artist: sample.artist,
         record: sample.record,
         audio: { storageId, duration, peaks },
+        look: look.id,
         createdAt: now,
         updatedAt: now,
       });
