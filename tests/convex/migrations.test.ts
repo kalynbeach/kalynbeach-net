@@ -9,6 +9,12 @@ import {
   validateMigrationData,
 } from "@/convex/lib/migration";
 import { audioFileProblem, trackAudioProblem } from "@/convex/lib/tracks";
+import { lookNameProblem, planCreate } from "@/convex/lib/looks";
+import {
+  DEFAULT_WAVEFORM_CONFIG,
+  applyPreset,
+  parseWaveformConfig,
+} from "@/components/waveform/settings";
 
 describe("Convex migration data", () => {
   it("keeps the canonical repository seed exact, valid, and S3-backed", () => {
@@ -143,5 +149,31 @@ describe("preview samples", () => {
 
     expect(renderSampleWav(previewSamples[0]).wav).toEqual(first.wav);
     expect(second.wav).not.toEqual(first.wav);
+  });
+
+  it("each carry a saved look the player draws as its own figure", () => {
+    const [a, b] = previewSamples.map((sample) =>
+      parseWaveformConfig(sample.look.config)
+    );
+    const rosette = applyPreset(DEFAULT_WAVEFORM_CONFIG, "rosette");
+    const corners = applyPreset(DEFAULT_WAVEFORM_CONFIG, "corners");
+
+    expect(a).toEqual(rosette);
+    expect(b).toEqual({
+      ...corners,
+      look: { ...corners.look, color: "flame" },
+    });
+    expect(a).not.toEqual(DEFAULT_WAVEFORM_CONFIG);
+    expect(b).not.toEqual(a);
+  });
+
+  it("each look passes the dashboard's create rules under its own key", () => {
+    const keys = previewSamples.map((sample) => sample.look.createKey);
+
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const sample of previewSamples) {
+      expect(lookNameProblem(sample.look.name)).toBeNull();
+      expect(planCreate(null, sample.look, 0).kind).toBe("insert");
+    }
   });
 });

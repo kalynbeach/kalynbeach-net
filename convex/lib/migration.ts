@@ -197,6 +197,22 @@ export type PreviewSample = {
   hz: number;
   /** How often its volume swells. */
   pulseHz: number;
+  /** The saved look the preview gives the track, so each sample draws its own figure. */
+  look: { createKey: string; name: string; config: Record<string, unknown> };
+};
+
+/** The display both preview looks keep: the block's default X-Y scope. */
+const xyDisplay = {
+  mode: "xy",
+  xy: { axes: "lr", delay: 0.001 },
+  yt: {
+    timebase: 0.001,
+    channels: "both",
+    trigger: { channel: 0, slope: "rising", level: 0, mode: "auto" },
+    pretrigger: 0.25,
+    holdoff: 0,
+  },
+  scale: { kind: "auto" },
 };
 
 /** Stored tracks that only previews get, so every preview has audio to play. */
@@ -208,6 +224,40 @@ export const previewSamples = [
     record: "preview",
     hz: 220,
     pulseHz: 0.5,
+    // The block's Rosette preset (tests/convex/migrations.test.ts checks it).
+    look: {
+      createKey: "preview-rosette",
+      name: "Preview rosette",
+      config: {
+        tones: {
+          x: { wave: "sine", detuneCents: 0, phase: Math.PI / 2, hz: 220 },
+          y: { wave: "sine", detuneCents: 0, phase: 0 },
+          ratio: "3:2",
+          yHz: 220 / 1.5,
+        },
+        motion: {
+          drift: 0,
+          wander: 0,
+          wanderRate: 0.1,
+          rotation: 0,
+          spin: 0.02,
+          symmetry: 6,
+          mirror: false,
+        },
+        display: xyDisplay,
+        look: {
+          screen: "p31",
+          color: "auto",
+          color2: "flame",
+          beam: "line",
+          persistence: 96,
+          bloom: 0.9,
+          focus: 1.2,
+          intensity: 2,
+          hdr: false,
+        },
+      },
+    },
   },
   {
     publicId: 4,
@@ -216,6 +266,40 @@ export const previewSamples = [
     record: "preview",
     hz: 330,
     pulseHz: 1,
+    // The block's Corners preset, traced in flame.
+    look: {
+      createKey: "preview-corners-flame",
+      name: "Preview corners, flame",
+      config: {
+        tones: {
+          x: { wave: "square", detuneCents: 0, phase: Math.PI / 2, hz: 110 },
+          y: { wave: "square", detuneCents: 0, phase: 0 },
+          ratio: "1:1",
+          yHz: 110,
+        },
+        motion: {
+          drift: 0,
+          wander: 0,
+          wanderRate: 0.1,
+          rotation: 0,
+          spin: 0,
+          symmetry: 1,
+          mirror: false,
+        },
+        display: xyDisplay,
+        look: {
+          screen: "p31",
+          color: "flame",
+          color2: "flame",
+          beam: "gaussian",
+          persistence: 80,
+          bloom: 0.8,
+          focus: 1.2,
+          intensity: 2,
+          hdr: false,
+        },
+      },
+    },
   },
 ] as const satisfies readonly PreviewSample[];
 
