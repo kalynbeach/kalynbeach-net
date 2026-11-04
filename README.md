@@ -1,184 +1,109 @@
 # kalynbeach-net
 
-> 🌐 [kalynbeach.net](https://www.kalynbeach.net)
+This is the source for [kalynbeach.net](https://www.kalynbeach.net), my personal website. It's where I write about the software I build and play the music I make. The site is also the first real home of Kevelle, the design system I build in my kkb monorepo.
 
-## Commands
+## What's on the site
 
-- **Build:** `bun run build`
-- **Lint:** `bun run lint`
-- **Test:** `bun run test` (watch) | `bun run test run` (once)
-- **Test Single:** `bun run test run [filename]`
-- **Format:** `bun run format`
-- **Check formatting:** `bun run format:check`
-- **Check types:** `bun run typecheck`
-- **Convex Dev:** `bunx convex dev`
-- **Check Convex types (local only):** `bun run typecheck --project convex/tsconfig.json`
+| Page                    | What's there                                                                   | Source                                           |
+| ----------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------ |
+| Home, `/`               | A live waveform that fills the page. Press `?` to see the keys that change it. | `components/site/shell.tsx`                      |
+| About, `/about`         | Who I am, and where to find me                                                 | `content/about.mdx`                              |
+| Software, `/software`   | The projects I build, with a full page for some of them                        | `content/software.mdx`, `content/software/*.mdx` |
+| Music, `/music`         | My tracks, played through WavePlayer                                           | `content/music.mdx`, with tracks from Convex     |
+| Dashboard, `/dashboard` | Admin only. Upload tracks and edit waveform looks.                             | `components/dashboard/`, `components/looks/`     |
+| Lab, `/lab`             | Admin only. A three.js tool that exports a mesh as SVG.                        | `components/r3f/`                                |
 
-`convex dev` pushes backend code; it is not a read-only typecheck.
+## How it's built
 
-## Tech Stack
+- [Next.js](https://nextjs.org) 16.4 with the App Router, React 19.3, and the React Compiler
+- TypeScript 7, the native compiler
+- Tailwind CSS 4
+- Kevelle components, blocks, and styles, installed from the kkb [shadcn](https://ui.shadcn.com) registry at `registry.kkb.systems`. They're built on [Base UI](https://base-ui.com) and use [Phosphor](https://phosphoricons.com) icons.
+- MDX for page content, through `@next/mdx`
+- [Convex](https://www.convex.dev) for data and audio file storage
+- [Clerk](https://clerk.com) for sign-in
+- [Vercel](https://vercel.com) for hosting, Analytics, and Speed Insights
+- [Bun](https://bun.com) for packages and scripts, Vitest for tests, and Oxlint and Oxfmt for linting and formatting
 
-- **Framework:** Next.js 16 (App Router), React 19.3, Tailwind CSS v4.
-- **Runtime:** Bun (Strictly use `bun`/`bunx`).
-- **Identity:** Clerk.
-- **Data/Roles:** Convex (`guest | vip | admin`), Zod (Validation).
-- **UI:** Kevelle components from the kkb shadcn registry on Base UI, Phosphor icons, `react-three-fiber` (R3F).
+## Find your way around
 
-## TypeScript
+| Path                                                                                                                             | What it holds                                                                                               |
+| -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `content/`                                                                                                                       | Page copy, one MDX file per page                                                                            |
+| `app/`                                                                                                                           | Routes. About, Software, and Music re-export their MDX files, and each project page loads its file by slug. |
+| `components/site/`                                                                                                               | The site shell: sidebar, navigation, Cmd+K menu, waveform controls, and the components that MDX pages use   |
+| `components/dashboard/`, `components/looks/`                                                                                     | The admin dashboard's track uploads and waveform look editor                                                |
+| `convex/`                                                                                                                        | The Convex schema and functions for users, tracks, looks, and playlists                                     |
+| `lib/site.ts`, `lib/layout.ts`                                                                                                   | The site map, and where the waveform and the player go at each screen width                                 |
+| `lib/convex/`                                                                                                                    | Server-side Convex reads and the admin check                                                                |
+| `components/ui/`, `components/wave-player/`, `components/waveform/`, `lib/audio/`, `lib/phosphor/`, `lib/scope/`, `app/kevelle/` | Kevelle, installed from the registry. Changes to these files start in kkb.                                  |
+| `scripts/kevelle-fonts.ts`                                                                                                       | Downloads the licensed fonts before `dev` and `build`                                                       |
+| `tests/`                                                                                                                         | Vitest tests, including the site map, the layout, the Convex logic, the dashboard, and the lint setup       |
 
-TypeScript is pinned to **7.0.2**, the native compiler. `bun run typecheck`,
-Convex's CLI, and Next.js builds use the project compiler. Next.js 16.3.6 uses
-CLI typechecking by default; no `experimental.useTypeScriptCli` override or
-TypeScript 6 compatibility package is needed.
+## How the pieces fit together
 
-TypeScript 7 no longer automatically includes every installed `@types` package.
-The Convex tsconfig explicitly includes Node types for `process.env`; the root
-project receives Node types through Next's declarations. Run both typecheck
-commands above because the root check does not use Convex's separate config.
+`lib/site.ts` is the site map. It lists the public pages for the navigation, the admin pages for the Cmd+K menu, and the sign-in pages, and it says how each public page shows the music player. The root layout wraps every page in the shell, `components/site/shell.tsx`. The shell draws the sidebar, the Home waveform, and the player, and `lib/layout.ts` places them for desktop or for narrow screens below 1200px.
 
-### Editors
+Each public page's copy lives in an MDX file in `content/`. The file's `metadata` export sets the page title and lede, and `mdx-components.tsx` sets every page in Kevelle's typeset styles.
 
-The project compiler and editor language server are separate choices. In Zed,
-the [TypeScript Language Server extension](https://github.com/zed-extensions/tsgo)
-provides `typescript-ls` for TypeScript and TSX and supports pinning its package
-version to `7.0.2`. Neovim likewise needs a native-TS-compatible language-server
-configuration to use TS 7 in the editor. Personal editor changes are optional
-and are not managed by this repository.
+Tracks are audio files in Convex storage. A look is a saved setting for the waveform. On each request, the root layout reads the track list and the live look from Convex and waits at most 1 second. In the browser, the shell then subscribes to both, so an open page picks up every upload and look change from the dashboard.
 
-The native language server does not load Next's legacy IDE plugin. This affects
-plugin-specific suggestions and diagnostics, not ordinary TS/React tooling or
-Next-generated types. Whether switching loses anything depends on the previous
-editor setup. See [Next's TypeScript documentation](https://nextjs.org/docs/app/api-reference/config/typescript).
-VS Code's legacy `typescript.tsdk` workspace override is removed because TS 7
-does not ship the old `tsserver` SDK; use a TS 7-compatible editor integration.
+Clerk signs people in, and Convex gives them roles. Everyone starts as a guest. The Clerk user named in `INITIAL_ADMIN_CLERK_USER_ID` becomes the admin the first time they open an admin page. `app/(admin)/layout.tsx` and every admin Convex function check for that role.
 
-### Tooling compatibility
+## Run it locally
 
-The Convex and shadcn lint plugins' transitive `@typescript-eslint` packages still
-declare TypeScript `<6.1.0` support, and `tsconfck` declares an optional TypeScript 5
-peer.
-Those ranges do not officially cover TS 7. The configured Oxlint integration
-uses non-type-aware Convex rules, and `vite-tsconfig-paths` does not enable
-`parseNative`. Lint and the existing integration tests pass without a legacy
-compiler. Do not infer that the underlying TypeScript compiler-API integrations
-are compatible; recheck this boundary when changing these tools or their modes.
+You need:
 
-## Key Architectures
+- [Bun](https://bun.com)
+- Read access to the private `kalynbeach/kkb` repository, through `gh auth login` or a GitHub token in `KEVELLE_FONTS_TOKEN`. Before they start, `bun run dev` and `bun run build` download any licensed font that is missing or out of date, and they stop if the download fails.
+- A Convex account and a Clerk application
 
-- **Audio:** The sound pages, SoundCard, and Wave-Lab are archived at tag `archive/sound-2026-10`. The legacy WavePlayer is archived at tag `archive/legacy-wave-player-2026-10-04`. `/sound/wave-player` temporarily redirects to `/software/kkb-audio`.
-- **3D:** Located in `components/r3f/`.
-- **Auth:** Clerk establishes identity; sensitive Convex functions enforce app roles.
-- **Data:** Convex schema/functions live in `convex/`; server adapters live in `lib/convex/`.
-- **Tracks:** Track audio lives in Convex file storage. The root layout reads `tracks.list` through `fetchPublicQuery` (`lib/convex/server.ts`) on every document request, so every route renders per request. When Convex fails or takes longer than 1 s, the page renders with an empty list. After hydration, the shell subscribes to `tracks.list` (`components/site/live-tracks.ts`), so an open page follows each upload, replacement, and removal. Kalyn uploads and manages tracks on `/dashboard` (`components/dashboard/`), where the browser reads each file's duration and 256 peaks before it uploads.
+To start the site:
 
-## Linting and formatting
+1. Install the dependencies with `bun install`.
+2. Run `bunx convex dev` and keep it running. The first run creates a dev deployment and writes its URL to `.env.local`. After that, it pushes `convex/` to the dev deployment on every save.
+3. In the Clerk dashboard, turn on the Convex integration and copy your Frontend API URL.
+4. Set the Convex variables with `bunx convex env set CLERK_JWT_ISSUER_DOMAIN <frontend-api-url>`. To use the dashboard, also set `INITIAL_ADMIN_CLERK_USER_ID` to your Clerk user ID.
+5. Add `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` from Clerk to `.env.local`.
+6. To add sample tracks and looks, run `bunx convex run migrations:seedPreview`. This step is optional.
+7. Run `bun run dev`, then open http://localhost:3000.
 
-Oxlint runs the rules in [`.oxlintrc.json`](.oxlintrc.json). Oxfmt uses
-[`.oxfmtrc.json`](.oxfmtrc.json), with an 80-column width, semicolons, double quotes,
-ES5 trailing commas, and Tailwind class sorting. Import and package field sorting
-are disabled. Generated Convex files and vendored rule source are excluded from
-linting and formatting. TypeScript still checks the vendored rules.
+| Variable                                                | Where it's set                        | What it's for                            |
+| ------------------------------------------------------- | ------------------------------------- | ---------------------------------------- |
+| `NEXT_PUBLIC_CONVEX_URL`                                | `.env.local`, written by `convex dev` | The Convex deployment the site reads     |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | `.env.local`                          | Clerk sign-in                            |
+| `CLERK_JWT_ISSUER_DOMAIN`                               | The Convex deployment                 | Lets Convex verify Clerk tokens          |
+| `INITIAL_ADMIN_CLERK_USER_ID`                           | The Convex deployment                 | The Clerk user who becomes the admin     |
+| `KEVELLE_FONTS_TOKEN`                                   | Your shell or Vercel                  | Font downloads when `gh` isn't signed in |
 
-VS Code and Cursor users can install the recommended `oxc.oxc-vscode` extension.
-The workspace selects it as the formatter without changing format-on-save preferences.
+## Check a change
 
-### Rule coverage
+| Command                                            | What it does                                                                                                     |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `bun run lint`                                     | Lints with Oxlint                                                                                                |
+| `bun run format:check`                             | Checks formatting with Oxfmt. `bun run format` fixes it.                                                         |
+| `bun run typecheck`                                | Typechecks the app                                                                                               |
+| `bun run typecheck --project convex/tsconfig.json` | Typechecks the Convex functions with their own settings, without pushing anything                                |
+| `bun run test run`                                 | Runs every test once. Add a path, such as `tests/site.test.ts`, to run one file. `bun run test` watches instead. |
+| `bun run build`                                    | Builds the site for production                                                                                   |
 
-The configuration explicitly lists the migrated Next.js, React, accessibility,
-and TypeScript rules rather than enabling new categories by default.
+VS Code and Cursor recommend the Oxc extension, and the workspace uses it as the formatter. TypeScript 7 needs an editor language server that supports the native compiler.
 
-The following differences from the previous ESLint configuration are intentional:
+## Edit content
 
-| Previous rule                                        | Current behavior                                                                                                                   |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `react/jsx-uses-react`, `react/jsx-uses-vars`        | The automatic JSX transform and Oxlint's unused-variable analysis handle these cases.                                              |
-| `react-hooks/config`, `react-hooks/gating`           | Oxc uses fixed compiler options; these configuration checks have no native equivalent. The app does not configure compiler gating. |
-| `react/no-deprecated`                                | Retired. Oxlint's general deprecation rule requires a separate type-aware engine, which this setup does not enable.                |
-| `@next/next/no-location-assign-relative-destination` | Retired pending native support. Internal navigation continues to use Next's navigation APIs.                                       |
-| `react/require-render-return`                        | Enabled explicitly despite its current nursery status; Oxlint is pinned.                                                           |
-| Convex recommended rules                             | Official plugin 5.0.0 runs through Oxlint's JS-plugin API, using its non-type-aware checks.                                        |
+To change a page, edit its file in `content/`. A page's title and lede are in the file's `metadata` export, and everything below that is the page's MDX.
 
-See the [Oxlint migration guide](https://oxc.rs/docs/guide/usage/linter/migrate-from-eslint)
-and [React Compiler rule coverage](https://oxc.rs/blog/2026-08-18-react-compiler-support).
-Linting runs only Oxlint, with no ESLint CLI step or fallback. The official Convex
-plugin brings ESLint in transitively through `@typescript-eslint/utils`; it is
-installed, but not used as the lint runner. Convex's CLI still depends on Prettier
-transitively, and Oxfmt bundles it for some languages; project formatting runs only Oxfmt.
+To add a software project page:
 
-### Official Convex checks
+1. Add `content/software/<slug>.mdx`.
+2. Add the slug and its navigation label to `software` in `lib/site.ts`.
+3. Add `<Project slug="<slug>" />` to `content/software.mdx` where the project belongs.
+4. Add the project to the navigation and Cmd+K expectations in `tests/site.test.ts`.
 
-[`@convex-dev/eslint-plugin`](https://docs.convex.dev/eslint) is pinned to 5.0.0
-and loaded directly through Oxlint's JS-plugin API. The Convex override preserves
-six explicitly selected rules and severities: object-style function registration,
-argument validators, explicit table IDs, inline query-filter warnings, top-of-hour
-cron warnings, and schema import-cycle detection. Version 5's recommended preset
-also enables `no-duplicate-indexes` and `no-process-env`; this project does not yet
-enable them. Runtime-import restrictions, `require-access-control`, and
-`no-collect-in-query` also remain disabled.
+`tests/site.test.ts` fails when the site map, the route files, and the content files disagree.
 
-Version 3 added non-type-aware table-ID detection, replacing the need for our local
-Convex rules. Under Oxlint, the official plugin uses syntax rather than TypeScript
-receiver types. Registrar checks recognize literal names such as `query` and
-`mutation`, not renamed imports. Table-ID checks recognize
-`ctx.db.get/patch/replace/delete`, not bare `db`, arbitrary aliases, or
-string-computed methods. Query filtering is checked
-on inline query chains, not stored query variables; array filtering after collection
-remains allowed. Schema-cycle detection follows relative imports, not path aliases.
-No table names are autofixed without type information. `bun run typecheck` still
-checks table-first calls against Convex's generated types.
+## Deploy
 
-Oxlint's native type-aware mode does not expose type information to JavaScript
-plugins. The integration test in `tests/tools/lint-config.test.ts` verifies all six
-configured Convex rules against the actual Oxlint CLI, including filesystem-based
-schema-cycle detection. Run `bun run test run tests/tools` when upgrading the plugin.
+Vercel builds every push. Its build command, set in the Vercel project, is `bunx convex deploy --cmd 'bun run build' --preview-run 'migrations:seedPreview'`. Each Vercel environment has its own `CONVEX_DEPLOY_KEY`, and that key picks the Convex deployment. On a branch, the command creates or reuses the branch's Convex preview deployment, builds the site, and pushes the functions. A new preview then gets sample tracks and looks from `seedPreview`. On `main`, the command builds the site and pushes the production Convex functions.
 
-### shadcn design-system lint setup
-
-`@shadcn/lint` is registered through Oxlint's `jsPlugins`. Run `bun run lint`
-as usual. Five rules are enabled as warnings: `no-restyle`, `no-arbitrary-values`,
-`no-raw-colors`, `no-inline-styles`, and `require-static-classes`. The first two
-allow layout classes. Existing non-shadcn lint policies are unchanged.
-
-Component implementations in `components/ui/**` are exempt from `no-restyle`,
-`no-arbitrary-values`, and `require-static-classes` so they can define their own
-styling. `no-raw-colors` and `no-inline-styles` remain enabled there.
-
-Following the [adoption guide](https://github.com/shadcn-ui/lint/blob/main/docs/adoption.md),
-these warnings surface cleanup work without failing lint. Promote them to errors
-as the codebase is cleaned up. Project-specific design-system contracts remain a
-follow-up.
-
-Configure `shadcn/*` rules under `rules` in [`.oxlintrc.json`](.oxlintrc.json).
-See the [available rules](https://github.com/shadcn-ui/lint/blob/main/README.md#rules)
-and [design-system configuration examples](https://github.com/shadcn-ui/lint/blob/main/docs/design-systems.md).
-Component imports (`@/components/ui`) and the Tailwind v4 theme (`app/globals.css`)
-are discovered through `components.json` and the TypeScript path alias; no custom
-discovery settings are needed.
-
-### Focused native checks
-
-The built-in `vitest` plugin is scoped to `*.test.*` and `*.spec.*` JS/TS files.
-It rejects focused tests, malformed expectations, and unawaited/unreturned async
-expectations. `valid-expect` permits Vitest's optional second message argument.
-
-Four additional `jsx-a11y` warnings cover click handlers without keyboard handlers,
-interactive roles without focus support, static elements with interaction handlers,
-and positive tab indices. Prefer native buttons and links over adding roles to divs.
-
-See [Oxlint's built-in plugins](https://oxc.rs/docs/guide/usage/linter/plugins).
-Type-aware async rules (`no-floating-promises`, `no-misused-promises`) remain a
-separate follow-up; this migration does not enable a broad style preset or
-allocation-focused React performance rules.
-
-### Selected anti-slop rules
-
-[`tools/oxlint/anti-slop.ts`](tools/oxlint/anti-slop.ts) enables two rules as warnings:
-`no-chained-type-assertions` and `no-widen-then-assert`. Existing test doubles that
-use chained assertions remain visible as warnings. Runtime validation of `unknown`
-inputs is allowed; the other upstream anti-slop policies are not enabled.
-
-Source and license provenance are recorded in the
-[vendor README](tools/oxlint/vendor/anti-slop/README.md). Keep `oxlint` and
-`@oxlint/plugins` pinned to matching versions and run `bun run test run tests/tools`
-when updating either the plugin API or vendored rules. JavaScript plugin support
-is still alpha, so dependency upgrades need a diagnostic review.
+The pages that came before the redesign live on in git tags. The old sound pages are at `archive/sound-2026-10`, and the first WavePlayer is at `archive/legacy-wave-player-2026-10-04`.
