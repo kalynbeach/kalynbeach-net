@@ -169,8 +169,11 @@
  */
 
 /*
- * role-name and role-title trim to the cap top and the baseline, so the
- * name and a page's title align by their caps on the top line.
+ * role-name and role-title trim to the cap top, so the name and a page's
+ * title align by their caps on the top line. The name also trims to its
+ * baseline; the title keeps its line box below, so the lede sits 16 under
+ * it as drawn. Below 1200px there is no top line, and the title keeps its
+ * whole line box, 20 under the top bar, as the 390 board draws it.
  */
 @utility role-name {
   font-family: var(--font-text);
@@ -185,16 +188,17 @@
 }
 
 @utility role-title {
-  font-family: var(--font-text);
-  font-size: 2.75rem;
-  font-weight: 500;
-  line-height: 1.091;
-  letter-spacing: -0.025em;
-  text-box: trim-both cap alphabetic;
+  font-family: var(--font-ui);
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  text-box: trim-start cap alphabetic;
   text-wrap: balance;
   @variant max-desktop {
     font-size: 2rem;
-    line-height: 1.125;
+    line-height: 1.25;
+    text-box: normal;
   }
 }
 

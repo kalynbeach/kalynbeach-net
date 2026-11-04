@@ -7,12 +7,12 @@ import type { PageMeta } from "@/lib/site";
  * {...metadata} />`. The shell renders it for system and not-found pages.
  * The prop is `description` because the lede is the meta description.
  *
- * The title's box ends at its baseline (role-title trims it), so the 26 gap
- * puts the lede's line box 16 under the title's untrimmed 48 line, as drawn.
+ * role-title trims only the title's top, and nothing below 1200px, so its
+ * line box ends below the text and the lede sits 16 under it, as drawn.
  */
 export function PageHeader({ title, description }: PageMeta) {
   return (
-    <hgroup data-slot="page-header" className="flex flex-col gap-6.5">
+    <hgroup data-slot="page-header" className="flex flex-col gap-4">
       <h1 data-slot="page-title" className="role-title text-ramp-10">
         {title}
       </h1>
