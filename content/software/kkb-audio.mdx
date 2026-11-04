@@ -1,3 +1,4 @@
+import { Meta } from "@/components/site/page-header";
 import { Screenshot } from "@/components/site/screenshot";
 import { Steps } from "@/components/site/steps";
 
@@ -7,11 +8,11 @@ export const metadata = {
     "A Rust foundation for my sound, audio, and music software. One real-time render engine runs in the browser through WebAssembly and natively on macOS.",
 };
 
-<PageHeader {...metadata} />
+<PageHeader {...metadata}>
+  <Meta>Rust / WebAssembly / TypeScript</Meta>
+</PageHeader>
 
 Each host handles its own files, devices, and lifecycle outside the engine.
-
-<p className="role-mono-sm text-ramp-7">Rust / WebAssembly / TypeScript</p>
 
 ## WavePlayer
 

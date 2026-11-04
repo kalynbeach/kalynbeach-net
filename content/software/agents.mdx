@@ -7,15 +7,15 @@ export const metadata = {
     "Three and a half years of building with AI agents, from a LangChain tool for music makers to the setup that builds this site.",
 };
 
-<PageHeader {...metadata} />
-
-<Stats
-  items={[
-    { label: "Since", value: "2023-04-09" },
-    { label: "@kkb/agents", value: "170 commits" },
-    { label: "Codex and Pi sessions", short: "Sessions", value: "2,807" },
-  ]}
-/>
+<PageHeader {...metadata}>
+  <Stats
+    items={[
+      { label: "Since", value: "2023-04-09" },
+      { label: "@kkb/agents", value: "170 commits" },
+      { label: "Codex and Pi sessions", short: "Sessions", value: "2,807" },
+    ]}
+  />
+</PageHeader>
 
 <Timeline
   years={[
