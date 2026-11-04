@@ -143,9 +143,9 @@ function Sections({ children }: { children: ReactNode }) {
   // still play, and the block's own key guide answers ?.
   const controlsShown = placement.stage && layout === "desktop";
   const controls = useWaveformControls(controlsShown);
-  // What the rail holds, top to bottom: the open waveform controls and the
-  // mini player, or Music's Library. The controls' state closes only in an
-  // effect after they unmount, so it counts only while they render.
+  // What the rail holds, top to bottom: the mini player and the open
+  // waveform controls, or Music's Library. The controls' state closes only
+  // in an effect after they unmount, so it counts only while they render.
   const railHolds =
     (controlsShown && controls.state.panel.kind === "open") ||
     placement.frame === "mini" ||
@@ -272,8 +272,8 @@ function Sections({ children }: { children: ReactNode }) {
           // Items stack 40 apart from the top line down, and the rail stays
           // within the frame. It starts 8 above the top line, padded back
           // down, so a labelled item's header, which rises 8 to put its
-          // label's caps on the line, isn't clipped. The waveform controls
-          // go first, above the mini player.
+          // label's caps on the line, isn't clipped. The mini player goes
+          // first, and the waveform controls open under it.
           <Rail
             data-slot="site-rail"
             role={Rail === "aside" && !railHolds ? "none" : undefined}
@@ -281,12 +281,17 @@ function Sections({ children }: { children: ReactNode }) {
             className="max-desktop:hidden desktop:top-[calc(var(--spacing-top)-0.5rem)] desktop:max-h-[calc(var(--spacing-frame)+0.5rem)] desktop:sticky desktop:-mt-2 desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto desktop:pt-2"
             {...(controlsShown ? pointerZone(controls, "rail") : {})}
           >
-            {controlsShown && <WaveformControls controls={controls} />}
             {placement.frame === "mini" && (
               <RailPlayer
                 live={!placement.stage}
                 first={!miniShown}
                 onShown={() => setMiniShown(true)}
+              />
+            )}
+            {controlsShown && (
+              <WaveformControls
+                controls={controls}
+                underMini={placement.frame === "mini"}
               />
             )}
             {music && (
