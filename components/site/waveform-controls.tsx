@@ -459,7 +459,10 @@ export function WaveformControls({
           className="flex flex-col"
         >
           <div className="flex h-6 items-center gap-2">
-            <h2 id={headingId} className="type-label text-ramp-10 flex-1">
+            <h2
+              id={headingId}
+              className="role-mono-sm text-ramp-10 flex-1 font-medium"
+            >
               Waveform controls
             </h2>
             <button
@@ -524,7 +527,7 @@ export function WaveformControls({
                               ? ""
                               : undefined
                           }
-                          className="type-pixel bg-ramp-3 text-ramp-9 data-pressed:bg-ramp-10 data-pressed:text-ramp-1 flex h-5 min-w-5 items-center justify-center px-1.5"
+                          className="role-mono-sm bg-ramp-3 text-ramp-9 data-pressed:bg-ramp-10 data-pressed:text-ramp-1 flex h-5 min-w-5 items-center justify-center px-1.5"
                         >
                           {cap.text}
                         </kbd>
