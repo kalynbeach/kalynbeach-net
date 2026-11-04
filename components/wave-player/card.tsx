@@ -84,14 +84,16 @@ export function CardView({
                 <p className="type-caption text-muted-foreground min-w-0">
                   {byline}
                 </p>
-                <span className="type-pixel text-muted-foreground shrink-0 tabular-nums">
+                <span className="type-pixel font-label text-muted-foreground shrink-0 tabular-nums">
                   {current
                     ? formatOrdinal(current.index, state.tracks.length)
                     : null}
                 </span>
               </div>
               {current?.track.tag ? (
-                <Badge variant="outline">{current.track.tag}</Badge>
+                <Badge variant="outline" face="label">
+                  {current.track.tag}
+                </Badge>
               ) : null}
             </div>
             <SeekBar state={state} playhead={playhead} onCommand={onCommand} />

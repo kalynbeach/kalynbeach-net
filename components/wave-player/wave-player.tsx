@@ -34,6 +34,13 @@
  * time, and the transport, over a thin progress line, with no seek. Every
  * view wraps a long title and never truncates it.
  *
+ * Type. Time readouts keep --font-pixel. They are the elapsed time, the
+ * remaining time, every duration, and --:-- for an unknown time. The other
+ * pixel-style text takes --font-label: the card's track counter, the
+ * Library's track count, and the status and tag Badges. It keeps the pixel
+ * size and tracking, and --font-label defaults to --font-pixel, so Kevelle
+ * looks the same until a host sets the label font to its own face.
+ *
  * Provider. Put it where it outlives navigation, such as a Next.js root
  * layout. Playback lives there, so views mount and unmount freely. `tracks`
  * is plain data a server component can pass, in play order: { id, title,

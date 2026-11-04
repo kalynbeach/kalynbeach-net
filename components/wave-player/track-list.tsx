@@ -35,7 +35,7 @@ export function TrackListView({
         <h2 id={heading} className="type-label text-foreground">
           Library
         </h2>
-        <span className="type-pixel text-muted-foreground tabular-nums">
+        <span className="type-pixel font-label text-muted-foreground tabular-nums">
           {formatCount(state.tracks.length)}
         </span>
       </div>

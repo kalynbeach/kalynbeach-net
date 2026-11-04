@@ -20,7 +20,11 @@ import { FAILURE, STATUS_VIEW } from "./status-view";
 export function StatusBadge({ state }: { readonly state: PlayerState }) {
   const badge = STATUS_VIEW[state.status.kind].badge;
 
-  return badge ? <Badge variant={badge.variant}>{badge.label}</Badge> : null;
+  return badge ? (
+    <Badge variant={badge.variant} face="label">
+      {badge.label}
+    </Badge>
+  ) : null;
 }
 
 /**

@@ -26,9 +26,16 @@ const badgeVariants = cva(
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary link-underline hover:underline",
       },
+      // A badge is a value in the pixel face. A label badge, such as a
+      // status or a tag, keeps the size and takes --font-label.
+      face: {
+        value: "",
+        label: "font-label",
+      },
     },
     defaultVariants: {
       variant: "default",
+      face: "value",
     },
   }
 );
@@ -36,6 +43,7 @@ const badgeVariants = cva(
 function Badge({
   className,
   variant = "default",
+  face = "value",
   render,
   ...props
 }: useRender.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
@@ -43,7 +51,7 @@ function Badge({
     defaultTagName: "span",
     props: mergeProps<"span">(
       {
-        className: cn(badgeVariants({ variant }), className),
+        className: cn(badgeVariants({ variant, face }), className),
       },
       props
     ),

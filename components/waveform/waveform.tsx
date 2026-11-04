@@ -107,7 +107,10 @@
  * that stage is mounted and present, until the visitor turns page keys off
  * with the key guide's switch, as WCAG 2.1.4 asks. The switch lasts as long
  * as the provider, and the focused stage still plays, so a visitor can turn
- * them back on. Keys stand down with Ctrl, Meta, or Alt, during IME
+ * them back on. A host that shows its own page keys switch reads and sets
+ * the same setting with useWaveformPageKeys(), which is null without
+ * onConfigChange, and keeps keys="page" on the stage, so that one setting
+ * decides. Keys stand down with Ctrl, Meta, or Alt, during IME
  * composition, after another handler took the key, while a modal dialog is
  * open, and while a text field has focus, and a focused control keeps its
  * own Space, Enter, arrows, Home, End, Page Up, Page Down, and Escape.
@@ -275,7 +278,10 @@
  * they exist, and it also shows after the pointer rests 600 ms on the stage,
  * and for 3 s after a printable key that plays nothing. Without them it says
  * how to strike. Pressing the button, or Space or Enter while it has focus,
- * strikes the waveform. An absent stage drops the button.
+ * strikes the waveform. hint={false} drops the caption, and the button's
+ * aria-describedby with it, for a host that teaches the keys its own way;
+ * focus then shows only through the bloom, and ? still opens the key guide
+ * where a one-line caption would hold it. An absent stage drops the button.
  * useWaveform().strike() strikes from a page's own control, and
  * WaveformPanel, in ./panel.tsx, edits every setting.
  */
@@ -429,6 +435,22 @@ export function useWaveform(): { strike(): void } {
   return React.useMemo(() => ({ strike: engine.strike }), [engine]);
 }
 
+/**
+ * The key guide's page keys switch, for a host that shows its own. It is
+ * the provider's one setting, so the host's control and the guide's switch
+ * always agree. Null without onConfigChange, where the stage has no keys.
+ */
+export function useWaveformPageKeys(): Pick<
+  StageKeys,
+  "pageKeys" | "setPageKeys"
+> | null {
+  const { keys } = useWaveformContext("useWaveformPageKeys");
+
+  return keys
+    ? { pageKeys: keys.pageKeys, setPageKeys: keys.setPageKeys }
+    : null;
+}
+
 /** The provider's config and its change handler, for an editor such as WaveformPanel. */
 export function useWaveformConfig() {
   const { config, onConfigChange } = useWaveformContext("useWaveformConfig");
@@ -459,8 +481,18 @@ export type WaveformProps = Placement &
          * key guide.
          */
         readonly keys?: StageKeysScope;
+        /**
+         * Default true: the caption at the stage's bottom edge, which says
+         * how to play it on focus, dwell, and stray keys. false renders no
+         * caption and drops the button's aria-describedby.
+         */
+        readonly hint?: boolean;
       }
-    | { readonly form: Exclude<Form, "stage">; readonly keys?: never }
+    | {
+        readonly form: Exclude<Form, "stage">;
+        readonly keys?: never;
+        readonly hint?: never;
+      }
   );
 
 export function Waveform(props: WaveformProps) {
@@ -520,6 +552,7 @@ function Slot({
   anchor = null,
   present = true,
   keys = "focus",
+  hint = true,
   className,
 }: WaveformProps) {
   const { engine } = useWaveformContext("Waveform");
@@ -552,7 +585,9 @@ function Slot({
 
   return (
     <div ref={box} className={cn("relative", className)}>
-      {staged ? <Stage scope={keys} onLit={setFocused} /> : null}
+      {staged ? (
+        <Stage scope={keys} captioned={hint} onLit={setFocused} />
+      ) : null}
     </div>
   );
 }
@@ -635,12 +670,14 @@ const AT_REST: Hint = { dwell: false, focus: false, stray: false };
 
 type Timer = ReturnType<typeof setTimeout>;
 
-/** The stage's strike button, and with keys, its hint and its key guide. */
+/** The stage's strike button, its hint unless the host turns it off, and with keys, its key guide. */
 function Stage({
   scope,
+  captioned,
   onLit,
 }: {
   readonly scope: StageKeysScope;
+  readonly captioned: boolean;
   readonly onLit: (lit: boolean) => void;
 }) {
   const { engine, keys } = useWaveformContext("Waveform");
@@ -695,7 +732,7 @@ function Stage({
     const hit = entryFor(WAVEFORM_KEYS, input);
 
     if (!hit) {
-      if (input.key.length === 1) strayKey();
+      if (captioned && input.key.length === 1) strayKey();
 
       return;
     }
@@ -760,7 +797,7 @@ function Stage({
   // where the bloom lift has no room, at the bloom's limit.
   const shown = hint.focus || (keys !== null && (hint.dwell || hint.stray));
 
-  const caption = (
+  const caption = captioned ? (
     <span
       id={hintId}
       data-shown={shown ? "" : undefined}
@@ -768,7 +805,7 @@ function Stage({
     >
       {keys ? COPY.hint : COPY.strikeHint}
     </span>
-  );
+  ) : null;
 
   const edge =
     "pointer-events-none absolute inset-x-0 bottom-3 flex justify-center";
@@ -780,7 +817,7 @@ function Stage({
         type="button"
         aria-label={COPY.stage}
         aria-keyshortcuts={keys ? shortcutsOf(WAVEFORM_KEYS) : undefined}
-        aria-describedby={hintId}
+        aria-describedby={captioned ? hintId : undefined}
         onClick={engine.strike}
         onKeyDown={(event) => {
           // Space and Enter strike through the button's own click.
@@ -798,7 +835,7 @@ function Stage({
           setHint((last) => ({ ...last, focus: false }));
         }}
         onPointerMove={(event) => {
-          if (event.pointerType === "touch" || hint.dwell) return;
+          if (!captioned || event.pointerType === "touch" || hint.dwell) return;
 
           if (dwell.current) clearTimeout(dwell.current);
 
@@ -816,7 +853,7 @@ function Stage({
       />
       {keys ? (
         <Popover open={guide} onOpenChange={setGuide}>
-          {/* The guide's anchor along the stage's bottom edge, holding the hint. Hidden and out of reach, so only ? opens the guide. */}
+          {/* The guide's anchor along the stage's bottom edge, holding the hint, or without it a blank of the caption's one-line height, so the guide opens where it would over an unwrapped caption. Hidden and out of reach, so only ? opens the guide. */}
           <PopoverTrigger
             nativeButton={false}
             tabIndex={-1}
@@ -824,7 +861,7 @@ function Stage({
             render={<span />}
             className={edge}
           >
-            {caption}
+            {caption ?? <span className="type-caption box-content h-lh py-1" />}
           </PopoverTrigger>
           <PopoverContent side="top" initialFocus={false} finalFocus={button}>
             <PopoverTitle>{COPY.guide}</PopoverTitle>
@@ -858,11 +895,11 @@ function Stage({
             ) : null}
           </PopoverContent>
         </Popover>
-      ) : (
+      ) : caption ? (
         <span aria-hidden="true" className={edge}>
           {caption}
         </span>
-      )}
+      ) : null}
     </>
   );
 }
