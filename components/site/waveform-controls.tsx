@@ -2,7 +2,8 @@
 
 /**
  * Home's waveform controls on desktop: the ghost "?" under the stage and the
- * key map at the top of the rail, built around the installed block's keys.
+ * key map in the rail, under the mini player when there is one, built
+ * around the installed block's keys.
  * lib/waveform-controls.ts holds the rows and the state machine; this file
  * feeds it events and draws it.
  *
@@ -341,6 +342,46 @@ function useReducedFade(
 }
 
 /**
+ * Glides the controls to their new place when the mini player above them
+ * comes or goes, which would otherwise move them by its height and the
+ * rail's gap in one frame. The mini follows playback, outside any
+ * transition, so the glide is a Web Animation from the frame's last settled
+ * offset, noted on mount and after each of its own transitions. Under
+ * reduced motion the controls move at once.
+ */
+function useGlide(frame: RefObject<HTMLElement | null>, underMini: boolean) {
+  const settled = useRef<number | null>(null);
+
+  useEffect(() => {
+    const element = frame.current;
+
+    if (!element) return;
+    const note = () => {
+      settled.current = element.offsetTop;
+    };
+    note();
+    element.addEventListener("transitionend", note);
+
+    return () => element.removeEventListener("transitionend", note);
+  }, [frame]);
+
+  useLayoutEffect(() => {
+    const element = frame.current;
+    const from = settled.current;
+
+    if (!element || from === null) return;
+    settled.current = element.offsetTop;
+    const by = from - element.offsetTop;
+
+    if (by === 0 || window.matchMedia(REDUCED_MOTION).matches) return;
+    element.animate(
+      { translate: [`0 ${by}px`, "0 0"] },
+      { duration: 220, easing: CONTROLS_FADE.easing }
+    );
+  }, [frame, underMini]);
+}
+
+/**
  * The ghost "?", 24 under the stage on its axis. Its ::before spans that
  * gap, so the pointer crossing it never leaves the zone. Focus shows it,
  * since it is the next tab stop after the nav.
@@ -382,22 +423,28 @@ export function WaveformGhost({
   );
 }
 
-/** The key map at the top of the rail. Mounted on Home for its transitions; inert while closed. */
+/** The key map in the rail. Mounted on Home for its transitions; inert while closed. */
 export function WaveformControls({
   controls,
+  underMini,
 }: {
   readonly controls: WaveformControlsApi;
+  /** The mini player sits above in the rail. */
+  readonly underMini: boolean;
 }) {
   const { state, dispatch, panel, panelId, pageKeys, setPageKeys } = controls;
   const { config } = useWaveformConfig();
   const headingId = useId();
+  const frame = useRef<HTMLDivElement>(null);
   const open = state.panel.kind === "open";
   const mark = state.panel.kind === "open" ? state.panel.mark : null;
 
   useReducedFade(panel, open, CONTROLS_FADE);
+  useGlide(frame, underMini);
 
   return (
     <div
+      ref={frame}
       data-slot="waveform-controls-frame"
       data-open={open ? "" : undefined}
       inert={!open}

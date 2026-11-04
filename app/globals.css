@@ -354,7 +354,7 @@
  *   ghost press         scale 0.97 on :active          120ms ease-out
  *   controls in / out   the row's reveal, opacity,     220 / 160ms
  *                       translateY -4px
- *   the mini below      follows the row, in step       220 / 160ms
+ *   the mini above      stays put; the row opens under it
  *   a key's value       phosphor, then ink 8           held 1500ms, then 300ms ease
  *
  * Kevelle's reduced-motion rule cuts every transition to 0.01ms, so there
@@ -393,30 +393,35 @@
   }
 
   /*
-   * Closed, the row takes no room: grid rows 0fr, and its bottom margin
-   * cancels the rail's 40 gap less the 8 it rises, so the mini below stays
-   * on the top line. Open, the header rises 8 so the label's caps sit on
-   * the top line, and the row grows to the controls' height, carrying the
-   * mini down with it.
+   * The mini player, when the rail has one, keeps the top line, and the
+   * controls open under it. Closed, the row takes no room: grid rows 0fr,
+   * and after the mini its top margin cancels the rail's 40 gap. Open, it
+   * grows to the controls' height, 40 under the mini, which never moves. With
+   * no mini the row comes first, and its header rises 8 so the label's caps
+   * sit on the top line.
    */
   [data-slot="waveform-controls-frame"] {
-    --rise: 8px;
     display: grid;
     grid-template-rows: 0fr;
-    margin-top: calc(-1 * var(--rise));
-    margin-bottom: calc(var(--rise) - 2.5rem);
+    margin-top: -0.5rem;
     visibility: hidden;
     transition:
       grid-template-rows 160ms var(--ease-controls),
-      margin-bottom 160ms var(--ease-controls),
+      margin-top 160ms var(--ease-controls),
       visibility 0s 160ms;
 
+    &:not(:first-child) {
+      margin-top: -2.5rem;
+    }
     &[data-open] {
       grid-template-rows: 1fr;
-      margin-bottom: 0;
       visibility: visible;
       transition-duration: 220ms, 220ms, 0s;
       transition-delay: 0s;
+
+      &:not(:first-child) {
+        margin-top: 0;
+      }
     }
     @media (prefers-reduced-motion: reduce) {
       &:not([data-open]) {

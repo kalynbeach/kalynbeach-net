@@ -1,7 +1,7 @@
 /**
- * Home's waveform controls: the ghost "?" under the stage and the key map at
- * the top of the rail (Layout E, "Waveform controls: states, timings,
- * motion"). This module is the pure half: the rows, read from the installed
+ * Home's waveform controls: the ghost "?" under the stage and the key map in
+ * the rail, under the mini player when there is one (Layout E, "Waveform
+ * controls: states, timings, motion"). This module is the pure half: the rows, read from the installed
  * block's key table, and one state machine with the timers each state runs.
  * components/site/waveform-controls.tsx feeds it events and draws it.
  */
