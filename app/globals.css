@@ -349,7 +349,8 @@
  * Layout E's motion. CSS transitions, so a close during the entrance
  * reverses from where it is. Key presses never animate.
  *
- *   ghost in / out      opacity                        200 / 150ms
+ *   ghost in            opacity, scale 0.9, blur 4px   280ms Kevelle ease-out
+ *   ghost out           the same, after a 600ms linger 160ms Kevelle ease-out
  *   ghost press         scale 0.97 on :active          120ms ease-out
  *   controls in / out   the row's reveal, opacity,     220 / 160ms
  *                       translateY -4px
@@ -357,26 +358,36 @@
  *   a key's value       phosphor, then ink 8           held 1500ms, then 300ms ease
  *
  * Kevelle's reduced-motion rule cuts every transition to 0.01ms, so there
- * the ghost's fade and the controls' opacity (120 in, 100 out) run as Web
- * Animations, nothing slides or scales, and a closing row waits out the
- * 100ms fade before it collapses.
+ * the ghost's fade (280 in, 160 out) and the controls' opacity (120 in,
+ * 100 out) run as Web Animations, nothing slides, scales or blurs, and a
+ * closing row waits out the 100ms fade before it collapses.
  */
 @layer components {
   [data-slot="waveform-ghost"] {
     opacity: 0;
     pointer-events: none;
-    transition:
-      opacity 150ms var(--ease-controls),
-      scale 120ms ease-out;
+    transition-property: opacity, scale, filter, transform;
+    transition-duration:
+      var(--duration-small), var(--duration-small), var(--duration-small), 120ms;
+    transition-timing-function:
+      var(--ease-out), var(--ease-out), var(--ease-out), ease-out;
 
     &[data-shown] {
       opacity: 1;
+      scale: 1;
+      filter: blur(0);
       pointer-events: auto;
-      transition-duration: 200ms, 120ms;
+      transition-duration:
+        var(--duration-large), var(--duration-large), var(--duration-large),
+        120ms;
     }
     @media (prefers-reduced-motion: no-preference) {
+      &:not([data-shown]) {
+        scale: 0.9;
+        filter: blur(4px);
+      }
       &:active {
-        scale: 0.97;
+        transform: scale(0.97);
       }
     }
   }

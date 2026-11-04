@@ -115,11 +115,11 @@ describe("the controls' states", () => {
     expect(kind(focused)).toBe("ghost");
     const blurred = run([{ type: "ghostFocus", focused: false }], focused);
     expect(kind(blurred)).toBe("closing");
-    expect(timers(blurred)).toEqual([["fade", 400]]);
+    expect(timers(blurred)).toEqual([["fade", 600]]);
     expect(kind(run([{ type: "fade" }], blurred))).toBe("rest");
   });
 
-  test("ghost: it lingers 400 ms once the pointer leaves, and stays if it comes back", () => {
+  test("ghost: it lingers 600 ms once the pointer leaves, and stays if it comes back", () => {
     const ghost = run([{ type: "pointer", to: "stage" }, { type: "dwell" }]);
     const leaving = run([{ type: "pointer", to: "away" }], ghost);
     expect(kind(leaving)).toBe("closing");

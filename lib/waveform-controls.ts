@@ -249,7 +249,7 @@ export type ControlsEvent =
 
 /** E's timings. */
 export const DWELL_MS = 1000;
-export const GHOST_LINGER_MS = 400;
+export const GHOST_LINGER_MS = 600;
 export const VALUE_MS = 1500;
 
 export const INITIAL_CONTROLS: ControlsState = {
