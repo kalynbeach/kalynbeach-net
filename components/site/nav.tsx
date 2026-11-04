@@ -16,9 +16,10 @@ import { Waveform } from "@/components/waveform/waveform";
 /**
  * "Kalyn Beach" with the mark, the static waveform, right of it, at the top
  * of the sidebar, in the mobile top bar and in the sheet header. The mark's
- * box always renders, so the row keeps its size. The shell sets `mark` on
- * the one Identity its layout shows, Home included, since the waveform lends
- * its view-transition name to the newest mark even when CSS hides it. Below
+ * box always renders, so the row keeps its size. The shell sets `mark` only
+ * on the one Identity its layout shows, since the waveform lends its
+ * view-transition name to the newest mark even when CSS hides it, and on
+ * no Identity on Home, where the stage is the figure. Below
  * 1200px the open sheet's Identity is the newest, so it holds the name while
  * the sheet covers the top bar.
  *

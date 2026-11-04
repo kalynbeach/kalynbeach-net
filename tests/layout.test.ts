@@ -25,9 +25,9 @@ describe("desktop breakpoint", () => {
 
 describe("placement", () => {
   test.each<[string, boolean, Layout | null, Placement]>([
-    ["/", false, "desktop", { stage: true, frame: null, mark: "desktop" }],
-    ["/", true, "desktop", { stage: true, frame: "mini", mark: "desktop" }],
-    ["/", true, "narrow", { stage: true, frame: "bar", mark: "narrow" }],
+    ["/", false, "desktop", { stage: true, frame: null, mark: null }],
+    ["/", true, "desktop", { stage: true, frame: "mini", mark: null }],
+    ["/", true, "narrow", { stage: true, frame: "bar", mark: null }],
     ["/", true, null, { stage: true, frame: null, mark: null }],
     [
       "/music",
@@ -124,13 +124,13 @@ describe("placement", () => {
     }
   });
 
-  test("shows the mark on every page, Home included, once the layout is known", () => {
-    for (const { route, layout, placement } of cases) {
-      expect(placement.mark, route).toBe(layout);
+  test("shows the mark on every page but Home once the layout is known", () => {
+    for (const { route, layout, entry, placement } of cases) {
+      if (entry.kind !== "stage") expect(placement.mark, route).toBe(layout);
     }
   });
 
-  test.fails("draws no mark on Home, at any layout", () => {
+  test("draws no mark on Home, at any layout", () => {
     for (const { route, entry, placement } of cases) {
       if (entry.kind === "stage") expect(placement.mark, route).toBeNull();
     }
