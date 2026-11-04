@@ -1,3 +1,5 @@
+import { LinkList } from "@/components/site/link-list";
+
 export const metadata = {
   title: "About",
   description:
@@ -18,4 +20,12 @@ I've been developing software since around 2012, and professionally since 2015. 
 
 ## Elsewhere
 
-- GitHub [kalynbeach](https://github.com/kalynbeach)
+<LinkList
+  links={[
+    {
+      service: "GitHub",
+      label: "kalynbeach",
+      href: "https://github.com/kalynbeach",
+    },
+  ]}
+/>
