@@ -130,6 +130,12 @@ describe("placement", () => {
     }
   });
 
+  test.fails("draws no mark on Home, at any layout", () => {
+    for (const { route, entry, placement } of cases) {
+      if (entry.kind === "stage") expect(placement.mark, route).toBeNull();
+    }
+  });
+
   test("shows the card exactly where the site map gives the full player", () => {
     for (const { route, entry, placement } of cases) {
       expect(placement.frame === "card", route).toBe(
