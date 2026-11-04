@@ -20,8 +20,10 @@
  * all, and only that event counts as played.
  *
  * Page-wide keys: the controls carry the switch that turns them off (WCAG
- * 2.1.4). Off, the stage takes keys="focus", and `?` works only with focus
- * on the stage, the ghost or the controls.
+ * 2.1.4). It flips the provider's one setting (useWaveformPageKeys), the
+ * same one the block's key guide flips below 1200px, so a choice holds at
+ * every width. Off, the stage plays only with focus, and `?` works only
+ * with focus on the stage, the ghost or the controls.
  */
 import {
   useCallback,
@@ -31,13 +33,15 @@ import {
   useLayoutEffect,
   useReducer,
   useRef,
-  useState,
   type PointerEvent,
   type RefObject,
 } from "react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
-import { useWaveformConfig } from "@/components/waveform/waveform";
+import {
+  useWaveformConfig,
+  useWaveformPageKeys,
+} from "@/components/waveform/waveform";
 import {
   COPY,
   GUIDE_KEY,
@@ -126,7 +130,7 @@ function keyInputOf(event: KeyboardEvent, stage: Element | null): KeyInput {
 export type WaveformControlsApi = {
   readonly state: ControlsState;
   readonly dispatch: (event: ControlsEvent) => void;
-  /** Page-wide keys, the switch in the controls. Lasts for the visit. */
+  /** Page-wide keys: the provider's setting, which lasts for the visit. */
   readonly pageKeys: boolean;
   readonly setPageKeys: (on: boolean) => void;
   readonly ghost: RefObject<HTMLButtonElement | null>;
@@ -137,11 +141,16 @@ export type WaveformControlsApi = {
 /**
  * The controls' state, keys and timers. `active` while Home shows on
  * desktop; turning inactive, by leaving Home or narrowing the window,
- * closes everything.
+ * closes everything. Runs under the site's PublicWaveform, which takes
+ * onConfigChange, so the stage has keys.
  */
 export function useWaveformControls(active: boolean): WaveformControlsApi {
   const [state, dispatch] = useReducer(controlsReducer, INITIAL_CONTROLS);
-  const [pageKeys, setPageKeys] = useState(true);
+  const keys = useWaveformPageKeys();
+
+  if (!keys)
+    throw new Error("useWaveformControls needs a keyed WaveformProvider");
+  const { pageKeys, setPageKeys } = keys;
   const ghost = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLElement>(null);
   const panelId = useId();

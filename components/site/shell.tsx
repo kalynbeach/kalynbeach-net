@@ -246,12 +246,8 @@ function Sections({ children }: { children: ReactNode }) {
             >
               {controlsShown && <WaveformGhost controls={controls} />}
               <div ref={stage} data-slot="waveform-stage" className="size-full">
-                {/* Page-wide keys: a visitor plays the figure with nothing focused, until the controls' switch turns them off. The choice holds below 1200px too, where the switch isn't shown. */}
-                <Waveform
-                  form="stage"
-                  keys={controls.pageKeys ? "page" : "focus"}
-                  className="size-full"
-                />
+                {/* Page-wide keys: a visitor plays the figure with nothing focused. The provider's one setting turns them off, flipped by the controls' switch on desktop and the block's key guide below 1200px, so the choice holds at every width. */}
+                <Waveform form="stage" keys="page" className="size-full" />
               </div>
             </div>
           )}
