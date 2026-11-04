@@ -20,8 +20,11 @@ const marker = {
 } as const;
 
 /**
- * Years oldest first. The first entry and the latest one are lit, so adding
- * a newer entry moves the latest highlight with no other edit.
+ * A section of its own, with its heading and the legend at the right, then the
+ * years, oldest first, 12 apart. A year is a TX-02 label above its entries,
+ * in gray ink; the signal is only for the lit markers. The first entry and
+ * the latest one are lit, so adding a newer entry moves the latest highlight
+ * with no other edit.
  *
  * One row shape at every width: top-aligned, 28px lines (the 16px labels pad
  * 6px above and below), so a one-line row is 28 tall and a wrapped row keeps
@@ -39,7 +42,7 @@ export function Timeline({ years }: { years: readonly Year[] }) {
     <section data-slot="timeline">
       <div
         data-slot="timeline-header"
-        className="flex items-baseline justify-between"
+        className="flex items-center justify-between"
       >
         <h2 className="role-heading text-ramp-10">Timeline</h2>
         <p className="flex items-baseline gap-2">
@@ -50,44 +53,46 @@ export function Timeline({ years }: { years: readonly Year[] }) {
           <span className="role-mono-sm text-ramp-7">inferred</span>
         </p>
       </div>
-      {years.map(({ year, entries }) => (
-        <section key={year}>
-          <h3 className="role-readout h-row text-signal-dim flex items-end pb-1">
-            {year}
-          </h3>
-          <ol>
-            {entries.map((entry) => (
-              <li key={entry.date} className="flex gap-3">
-                <time
-                  dateTime={`${year}-${entry.date}`}
-                  className="role-mono-sm text-ramp-7 desktop:w-12 w-10 shrink-0 py-1.5"
-                >
-                  {entry.date}
-                </time>
-                <span aria-hidden className="relative w-1.75 shrink-0 pt-2.5">
-                  {!entry.inferred && (
-                    <span className="bg-ramp-4 max-desktop:hidden absolute inset-y-0 left-0.75 w-px" />
-                  )}
-                  <span
-                    className={cn(
-                      "relative block size-1.75",
-                      marker[markerOf(entry)]
+      <div className="mt-3 flex flex-col gap-3">
+        {years.map(({ year, entries }) => (
+          <section key={year}>
+            <h3 className="role-mono-sm text-ramp-9 py-1.5 font-medium">
+              {year}
+            </h3>
+            <ol>
+              {entries.map((entry) => (
+                <li key={entry.date} className="flex gap-3">
+                  <time
+                    dateTime={`${year}-${entry.date}`}
+                    className="role-mono-sm text-ramp-7 desktop:w-12 w-10 shrink-0 py-1.5"
+                  >
+                    {entry.date}
+                  </time>
+                  <span aria-hidden className="relative w-1.75 shrink-0 pt-2.5">
+                    {!entry.inferred && (
+                      <span className="bg-ramp-4 max-desktop:hidden absolute inset-y-0 left-0.75 w-px" />
                     )}
-                  />
-                </span>
-                <span className="role-body text-ramp-9 flex-1">
-                  {entry.text}
-                </span>
-                {entry.tag && (
-                  <span className="role-mono-sm text-signal-dim w-max py-1.5">
-                    {entry.tag}
+                    <span
+                      className={cn(
+                        "relative block size-1.75",
+                        marker[markerOf(entry)]
+                      )}
+                    />
                   </span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </section>
-      ))}
+                  <span className="role-body text-ramp-9 flex-1">
+                    {entry.text}
+                  </span>
+                  {entry.tag && (
+                    <span className="role-mono-sm text-ramp-7 w-max py-1.5">
+                      {entry.tag}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))}
+      </div>
     </section>
   );
 }
