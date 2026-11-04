@@ -311,7 +311,7 @@ function TrackRow({
   return (
     <tbody>
       <tr className="border-ramp-4 border-t">
-        <td className="role-readout text-ramp-6 py-3 pe-4 align-top">
+        <td className="role-mono-sm text-ramp-7 py-3 pe-4 align-top">
           {formatCount(track.id)}
         </td>
         <th scope="row" className="py-3 pe-6 text-start font-normal">
@@ -336,7 +336,7 @@ function TrackRow({
                 {audio.src === null && (
                   <Badge variant="destructive">Missing</Badge>
                 )}
-                <span className="role-readout text-ramp-7">
+                <span className="role-mono-sm text-ramp-7">
                   {formatClock(audio.duration)}
                 </span>
               </>
@@ -529,9 +529,7 @@ function UploadStatus({ view, send }: { view: UploadView; send: Send }) {
     <div className="flex flex-col gap-2">
       <p className="role-mono-sm text-ramp-7 flex gap-2">
         <span className="min-w-0 break-all">{file.name}</span>
-        {file.duration !== null && (
-          <span className="role-readout">{formatClock(file.duration)}</span>
-        )}
+        {file.duration !== null && <span>{formatClock(file.duration)}</span>}
       </p>
       <FieldError>{view.rejection}</FieldError>
       {progress && (
