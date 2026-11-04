@@ -194,7 +194,9 @@ function TrackRow({ track }: { track: AdminTrack }) {
         <span className="flex shrink-0 items-center gap-2">
           {audio.kind === "legacy" ? (
             <>
-              <Badge variant="outline">Legacy</Badge>
+              <Badge variant="outline" face="label">
+                Legacy
+              </Badge>
               <span className="role-mono-sm text-ramp-6">
                 {legacyFileName(audio.src)}
               </span>
@@ -202,7 +204,9 @@ function TrackRow({ track }: { track: AdminTrack }) {
           ) : (
             <>
               {audio.src === null && (
-                <Badge variant="destructive">Missing</Badge>
+                <Badge variant="destructive" face="label">
+                  Missing
+                </Badge>
               )}
               <span className="role-mono-sm text-ramp-7">
                 {formatClock(audio.duration)}
