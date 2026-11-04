@@ -111,9 +111,9 @@ describe("the controls' states", () => {
   });
 
   test("ghost: focus reaching the button shows it, and losing it lets it linger", () => {
-    const focused = run([{ type: "focus", to: "ghost" }]);
+    const focused = run([{ type: "ghostFocus", focused: true }]);
     expect(kind(focused)).toBe("ghost");
-    const blurred = run([{ type: "focus", to: null }], focused);
+    const blurred = run([{ type: "ghostFocus", focused: false }], focused);
     expect(kind(blurred)).toBe("closing");
     expect(timers(blurred)).toEqual([["fade", 400]]);
     expect(kind(run([{ type: "fade" }], blurred))).toBe("rest");
@@ -129,49 +129,52 @@ describe("the controls' states", () => {
     expect(kind(run([{ type: "fade" }], leaving))).toBe("rest");
   });
 
-  test("open, asked: a click on the ghost or ? opens, and stays until closed", () => {
+  test("open: a click on the ghost or ? opens, and stays until closed", () => {
     const ghost = run([{ type: "pointer", to: "stage" }, { type: "dwell" }]);
-    const asked = run([{ type: "toggle" }], ghost);
-    expect(asked.panel).toEqual({ kind: "open", by: "asked", mark: null });
-    expect(timers(run([{ type: "pointer", to: "away" }], asked))).toEqual([]);
-    expect(kind(run([{ type: "idle" }], asked))).toBe("open");
+    const open = run([{ type: "toggle" }], ghost);
+    expect(open.panel).toEqual({ kind: "open", mark: null });
+    expect(timers(run([{ type: "pointer", to: "away" }], open))).toEqual([]);
+    expect(kind(run([pressM, { type: "lift" }], open))).toBe("open");
     // ? from anywhere on Home, with the pointer elsewhere.
-    expect(run([{ type: "toggle" }]).panel).toEqual(asked.panel);
+    expect(run([{ type: "toggle" }]).panel).toEqual(open.panel);
   });
 
   test("closed: ?, × and Escape close, and the ghost stays under the pointer or lingers", () => {
-    const asked = run([{ type: "pointer", to: "stage" }, { type: "toggle" }]);
-    expect(kind(run([{ type: "toggle" }], asked))).toBe("ghost");
-    expect(kind(run([{ type: "close" }], asked))).toBe("ghost");
-    const away = run([{ type: "pointer", to: "away" }], asked);
+    const open = run([{ type: "pointer", to: "stage" }, { type: "toggle" }]);
+    expect(kind(run([{ type: "toggle" }], open))).toBe("ghost");
+    expect(kind(run([{ type: "close" }], open))).toBe("ghost");
+    const away = run([{ type: "pointer", to: "away" }], open);
     expect(kind(run([{ type: "close" }], away))).toBe("closing");
     expect(kind(run([{ type: "close" }]))).toBe("rest");
   });
 
-  test("open, played: a mapped key opens the controls with its cap held and its value fresh", () => {
-    const played = run([pressM]);
-    expect(played.panel).toEqual({
+  test("open: a mapped key marks its row with its cap held and its value fresh", () => {
+    const pressed = run([{ type: "toggle" }, pressM]);
+    expect(pressed.panel).toEqual({
       kind: "open",
-      by: "played",
       mark: { ...spotOf(M), code: "KeyM", fresh: true, press: 1 },
     });
-    expect(played.held).toEqual([{ ...spotOf(M), code: "KeyM" }]);
-    // While held: no idle and no settle.
-    expect(timers(played)).toEqual([]);
-    const lifted = run([{ type: "lift", code: "KeyM" }], played);
+    expect(pressed.held).toEqual([{ ...spotOf(M), code: "KeyM" }]);
+    // While held, the value stays fresh.
+    expect(timers(pressed)).toEqual([]);
+    const lifted = run([{ type: "lift", code: "KeyM" }], pressed);
     expect(lifted.held).toEqual([]);
     expect(lifted.panel).toMatchObject({ mark: { fresh: true } });
-    expect(timers(lifted)).toEqual([
-      ["idle", 8000],
-      ["settle", 1500],
-    ]);
+    expect(timers(lifted)).toEqual([["settle", 1500]]);
     const settled = run([{ type: "settle", press: 1 }], lifted);
-    expect(settled.panel).toMatchObject({ mark: { fresh: false } });
+    expect(settled.panel).toMatchObject({
+      kind: "open",
+      mark: { fresh: false },
+    });
   });
 
-  test("open, played: another key's lift or an earlier press's settle leaves the mark", () => {
-    const played = run([pressM, { type: "lift", code: "KeyN" }]);
-    expect(played.held).toEqual([{ ...spotOf(M), code: "KeyM" }]);
+  test("open: another key's lift or an earlier press's settle leaves the mark", () => {
+    const pressed = run([
+      { type: "toggle" },
+      pressM,
+      { type: "lift", code: "KeyN" },
+    ]);
+    expect(pressed.held).toEqual([{ ...spotOf(M), code: "KeyM" }]);
     const again = run(
       [
         { type: "lift" },
@@ -179,15 +182,16 @@ describe("the controls' states", () => {
         { type: "lift" },
         { type: "settle", press: 1 },
       ],
-      played
+      pressed
     );
     expect(again.panel).toMatchObject({ mark: { press: 2, fresh: true } });
   });
 
-  test("open, played: a sweep still held keeps them open through another key's press and lift", () => {
+  test("open: a sweep still held keeps its cap pressed through another key's press and lift", () => {
     const V = spotOf({ key: "v", code: "KeyV" })!;
     const X = spotOf({ key: "x", code: "KeyX" })!;
     const sweeping = run([
+      { type: "toggle" },
       { type: "press", spot: V, code: "KeyV" },
       { type: "press", spot: X, code: "KeyX" },
       { type: "lift", code: "KeyX" },
@@ -195,44 +199,15 @@ describe("the controls' states", () => {
     expect(sweeping.panel).toMatchObject({ mark: { ...X, fresh: true } });
     expect(sweeping.held).toEqual([{ ...V, code: "KeyV" }]);
     expect(timers(sweeping)).toEqual([["settle", 1500]]);
-    expect(kind(run([{ type: "idle" }], sweeping))).toBe("open");
-    const released = run([{ type: "lift", code: "KeyV" }], sweeping);
-    expect(timers(released)).toEqual([
-      ["idle", 8000],
-      ["settle", 1500],
-    ]);
   });
 
-  test("open, played: 8 s idle hides it, but not while the pointer is on the rail", () => {
-    const played = run([pressM, { type: "lift" }]);
-    expect(kind(run([{ type: "idle" }], played))).toBe("closing");
-    const onRail = run([{ type: "pointer", to: "rail" }], played);
-    expect(timers(onRail)).toEqual([["settle", 1500]]);
-    expect(kind(run([{ type: "idle" }], onRail))).toBe("open");
+  test("closed: a key held when the controls open shows its cap pressed, with no mark yet", () => {
+    const open = run([pressM, { type: "toggle" }]);
+    expect(open.panel).toEqual({ kind: "open", mark: null });
+    expect(open.held).toEqual([{ ...spotOf(M), code: "KeyM" }]);
   });
 
-  test("open, played: focus inside the controls holds off the idle hide until it leaves", () => {
-    const played = run([pressM, { type: "lift" }]);
-    const focused = run([{ type: "focus", to: "controls" }], played);
-    expect(timers(focused)).toEqual([["settle", 1500]]);
-    expect(kind(run([{ type: "idle" }], focused))).toBe("open");
-    const left = run([{ type: "focus", to: null }], focused);
-    expect(timers(left)).toEqual([
-      ["idle", 8000],
-      ["settle", 1500],
-    ]);
-  });
-
-  test("open, asked: a key marks its row and keeps the controls asked", () => {
-    const asked = run([{ type: "toggle" }, pressM]);
-    expect(asked.panel).toMatchObject({
-      kind: "open",
-      by: "asked",
-      mark: { code: "KeyM" },
-    });
-  });
-
-  test.fails("closed: a mapped key plays without opening the controls", () => {
+  test("closed: a mapped key plays without opening the controls", () => {
     expect(kind(run([pressM]))).toBe("rest");
     const ghost = run([{ type: "pointer", to: "stage" }, { type: "dwell" }]);
     expect(kind(run([pressM], ghost))).toBe("ghost");
@@ -242,7 +217,7 @@ describe("the controls' states", () => {
     for (const events of [
       [pressM],
       [{ type: "toggle" }],
-      [{ type: "focus", to: "ghost" }],
+      [{ type: "ghostFocus", focused: true }],
     ] as ControlsEvent[][]) {
       expect(run([...events, { type: "leave" }])).toEqual(INITIAL_CONTROLS);
     }

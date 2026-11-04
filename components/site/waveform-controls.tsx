@@ -355,8 +355,8 @@ export function WaveformGhost({
       aria-expanded={open}
       aria-controls={panelId}
       onClick={() => dispatch({ type: "toggle" })}
-      onFocus={() => dispatch({ type: "focus", to: "ghost" })}
-      onBlur={() => dispatch({ type: "focus", to: null })}
+      onFocus={() => dispatch({ type: "ghostFocus", focused: true })}
+      onBlur={() => dispatch({ type: "ghostFocus", focused: false })}
       className={cn(
         "border-ramp-4 text-ramp-8 font-ui absolute top-[calc(100%+1.5rem)] left-[calc(50%-0.875rem)] flex size-7 items-center justify-center border text-sm/4 font-medium",
         "data-on:border-ramp-6 data-on:bg-ramp-3 data-on:text-ramp-10",
@@ -397,11 +397,6 @@ export function WaveformControls({
           data-slot="waveform-controls"
           aria-labelledby={headingId}
           className="flex flex-col"
-          onFocus={() => dispatch({ type: "focus", to: "controls" })}
-          onBlur={({ currentTarget, relatedTarget }) => {
-            if (!currentTarget.contains(relatedTarget))
-              dispatch({ type: "focus", to: null });
-          }}
         >
           <div className="flex h-6 items-center gap-2">
             <h2 id={headingId} className="type-label text-ramp-10 flex-1">
