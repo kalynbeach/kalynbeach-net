@@ -45,6 +45,7 @@ import {
   useState,
   useSyncExternalStore,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -157,6 +158,8 @@ function Sections({ children }: { children: ReactNode }) {
   const [miniShown, setMiniShown] = useState(false);
 
   useScrollToTop(pathname);
+  const stage = useRef<HTMLDivElement>(null);
+  useUndescribedStage(stage, placement.stage);
 
   return (
     // .root (Kevelle) isolates the page, so Base UI portals stack predictably.
@@ -237,7 +240,7 @@ function Sections({ children }: { children: ReactNode }) {
               {...(controlsShown ? pointerZone(controls, "stage") : {})}
             >
               {controlsShown && <WaveformGhost controls={controls} />}
-              <div data-slot="waveform-stage" className="size-full">
+              <div ref={stage} data-slot="waveform-stage" className="size-full">
                 {/* Page-wide keys: a visitor plays the figure with nothing focused, until the controls' switch turns them off. */}
                 <Waveform
                   form="stage"
@@ -352,6 +355,24 @@ function RailPlayer({
       <WavePlayerMini live={live} expand={<Link href="/music" />} />
     </div>
   );
+}
+
+/**
+ * kevelle/waveform describes its stage button with its own key hint, which
+ * the site never shows (app/globals.css). A screen reader still reads text
+ * a button names in aria-describedby, hidden or not, so the site drops the
+ * reference once the stage mounts. The block sets it from a stable useId,
+ * so React never writes it back.
+ */
+function useUndescribedStage(
+  stage: RefObject<HTMLElement | null>,
+  shown: boolean
+) {
+  useLayoutEffect(() => {
+    stage.current
+      ?.querySelector("button[aria-describedby]")
+      ?.removeAttribute("aria-describedby");
+  }, [stage, shown]);
 }
 
 /**

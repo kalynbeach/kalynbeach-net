@@ -501,15 +501,19 @@
 }
 
 /*
- * On desktop the ghost under Home's stage stands in for the stage's own
- * hint, which kevelle/waveform shows after the pointer rests 600ms or a
- * stray key, so nothing about the keys shows before the ghost. The hint
- * still shows while the stage has keyboard focus. The block has no prop
- * for this, so the rule reaches into its caption by data-shown; if the
- * block renames that, the hint shows again and nothing breaks.
+ * kevelle/waveform's stage captions itself ("Type to play. Press ? for the
+ * keys.") on a rest, a stray key or keyboard focus. The site never shows it,
+ * at any width or in any state, so the stage stays clean; on desktop the
+ * ghost "?" is the cue. The block has no prop for this, so the rule reaches
+ * into its markup: the caption sits inside the aria-hidden edge that follows
+ * the strike button, which carries aria-keyshortcuts with keys, or else
+ * names the caption in aria-describedby. visibility keeps the edge's size,
+ * which anchors the block's own key guide below 1200px. The caption node is
+ * already hidden from assistive tech, and the shell drops Home's
+ * aria-describedby, so the button no longer reads it as a description.
  */
-@media (width >= 75rem) {
-  [data-slot="waveform-stage"]:not(:has(:focus-visible)) [data-shown] {
-    opacity: 0;
-  }
+button:is([aria-keyshortcuts], [aria-describedby])
+  + [aria-hidden="true"]
+  > [id] {
+  visibility: hidden;
 }
