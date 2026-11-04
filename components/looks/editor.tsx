@@ -313,7 +313,11 @@ function LookList({
                 {usage(row.trackCount)}
               </span>
             )}
-            {row.live && <Badge variant="success">Live</Badge>}
+            {row.live && (
+              <Badge variant="success" face="label">
+                Live
+              </Badge>
+            )}
           </button>
         </li>
       ))}
@@ -407,7 +411,9 @@ function LookControls({
           Discard
         </Button>
         {useOnSite.kind === "live" ? (
-          <Badge variant="success">Live</Badge>
+          <Badge variant="success" face="label">
+            Live
+          </Badge>
         ) : (
           <>
             <Button
