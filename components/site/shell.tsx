@@ -45,7 +45,6 @@ import {
   useState,
   useSyncExternalStore,
   type ReactNode,
-  type RefObject,
 } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -163,8 +162,6 @@ function Sections({ children }: { children: ReactNode }) {
   const [miniShown, setMiniShown] = useState(false);
 
   useScrollToTop(pathname);
-  const stage = useRef<HTMLDivElement>(null);
-  useUndescribedStage(stage, placement.stage);
 
   return (
     // .root (Kevelle) isolates the page, so Base UI portals stack predictably.
@@ -245,9 +242,14 @@ function Sections({ children }: { children: ReactNode }) {
               {...(controlsShown ? pointerZone(controls, "stage") : {})}
             >
               {controlsShown && <WaveformGhost controls={controls} />}
-              <div ref={stage} data-slot="waveform-stage" className="size-full">
-                {/* Page-wide keys: a visitor plays the figure with nothing focused. The provider's one setting turns them off, flipped by the controls' switch on desktop and the block's key guide below 1200px, so the choice holds at every width. */}
-                <Waveform form="stage" keys="page" className="size-full" />
+              <div data-slot="waveform-stage" className="size-full">
+                {/* keys="page" even with page keys off: the provider's one setting decides (waveform-controls.tsx). No caption at any width: on desktop the ghost "?" is the cue. */}
+                <Waveform
+                  form="stage"
+                  keys="page"
+                  hint={false}
+                  className="size-full"
+                />
               </div>
             </div>
           )}
@@ -355,24 +357,6 @@ function RailPlayer({
       <WavePlayerMini expand={<Link href="/music" />} />
     </div>
   );
-}
-
-/**
- * kevelle/waveform describes its stage button with its own key hint, which
- * the site never shows (app/globals.css). A screen reader still reads text
- * a button names in aria-describedby, hidden or not, so the site drops the
- * reference once the stage mounts. The block sets it from a stable useId,
- * so React never writes it back.
- */
-function useUndescribedStage(
-  stage: RefObject<HTMLElement | null>,
-  shown: boolean
-) {
-  useLayoutEffect(() => {
-    stage.current
-      ?.querySelector("button[aria-describedby]")
-      ?.removeAttribute("aria-describedby");
-  }, [stage, shown]);
 }
 
 /**
