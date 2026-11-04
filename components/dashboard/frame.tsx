@@ -53,6 +53,7 @@ export function DashboardFrame({ account }: { account: ReactNode }) {
           Dashboard
         </h1>
         <ToggleGroup
+          face="label"
           aria-label={SWITCH_NAME}
           variant="outline"
           spacing={0}
