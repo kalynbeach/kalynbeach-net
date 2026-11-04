@@ -57,12 +57,21 @@ import {
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 
-/** E's ease for the ghost and the controls, as in app/globals.css. */
-const EASE = "cubic-bezier(0.23, 1, 0.32, 1)";
-
-/** E's reduced-motion column: the opacity fades it keeps. */
-const GHOST_FADE = { in: 200, out: 150 };
-const CONTROLS_FADE = { in: 120, out: 100 };
+/**
+ * The opacity fades reduced motion keeps, as in app/globals.css: the ghost
+ * on Kevelle's --duration-large, --duration-small and --ease-out, the
+ * controls on E's timings.
+ */
+const GHOST_FADE = {
+  in: 280,
+  out: 160,
+  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+};
+const CONTROLS_FADE = {
+  in: 120,
+  out: 100,
+  easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+};
 
 /*
  * The block decides whether it takes a key from what holds focus and
@@ -298,13 +307,17 @@ export function pointerZone(
 
 /**
  * Kevelle's reduced-motion rule cuts every CSS transition short, so under
- * reduced motion the opacity fades E keeps run as Web Animations, from
+ * reduced motion the opacity fades it keeps run as Web Animations, from
  * wherever the last one got to.
  */
 function useReducedFade(
   ref: RefObject<HTMLElement | null>,
   shown: boolean,
-  ms: { readonly in: number; readonly out: number }
+  timing: {
+    readonly in: number;
+    readonly out: number;
+    readonly easing: string;
+  }
 ) {
   const last = useRef(shown);
   const fade = useRef<Animation | null>(null);
@@ -322,9 +335,9 @@ function useReducedFade(
     fade.current?.cancel();
     fade.current = element.animate(
       { opacity: [from, Number(shown)] },
-      { duration: shown ? ms.in : ms.out, easing: EASE }
+      { duration: shown ? timing.in : timing.out, easing: timing.easing }
     );
-  }, [ref, shown, ms]);
+  }, [ref, shown, timing]);
 }
 
 /**
