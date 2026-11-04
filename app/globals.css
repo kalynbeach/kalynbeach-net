@@ -32,14 +32,16 @@
    * Font roles. ui: titles, nav, labels, values, dates and code; all site
    * text that isn't the name, a heading or prose. text: the name, headings
    * and body. readout: the player's time readouts, and nothing else. long:
-   * long-form writing. --font-mono follows ui, so code, Kevelle's one mono
-   * role, sets in TX-02.
+   * long-form writing. --font-mono and --font-label follow ui, so code and
+   * Kevelle's labels (type-label, such as the player's Library heading) set
+   * in TX-02.
    */
   --font-ui: "TX-02", "Paper Mono", ui-monospace, monospace;
   --font-text: var(--font-sans);
   --font-readout: var(--font-pixel);
   --font-long: var(--font-serif);
   --font-mono: var(--font-ui);
+  --font-label: var(--font-ui);
 
   --spacing-sidebar: 15rem; /* 240: the sidebar, and the rail that mirrors it */
   --spacing-sheet: 18.75rem; /* 300: the nav sheet below 1200px */
