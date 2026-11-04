@@ -326,7 +326,9 @@ function TrackRow({
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {audio.kind === "legacy" ? (
               <>
-                <Badge variant="outline">Legacy</Badge>
+                <Badge variant="outline" face="label">
+                  Legacy
+                </Badge>
                 <span className="role-mono-sm text-ramp-6">
                   {legacyFileName(audio.src)}
                 </span>
@@ -334,7 +336,9 @@ function TrackRow({
             ) : (
               <>
                 {audio.src === null && (
-                  <Badge variant="destructive">Missing</Badge>
+                  <Badge variant="destructive" face="label">
+                    Missing
+                  </Badge>
                 )}
                 <span className="role-mono-sm text-ramp-7">
                   {formatClock(audio.duration)}
