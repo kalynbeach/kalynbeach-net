@@ -45,13 +45,16 @@ export function Identity({ atRest }: { atRest: boolean }) {
 }
 
 /**
- * Text color alone marks the active row: ramp 10 against nav-idle. The
- * parent of the active page stays idle-colored, so one row reads as active.
+ * The signal's hue marks the active row against nav-idle. In light the two
+ * inks have nearly the same lightness, so weight 500 marks it without color
+ * too (WCAG 1.4.1); the face is monospaced, so the weight moves nothing.
+ * Dark keeps 400, where phosphor is far brighter than idle. The parent of
+ * the active page stays idle, so one row reads as active.
  */
 const rowColor = {
-  idle: "text-nav-idle hover:text-ramp-9",
-  active: "text-ramp-10",
-  ancestor: "text-nav-idle hover:text-ramp-9",
+  idle: "text-nav-idle hover:text-nav-hover",
+  active: "text-signal font-medium dark:font-normal",
+  ancestor: "text-nav-idle hover:text-nav-hover",
 } as const satisfies Record<NavRow["state"], string>;
 
 export function NavTree({
