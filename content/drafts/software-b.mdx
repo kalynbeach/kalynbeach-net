@@ -1,0 +1,200 @@
+import { DraftProject } from "@/app/drafts/draft-project";
+import { Timeline } from "@/components/site/timeline";
+
+export const metadata = {
+  title: "Software",
+  description:
+    "The projects I'm working on now, then a timeline of my work since 2012.",
+};
+
+<PageHeader {...metadata} />
+
+<DraftProject slug="kkb" />
+
+<DraftProject slug="agents-b" />
+
+## Kevelle
+
+Kevelle is my middle name and the name of my design system. I design its color, type, surfaces and motion in Paper. I took its look from hardware labels, hairline grids, dithered meters and oscilloscope traces.
+
+The registry at [registry.kkb.systems](https://registry.kkb.systems) has 91 items you can install with the shadcn CLI. This site installs its components and tokens from there.
+
+<DraftProject slug="kkb-audio" />
+
+## kalynbeach.net
+
+This is my personal site, and it plays my music. Home's waveform plays from the keyboard, and the mini player follows you from page to page. I upload tracks from a dashboard, and each track can have its own saved waveform look.
+
+It's built with Next.js 16, React 19, Convex and Clerk, and the code is on [GitHub](https://github.com/kalynbeach/kalynbeach-net). Claude Code and Codex built the November 2026 redesign as stacked PRs, each reviewed by a second model.
+
+<Timeline
+  years={[
+    {
+      year: 2012,
+      entries: [
+        {
+          date: "09",
+          text: "Computer science coursework at Chapman University",
+          inferred: true,
+          tag: "school",
+        },
+      ],
+    },
+    {
+      year: 2015,
+      entries: [
+        {
+          date: "03",
+          text: "Last shifts at Starbucks, where I taught myself to code",
+          tag: "work",
+        },
+        {
+          date: "04",
+          text: "Contract web developer at CPR Interactive",
+          tag: "work",
+        },
+        {
+          date: "06",
+          text: "Intern at Demand Media, then associate engineer",
+          tag: "work",
+        },
+      ],
+    },
+    {
+      year: 2016,
+      entries: [
+        {
+          date: "09",
+          text: "Software engineer at Leaf Group, senior from 2022",
+          tag: "work",
+        },
+      ],
+    },
+    {
+      year: 2021,
+      entries: [
+        {
+          date: "06-20",
+          text: "wavy, a live audio visualizer",
+          tag: "projects",
+        },
+        {
+          date: "10-13",
+          text: "node-max-patches, for Max for Live",
+          tag: "projects",
+        },
+      ],
+    },
+    {
+      year: 2023,
+      entries: [
+        {
+          date: "04-09",
+          text: '"AI tools for music makers," a LangChain chat and PDF tool',
+          tag: "agents",
+        },
+        {
+          date: "05",
+          text: "Leaf Group becomes World of Good Brands",
+          tag: "work",
+        },
+        {
+          date: "06-18",
+          text: "Vercel AI SDK chat and document Q&A",
+          tag: "agents",
+        },
+        { date: "12-28", text: "Local models with Ollama", tag: "agents" },
+      ],
+    },
+    {
+      year: 2024,
+      entries: [
+        {
+          date: "09-03",
+          text: "Aider with Sonnet, and a first prompt library",
+          tag: "agents",
+        },
+        {
+          date: "12-11",
+          text: "First MCP servers, for music and audio",
+          tag: "agents",
+        },
+        { date: "12-16", text: "First commit on this site", tag: "projects" },
+      ],
+    },
+    {
+      year: 2025,
+      entries: [
+        {
+          date: "02-27",
+          text: "An MCP server for Ableton Live",
+          tag: "agents",
+        },
+        {
+          date: "03-07",
+          text: "First Claude Code run",
+          inferred: true,
+          tag: "agents",
+        },
+        {
+          date: "06-10",
+          text: "kkb-code, Claude Code commands and specs",
+          tag: "agents",
+        },
+        {
+          date: "07",
+          text: "Lead engineer on Gist GEO at ProRata AI",
+          tag: "work",
+        },
+        {
+          date: "08-16",
+          text: "kkb-agentic, with subagents, slash commands and MCP",
+          tag: "agents",
+        },
+      ],
+    },
+    {
+      year: 2026,
+      entries: [
+        { date: "01-24", text: "The kkb monorepo", tag: "projects" },
+        { date: "03-20", text: "First PRs written by Codex", tag: "agents" },
+        {
+          date: "04-12",
+          text: "Pi joins Claude Code and Codex",
+          tag: "agents",
+        },
+        {
+          date: "08-20",
+          text: "Skills, global context and a sync CLI",
+          tag: "agents",
+        },
+        {
+          date: "08-28",
+          text: "kkb-audio, a Rust audio engine",
+          tag: "projects",
+        },
+        {
+          date: "10-15",
+          text: "pstack, one global instruction file and a router skill",
+          tag: "agents",
+        },
+        {
+          date: "10-22",
+          text: "The Kevelle registry goes live",
+          tag: "projects",
+        },
+        {
+          date: "10-27",
+          text: "This site's redesign, built as stacked PRs",
+          tag: "projects",
+        },
+        {
+          date: "10-30",
+          text: "GPT-6.1-sol checks the work Claude writes",
+          tag: "agents",
+        },
+        { date: "11", text: "Open to work", tag: "work" },
+      ],
+    },
+  ]}
+/>

@@ -1,0 +1,51 @@
+import { Stats } from "@/components/site/stats";
+
+export const metadata = {
+  title: "Agents",
+  description:
+    "How I build software with agents. One set of instructions runs Claude Code, Codex and Pi, and a second model family reviews the code Claude writes.",
+};
+
+<PageHeader {...metadata}>
+  <Stats
+    items={[
+      { label: "Since", value: "2023-04-09" },
+      { label: "kkb merged PRs", short: "kkb PRs", value: "100+" },
+      { label: "Codex and Pi sessions", short: "Sessions", value: "2,807" },
+    ]}
+  />
+</PageHeader>
+
+## Where it started
+
+I started by building AI features. In April 2023 I made "AI tools for music makers," a LangChain chat and PDF tool. In June I built chat and document Q&A with the Vercel AI SDK.
+
+In December 2024 I wrote my first MCP servers, for music and audio tools. An MCP server for Ableton Live followed in February 2025, and I started using Claude Code soon after. Codex wrote its first PRs for me in March 2026, and Pi joined them in April.
+
+## One set of instructions
+
+My agent system lives in `kkb`, my monorepo, next to the code it works on. One global instruction file holds my rules, and Claude Code, Codex and Pi all read it. A router skill loads guidance for engineering, design, delivery and other areas only when a task needs it.
+
+The method comes from pstack, an open-source set of engineering principles and playbooks for agents from Cursor. I keep a copy in `kkb` and add my own rules on top. A CLI I wrote in Effect 4 syncs one release of all of it to every agent on every machine. It won't overwrite a local edit, and its `check` command reports drift.
+
+## The review loop
+
+Agents deliver work as stacked PRs, small changes that build on each other. My skills open each PR and supervise it through CI and review. Claude Code GitHub Actions review the PRs on GitHub. I read the stack and decide what merges.
+
+## Models
+
+I pick a model for each role. Claude writes the code. GPT-6.1-sol runs every review and verification step in my agent system, so a second model family checks what Claude writes.
+
+## Shipped work
+
+I architected [kkb-audio](/software/kkb-audio), a real-time Rust audio engine, and delivered it with coding agents. This site's November 2026 redesign is a stack of PRs that agents wrote and a second model reviewed.
+
+At ProRata AI I was lead engineer on Gist GEO, an agentic AI product for generative engine optimization. I owned its agentic workflows and AI-reviewed CI, and took it from concept to an alpha with its first customers.
+
+## What I learned
+
+[Kalyn: these are guesses at your lessons. Keep, change or cut them.]
+
+When an agent gets something wrong, I fix the instruction that allowed it. A skill turns my correction into a narrow change to my instructions, so the next session starts with it.
+
+Keeping one copy of my rules means I fix a rule once. Every agent on every machine reads the same release.

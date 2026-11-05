@@ -176,6 +176,10 @@ for (const page of system) {
  */
 export function resolve(pathname: string): SiteEntry {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  // Temporary: a draft (app/drafts/[slug]) lays out as About, with no nav row or Cmd+K item.
+  if (/^\/drafts\/[^/]+$/.test(path)) {
+    return { kind: "page", player: "follow", title: null, nav: navFor(null) };
+  }
   const hit = index.get(path);
   return { ...(hit?.layout ?? notFound), nav: navFor(hit ? path : null) };
 }

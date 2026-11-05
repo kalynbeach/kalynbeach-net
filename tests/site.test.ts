@@ -25,10 +25,14 @@ const pages = globSync("app/**/page.tsx").map((file) => ({
   route: routeOf(file),
 }));
 
-const served = (route: string) =>
-  route === "/software/[slug]"
-    ? projects.map((slug) => `/software/${slug}`)
-    : [route];
+const served = (route: string) => {
+  if (route === "/software/[slug]") {
+    return projects.map((slug) => `/software/${slug}`);
+  }
+  // Temporary: drafts stay out of the site map.
+  if (route === "/drafts/[slug]") return [];
+  return [route];
+};
 
 const rows = (path: string) =>
   resolve(path).nav.flatMap((row) => [row, ...row.rows]);
@@ -102,6 +106,7 @@ describe("site map", () => {
     ["/login", { kind: "page", player: null, title: "Sign in" }],
     ["/no-such-page", { kind: "page", player: null, title: "Not found" }],
     ["/software/kevelle", { kind: "page", player: null, title: "Not found" }],
+    ["/drafts", { kind: "page", player: null, title: "Not found" }],
   ])("lays out %s", (path, expected) => {
     const { nav, ...layout } = resolve(path);
     expect(nav.length).toBeGreaterThan(0);
@@ -173,5 +178,17 @@ describe("site map", () => {
       ["Lab", "Admin"],
     ]);
     for (const { href } of commandItems) expect(routes).toContain(href);
+  });
+
+  it("lays out a draft as About, with no active nav row and no Cmd+K item or route", () => {
+    const { nav, ...layout } = resolve("/drafts/about-b/");
+    expect(layout).toEqual({ kind: "page", player: "follow", title: null });
+    expect(rows("/drafts/about-b").map((row) => row.state)).not.toContain(
+      "active"
+    );
+    expect(nav.find((row) => row.label === "Software")?.rows).toEqual([]);
+    const isDraft = (href: string) => href.startsWith("/drafts");
+    expect(commandItems.map(({ href }) => href).filter(isDraft)).toEqual([]);
+    expect(routes.filter(isDraft)).toEqual([]);
   });
 });
