@@ -1,10 +1,6 @@
 import Link from "next/link";
 
-/**
- * Temporary: components/site/project.tsx for a draft Software index, reading
- * content/drafts/<slug>.mdx and linking to its draft page. Draft files
- * import it.
- */
+/** Temporary: components/site/project.tsx for content/drafts/*.mdx, which import it. */
 export async function DraftProject({ slug }: { slug: string }) {
   const { metadata }: typeof import("*.mdx") = await import(
     `@/content/drafts/${slug}.mdx`

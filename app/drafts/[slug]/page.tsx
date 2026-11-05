@@ -1,11 +1,12 @@
 import { readdirSync } from "node:fs";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 // Temporary: previews of copy variants, removed with content/drafts/ once Kalyn picks.
 
 type Props = { params: Promise<{ slug: string }> };
 
-/** One page per content/drafts/<slug>.mdx, read at build time. Any other slug is a 404. */
+/** Slugs without a content/drafts/<slug>.mdx file are a 404. */
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -16,6 +17,7 @@ export function generateStaticParams() {
 
 async function content({ params }: Props) {
   const { slug } = await params;
+  if (!generateStaticParams().some((draft) => draft.slug === slug)) notFound();
   const draft: typeof import("*.mdx") = await import(
     `@/content/drafts/${slug}.mdx`
   );
