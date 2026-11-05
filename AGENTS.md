@@ -1,6 +1,6 @@
 # kalynbeach-net agent guide
 
-kalynbeach-net is Kalyn Beach's personal website, [kalynbeach.net](https://www.kalynbeach.net). Kalyn uses he/him. `README.md` explains what the site is, how the codebase is laid out, and which commands run and check it.
+kalynbeach-net is Kalyn Beach's personal website, [kalynbeach.net](https://www.kalynbeach.net). Kalyn uses he/him. `README.md` is for people reading the repository. It covers the pages, the stack, the codebase layout, and the architecture. This file holds the rules and commands for working in it.
 
 Issues live in GitHub Issues on `kalynbeach/kalynbeach-net`. Use the `gh` CLI for them.
 
@@ -31,7 +31,9 @@ Comments in these files cite kkb paths such as `tools/aura.ts`. Those paths exis
 
 `migrations:seedPreview` adds sample tracks and looks. Run it only on preview and dev deployments, never on production.
 
-A merge to `main` deploys the production Convex functions through the Vercel build.
+## Deploys
+
+Vercel builds every push. Its build command, set in the Vercel project, is `bunx convex deploy --cmd 'bun run build' --preview-run 'migrations:seedPreview'`. On a branch, it creates or reuses that branch's Convex preview deployment, builds the site, and pushes the functions. A new preview deployment then gets the `seedPreview` sample data. On `main`, it builds the site and pushes the production Convex functions, so a merge to `main` deploys production.
 
 ## Fonts
 
@@ -39,9 +41,20 @@ A merge to `main` deploys the production Convex functions through the Vercel bui
 
 ## Checks
 
-Run the commands in the README's "Check a change" section before you commit. Every one must pass.
+Run these before you commit. Every one must pass.
+
+```sh
+bun run lint
+bun run format:check   # `bun run format` fixes it
+bun run typecheck
+bun run typecheck --project convex/tsconfig.json
+bun run test run       # add a path, such as tests/site.test.ts, to run one file
+```
+
+Run `bun run build` too when a change touches routes, config, or the build. It downloads the fonts first, as the Fonts section describes. `bun run dev` also needs the Convex and Clerk settings in Kalyn's `.env.local`. Never copy that file into another checkout.
 
 - To add, rename, or remove a public page or a software project, change `lib/site.ts`, `content/`, and `tests/site.test.ts` together. The test fails when the site map, the route files, and the content files disagree.
+- To add a software project page, add `content/software/<slug>.mdx`, add its slug and navigation label to `software` in `lib/site.ts`, add `<Project slug="<slug>" />` to `content/software.mdx`, and add the project to the navigation and Cmd+K expectations in `tests/site.test.ts`.
 - After you upgrade `oxlint`, `@oxlint/plugins`, `@convex-dev/eslint-plugin`, or a rule in `tools/oxlint/`, run `bun run test run tests/tools`.
 
 ## Tooling notes
