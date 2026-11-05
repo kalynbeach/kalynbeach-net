@@ -47,7 +47,7 @@
   --spacing-sheet: 18.75rem; /* 300: the nav sheet below 1200px */
   --spacing-top: 6rem; /* 96: the top line, the sections' top and bottom padding, the sticky top */
   --spacing-header: 3.25rem; /* 52: the mobile top bar and the sheet header */
-  --spacing-row: 1.75rem; /* 28: nav, list and timeline rows */
+  --spacing-row: 1.75rem; /* 28: nav, list and table rows */
   --spacing-opening: 4rem; /* 64: a page's header to its content, and section to section; 48 below 1200px */
   --spacing-edge: 0.75rem; /* 12: below 1200px, section 1, the sheet and the bar sit this far in */
   --spacing-safe-top: env(safe-area-inset-top);
@@ -197,10 +197,10 @@
  *
  *   role        face and size (below 1200px)   ink  for
  *   name        ABC Areal 18/24 500             10   the name in the sidebar
- *   title       TX-02 40/48 (32/40)             10   each page's h1
+ *   title       TX-02 40/48 700 (32/40)         10   each page's h1
  *   lede        ABC Areal 19/28 (18/26)         7    the paragraph under the title
- *   heading     ABC Areal 22/28 500 (20/28)     10   section headings
- *   body        ABC Areal 17/28                 8    prose; 9 for timeline entries
+ *   heading     ABC Areal 22/28 600 (20/28)     10   section headings
+ *   body        ABC Areal 16/26                 8    prose; 9 for timeline entries
  *   detail      ABC Areal 15/22                 8    a step's detail
  *   nav         TX-02 14/28                     7    nav rows take nav-idle
  *                                                    (signal current)
@@ -240,7 +240,7 @@
 @utility role-title {
   font-family: var(--font-ui);
   font-size: 2.5rem;
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.035em;
   text-box: trim-start cap alphabetic;
@@ -268,7 +268,7 @@
 @utility role-heading {
   font-family: var(--font-text);
   font-size: 1.375rem;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.2728;
   letter-spacing: -0.01em;
   text-wrap: balance;
@@ -280,9 +280,9 @@
 
 @utility role-body {
   font-family: var(--font-text);
-  font-size: 1.0625rem;
+  font-size: 1rem;
   font-weight: 400;
-  line-height: 1.6471;
+  line-height: 1.625;
   letter-spacing: 0;
 }
 
