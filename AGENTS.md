@@ -1,6 +1,6 @@
 # kalynbeach-net agent guide
 
-kalynbeach-net is Kalyn Beach's personal website, [kalynbeach.net](https://www.kalynbeach.net). Kalyn uses he/him. `README.md` is for people reading the repository. It covers the pages, the stack, the codebase layout, and the architecture. This file holds the rules and commands for working in it.
+kalynbeach-net is Kalyn Beach's personal website, [kalynbeach.net](https://www.kalynbeach.net). Kalyn uses he/him. `README.md` is for people reading the repository. It covers the stack and the architecture. This file holds the rules and commands for working in it.
 
 Issues live in GitHub Issues on `kalynbeach/kalynbeach-net`. Use the `gh` CLI for them.
 

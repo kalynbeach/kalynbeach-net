@@ -1,17 +1,8 @@
 # kalynbeach-net
 
-This is the source for [kalynbeach.net](https://www.kalynbeach.net), my personal website. It's where I write about the software I build and play the music I make. The site is also the first real home of Kevelle, the design system I build in my kkb monorepo.
+This is the source for [kalynbeach.net](https://www.kalynbeach.net), my personal website.
 
-## Site structure
-
-| Page                    | What's there                                                                   | Source                                           |
-| ----------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------ |
-| Home, `/`               | A live waveform that fills the page. Press `?` to see the keys that change it. | `components/site/shell.tsx`                      |
-| About, `/about`         | Who I am, and where to find me                                                 | `content/about.mdx`                              |
-| Software, `/software`   | The projects I build, with a full page for some of them                        | `content/software.mdx`, `content/software/*.mdx` |
-| Music, `/music`         | My tracks, played through WavePlayer                                           | `content/music.mdx`, with tracks from Convex     |
-| Dashboard, `/dashboard` | Admin only. Upload tracks and edit waveform looks.                             | `components/dashboard/`, `components/looks/`     |
-| Lab, `/lab`             | Admin only. A three.js tool that exports a mesh as SVG.                        | `components/r3f/`                                |
+This site uses my `Kevelle` design system, which I'm building in my kkb monorepo and distributing via a personal registry.
 
 ## Tech stack
 
@@ -24,21 +15,6 @@ This is the source for [kalynbeach.net](https://www.kalynbeach.net), my personal
 - [Clerk](https://clerk.com) for sign-in
 - [Vercel](https://vercel.com) for hosting, Analytics, and Speed Insights
 - [Bun](https://bun.com) for packages and scripts, Vitest for tests, and Oxlint and Oxfmt for linting and formatting
-
-## Codebase layout
-
-| Path                                                                                                                             | What it holds                                                                                               |
-| -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `content/`                                                                                                                       | Page copy, one MDX file per page                                                                            |
-| `app/`                                                                                                                           | Routes. About, Software, and Music re-export their MDX files, and each project page loads its file by slug. |
-| `components/site/`                                                                                                               | The site shell: sidebar, navigation, Cmd+K menu, waveform controls, and the components that MDX pages use   |
-| `components/dashboard/`, `components/looks/`                                                                                     | The admin dashboard's track uploads and waveform look editor                                                |
-| `convex/`                                                                                                                        | The Convex schema and functions for users, tracks, looks, and playlists                                     |
-| `lib/site.ts`, `lib/layout.ts`                                                                                                   | The site map, and where the waveform and the player go at each screen width                                 |
-| `lib/convex/`                                                                                                                    | Server-side Convex reads and the admin check                                                                |
-| `components/ui/`, `components/wave-player/`, `components/waveform/`, `lib/audio/`, `lib/phosphor/`, `lib/scope/`, `app/kevelle/` | Kevelle, installed from the registry. Changes to these files start in kkb.                                  |
-| `scripts/kevelle-fonts.ts`                                                                                                       | Downloads the licensed fonts before `dev` and `build`                                                       |
-| `tests/`                                                                                                                         | Vitest tests, including the site map, the layout, the Convex logic, the dashboard, and the lint setup       |
 
 ## Architecture
 
