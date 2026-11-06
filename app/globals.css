@@ -197,7 +197,7 @@
  *
  *   role        face and size (below 1200px)   ink  for
  *   name        ABC Areal 18/24 500             10   the name in the sidebar
- *   title       TX-02 40/48 700 (32/40)         10   each page's h1
+ *   title       TX-02 40/48 600 (32/40)         10   each page's h1
  *   lede        ABC Areal 19/28 (18/26)         7    the paragraph under the title
  *   heading     ABC Areal 22/28 600 (20/28)     10   section headings (h2)
  *   subheading  ABC Areal 18/26 600             10   subsection headings (h3)
@@ -241,7 +241,7 @@
 @utility role-title {
   font-family: var(--font-ui);
   font-size: 2.5rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.035em;
   text-box: trim-start cap alphabetic;
