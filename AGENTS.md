@@ -50,7 +50,7 @@ Production serves only published pages and drops every `<Draft>` block. Vercel p
 
 ## Checks
 
-Run these before you commit. Every one must pass.
+Run these before you commit. Every one must pass. The `CI` workflow, `.github/workflows/ci.yml`, runs the same checks on every PR and every push to `main`.
 
 ```sh
 bun run lint
