@@ -17,6 +17,40 @@ export const metadata = {
   />
 </PageHeader>
 
+## My agent system
+
+My agent system lives in `kkb`, my monorepo, next to the code it works on.
+
+### One set of instructions
+
+One global instruction file sets the rules for Claude Code, Codex and Pi. A router skill loads guidance for engineering, design, delivery and other areas only when a task needs it.
+
+### Skills
+
+My own skills open PRs and supervise them through CI and review. Another skill turns my corrections into narrow fixes to my instructions. I also keep a copy of pstack, an open-source set of engineering principles and playbooks for agents from Cursor.
+
+### The sync CLI
+
+A CLI I wrote in Effect 4 syncs all of it to every agent on every machine. It won't overwrite a local edit, and it reports drift.
+
+## How work lands
+
+Agents deliver work as stacked PRs, and I review the stack. Claude writes the code and GPT-6.1-sol checks it, so a different model family reviews the work. Claude Code GitHub Actions also review the PRs on GitHub.
+
+## Shipped work
+
+### Gist GEO at ProRata AI
+
+I was lead engineer on Gist GEO, an agentic AI product for generative engine optimization. I took it from concept to an alpha with its first customers, and I owned its agentic workflows and AI-reviewed CI.
+
+### kkb-audio
+
+I architected [kkb-audio](/drafts/kkb-audio) and delivered it with coding agents.
+
+### This site
+
+This site's November 2026 redesign shipped the same way, as stacked PRs with a second model reviewing each one.
+
 <Timeline
   years={[
     {
@@ -97,21 +131,3 @@ export const metadata = {
     },
   ]}
 />
-
-## My agent system
-
-My agent system lives in `kkb`, my monorepo, next to the code it works on. One global instruction file sets the rules for Claude Code, Codex and Pi. A router skill loads guidance for engineering, design, delivery and other areas only when a task needs it.
-
-My own skills open PRs and supervise them through CI and review. Another skill turns my corrections into narrow fixes to my instructions. I also keep a copy of pstack, an open-source set of engineering principles and playbooks for agents from Cursor.
-
-A CLI I wrote in Effect 4 syncs all of it to every agent on every machine. It won't overwrite a local edit, and it reports drift.
-
-## How work lands
-
-Agents deliver work as stacked PRs, and I review the stack. Claude writes the code and GPT-6.1-sol checks it, so a different model family reviews the work. Claude Code GitHub Actions also review the PRs on GitHub.
-
-## Shipped work
-
-At ProRata AI I was lead engineer on Gist GEO, an agentic AI product for generative engine optimization. I took it from concept to an alpha with its first customers, and I owned its agentic workflows and AI-reviewed CI.
-
-I architected [kkb-audio](/software/kkb-audio) and delivered it with coding agents. This site's November 2026 redesign shipped the same way, as stacked PRs with a second model reviewing each one.

@@ -1,0 +1,220 @@
+import { DraftProject } from "@/app/drafts/draft-project";
+import { Experience } from "@/components/site/experience";
+import { Meta } from "@/components/site/page-header";
+import { Stats } from "@/components/site/stats";
+import { Timeline } from "@/components/site/timeline";
+
+export const metadata = {
+  title: "Software",
+  description:
+    "I've been developing software since around 2012, and professionally since 2015.",
+};
+
+<PageHeader {...metadata}>
+  <Stats
+    items={[
+      { label: "Coding since", value: "2012" },
+      { label: "Working since", value: "2015" },
+      { label: "Based in", value: "Los Angeles" },
+    ]}
+  />
+</PageHeader>
+
+<h2 id="experience">Experience</h2>
+
+[Kalyn: your background in a few lines, such as teaching yourself to code and the content sites.]
+
+<Experience
+  roles={[
+    {
+      from: "Jul 2025",
+      to: "Mar 2026",
+      company: "ProRata AI",
+      title: "Senior Software Engineer, Agentic Systems",
+      points: [
+        "Lead engineer on Gist GEO, ProRata's generative engine optimization product, through its alpha with first customers. Owned its initial architecture, implementation, agentic workflows and infrastructure (TypeScript, Convex, Clerk, AI-reviewed CI).",
+        "Prototyped Ask Anything, the next version of ProRata's embeddable AI search widget.",
+        "Built the team's CI/CD, tests, observability and code review, and mentored the team.",
+      ],
+    },
+    {
+      from: "May 2023",
+      to: "Oct 2024",
+      company: "World of Good Brands",
+      title: "Senior Software Engineer",
+      points: [
+        "Led the move from Python and Jinja templates to TypeScript, React and Next.js, and prototyped the headless WordPress and typed GraphQL architecture behind Zenith, the new multi-brand platform.",
+        "Designed Zenith's typed GraphQL data layer and shipped it in the Only In Your State rebuild. Owned that migration's database, user and places imports, and ramped the frontend team on React.",
+      ],
+    },
+    {
+      from: "Sep 2016",
+      to: "May 2023",
+      company: "Leaf Group",
+      title: "Senior Software Engineer, promoted in 2022",
+      points: [
+        "Primary frontend engineer for top sites including Sciencing, Bizfluent, Legal Beagle and Garden Guides.",
+        "Built and deployed the team's web-performance platform for a 50-site portfolio. Its Lighthouse audits drove the fixes that brought sites to green Core Web Vitals.",
+        "Proposed, built and shipped Music Notation and Chord Finder with browser synth playback.",
+      ],
+    },
+    {
+      from: "Jun 2015",
+      to: "Sep 2016",
+      company: "Demand Media",
+      title: "Associate Software Engineer, from intern",
+      points: [
+        "Moved about 30 sites onto a new content platform, and built React interfaces for Content Lab.",
+      ],
+    },
+    {
+      from: "2015",
+      company: "CPR Interactive",
+      title: "Contract Web Developer",
+      points: ["Built client sites, including for Oracle."],
+    },
+    {
+      from: "2013",
+      to: "2015",
+      company: "Starbucks",
+      title: "Shift Supervisor",
+      points: [
+        "Promoted from barista. Ran store shifts while learning to code.",
+      ],
+    },
+    {
+      from: "2012",
+      to: "2013",
+      company: "Chapman University",
+      title: "Computer Science coursework",
+    },
+  ]}
+/>
+
+### Skills
+
+- Languages: TypeScript, JavaScript, HTML, CSS, SQL, Python, Rust
+- Web: React, Next.js, Node.js, Bun, Tailwind CSS, Vue, GraphQL, tRPC, PostgreSQL, Redis, Prisma, Convex, Effect
+- AI: Claude Code, Codex, Pi, agent SDKs (Vercel AI SDK, Pi SDK), MCP, multi-agent workflows, AI code review, agent evaluation
+- Systems: web performance, design systems, accessibility, Web Audio, WebAssembly, WebGPU, Docker, CI/CD
+
+<h2 id="projects">Projects</h2>
+
+[Kalyn: a line on what you're building now, or nothing.]
+
+<DraftProject slug="kkb" />
+
+<Meta>Private monorepo / Since January 2026 / TypeScript, Effect 4, Bun</Meta>
+
+### Kevelle
+
+<Meta>Design system / 2026 / registry.kkb.systems</Meta>
+
+- Designed in Paper and published as a 91-item shadcn registry at [registry.kkb.systems](https://registry.kkb.systems)
+- More than 70 React components and audio blocks, including the Kevelle Oscilloscope, Waveform and WavePlayer
+- This site installs it from the registry
+
+[Kalyn: what Kevelle is and where its look comes from.]
+
+<DraftProject slug="kkb-audio" />
+
+<Meta>Rust / WebAssembly / Web Audio / Since August 2026</Meta>
+
+### kalynbeach.net
+
+<Meta>Next.js 16 / React 19 / Convex / Clerk / Since December 2024</Meta>
+
+- The code is on [GitHub](https://github.com/kalynbeach/kalynbeach-net)
+- Pages are MDX. Convex stores the data and audio, and Clerk handles sign-in
+- Built on Kevelle since October 2026, and redesigned in November 2026 with Claude Code and Codex
+
+[Kalyn: what this site is for.]
+
+### Earlier projects
+
+- 2021. [wavy](https://github.com/kalynbeach/wavy), a live audio visualizer
+- 2021. [node-max-patches](https://github.com/kalynbeach/node-max-patches), for Max for Live
+
+[Kalyn: other projects worth listing here.]
+
+<h2 id="agents">AI and agents</h2>
+
+[Kalyn: how your work with AI agents grew, in a few lines.]
+
+<DraftProject slug="agents" />
+
+<Timeline
+  years={[
+    {
+      year: 2012,
+      entries: [
+        {
+          date: "01",
+          text: "Computer science coursework at Chapman University",
+        },
+      ],
+    },
+    {
+      year: 2015,
+      entries: [
+        { date: "04", text: "Contract web developer at CPR Interactive" },
+        { date: "06", text: "Intern at Demand Media, then associate engineer" },
+      ],
+    },
+    {
+      year: 2016,
+      entries: [
+        {
+          date: "09",
+          text: "Software engineer at Leaf Group, senior from 2022",
+        },
+      ],
+    },
+    {
+      year: 2021,
+      entries: [
+        { text: "Music Notation at Leaf Group", inferred: true },
+        { date: "06-20", text: "wavy, a live audio visualizer" },
+        { date: "10-13", text: "node-max-patches, for Max for Live" },
+      ],
+    },
+    {
+      year: 2022,
+      entries: [
+        { text: "Chord Finder at Leaf Group", inferred: true },
+        {
+          text: "A web-performance platform for Leaf Group's sites",
+          inferred: true,
+        },
+      ],
+    },
+    {
+      year: 2023,
+      entries: [
+        { date: "04-09", text: "First AI tool, for music makers" },
+        { date: "05", text: "Leaf Group becomes World of Good Brands" },
+      ],
+    },
+    {
+      year: 2024,
+      entries: [{ date: "12-16", text: "First commit on this site" }],
+    },
+    {
+      year: 2025,
+      entries: [
+        { date: "06-10", text: "kkb-code, my first agent repo" },
+        { date: "07", text: "Lead engineer on Gist GEO at ProRata AI" },
+        { date: "08-16", text: "kkb-agentic" },
+      ],
+    },
+    {
+      year: 2026,
+      entries: [
+        { date: "01-24", text: "The kkb monorepo", tag: "kkb" },
+        { date: "08-28", text: "kkb-audio", tag: "kkb-audio" },
+        { date: "10-22", text: "The Kevelle registry goes live", tag: "kkb" },
+        { date: "10-27", text: "This site's redesign" },
+      ],
+    },
+  ]}
+/>

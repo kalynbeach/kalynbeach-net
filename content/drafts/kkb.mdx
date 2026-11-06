@@ -4,7 +4,7 @@ import { Timeline } from "@/components/site/timeline";
 export const metadata = {
   title: "kkb",
   description:
-    "My private monorepo and central project. It holds my agent system, my audio and visual work, a shared UI library and the Kevelle design system.",
+    "My private monorepo. It holds my agent system, my audio and visual work, a shared UI library and the Kevelle design system.",
 };
 
 <PageHeader {...metadata}>
@@ -17,72 +17,73 @@ export const metadata = {
   />
 </PageHeader>
 
-`kkb` holds most of what I build. I started it in January 2026. Its agent work goes back to kkb-code in June 2025.
+[Kalyn: what kkb is to you, in a few lines.]
 
 The repository is private, so this page describes it instead of linking to it.
 
-## What it holds
+## What's in it
 
-- My agent system, with the instructions, skills and tools my coding agents run on
-- My audio and visual work
+### Apps
+
+- The web app at [kkb.systems](https://kkb.systems), with audio and visual experiments: an oscilloscope driven by oscillators or live mic input, a web audio player and a binaural beat generator
+- The registry app at [registry.kkb.systems](https://registry.kkb.systems), which publishes Kevelle and its components and blocks, including the Kevelle Oscilloscope, Waveform and WavePlayer that this site uses
+
+### Packages
+
+- An audio package, with the oscilloscope that renders on kkb.systems
+- A headless audio engine for the browser
 - A shared React UI library
-- The Kevelle design system and the shadcn registry that publishes it
+- Ableton Live extension experiments
+- The agent system, described below
+
+### Stack
+
+- Bun workspaces and Turborepo
+- TypeScript 7, Next.js, React, Tailwind and Effect 4
+- Oxlint and Oxfmt
 
 ## Agent system
 
-My coding agents run in Claude Code, Codex and Pi. They all share one set of instructions and skills, and that set lives in `kkb` next to the code.
+[Kalyn: a line on why your agent system lives in kkb.]
 
-GLOBAL.md is the instruction file every agent reads first. The `kkb` router skill loads more guidance only when a task needs it, such as engineering, design, delivery or browser work.
+### Instructions and skills
 
-My own skills cover opening pull requests and supervising them through CI and review. Others write HTML reports or turn my corrections into narrow fixes to my instructions.
+- One global instruction file that Claude Code, Codex and Pi all read first
+- A router skill that loads guidance only when a task needs it, such as engineering, design, delivery or browser work
+- My own skills for opening PRs, supervising them through CI and review, writing HTML reports, and turning my corrections into fixes to my instructions
+- A copy of pstack, an open-source set of engineering principles and playbooks for agents from Cursor
 
-My agents also follow pstack, an open-source set of engineering principles and playbooks for agents from Cursor. `kkb` keeps its own copy.
+### The kkb-agents CLI
 
-The `kkb-agents` CLI is written in Effect 4. It reads one release of `main` and syncs the skills and instructions to Claude Code, Codex and Pi on every machine I use. It refuses to overwrite local edits, and its `check` command reports drift.
+- Written in Effect 4
+- Syncs one release of the skills and instructions to every agent on every machine
+- Refuses to overwrite a local edit, and its `check` command reports drift
 
-Agents open their work as stacked pull requests. Claude Code GitHub Actions review each one. Every agent that checks work runs on a second model family, so GPT-6.1-sol reviews what Claude writes. I review and merge.
+### Review
 
-The [Agents](/software/agents) page has the longer history.
+- Agents open their work as stacked PRs, and I review and merge them
+- Claude Code GitHub Actions review each PR
+- GPT-6.1-sol checks the work Claude writes
 
-## Audio and visual work
+The [Agents](/drafts/agents) page has the full history.
 
-Most of what I make involves sound. These are the audio and visual pieces in `kkb`:
+## Kevelle
 
-- A web audio player
-- A WebGPU oscilloscope, driven by oscillators or live mic input
-- A binaural beat generator
-- A headless audio engine package for the browser
-- Ableton Live extension experiments
+- My design system, named for my middle name
+- Designed in Paper and built in kkb
+- A 91-item shadcn registry at [registry.kkb.systems](https://registry.kkb.systems), with more than 70 React components and audio blocks
+- Departure Mono sets titles, labels and values, ABC Areal sets body text and controls, and Timeless Serif sets long-form prose
+- This site installs it from the registry, so a Kevelle change lands in kkb first
 
-The oscilloscope draws with Phosphor, my WebGPU renderer. Phosphor falls back to WebGL2 where WebGPU is missing. It recreates the glow and persistence of an analog CRT oscilloscope from live audio. You can try the oscilloscope at [kkb.systems](https://kkb.systems).
-
-## Kevelle and the registry
-
-Kevelle is my design system, and it's named for my middle name. I design it in Paper and build it in `kkb`.
-
-`kkb` publishes Kevelle as a shadcn registry of 91 items at [registry.kkb.systems](https://registry.kkb.systems). The items include more than 70 React components and audio instrument blocks for the oscilloscope, waveform, binaural beats and wave player.
-
-Kevelle's look is sharp and high contrast. Its references are machine reports, hardware labels, hairline grids, dithered meters and oscilloscope traces.
-
-In Kevelle, Departure Mono sets titles, labels and values. ABC Areal sets body text and controls, and Timeless Serif sets long-form prose.
-
-This site installs Kevelle from the registry. A change to a Kevelle component lands in `kkb` first, then reaches this site when I reinstall it.
-
-## How it's built
-
-`kkb` uses Bun workspaces and Turborepo. The code is TypeScript 7, with Next.js, React, Tailwind and Effect 4. Oxlint lints it and Oxfmt formats it.
+[Kalyn: what Kevelle looks like and where its look comes from.]
 
 <Timeline
   years={[
     {
       year: 2025,
       entries: [
-        { date: "06-10", text: "kkb-code, where the agent work starts" },
-        {
-          date: "08-16",
-          text: "Subagents, slash commands and MCP",
-          tag: "kkb-agentic",
-        },
+        { date: "06-10", text: "kkb-code, my first agent repo" },
+        { date: "08-16", text: "kkb-agentic" },
       ],
     },
     {
@@ -94,7 +95,10 @@ This site installs Kevelle from the registry. A change to a Kevelle component la
         { date: "05", text: "A binaural beat generator" },
         { date: "06", text: "An Ableton Live package" },
         { date: "08-20", text: "Skills, global context and a sync CLI" },
-        { date: "10-15", text: "pstack, GLOBAL.md and the kkb router" },
+        {
+          date: "10-15",
+          text: "pstack, one global instruction file and a router skill",
+        },
         { date: "10-21", text: "Kevelle moves into kkb" },
         { date: "10-22", text: "The registry goes live" },
         { date: "10-26", text: "WebGPU waveform and wave-player blocks" },

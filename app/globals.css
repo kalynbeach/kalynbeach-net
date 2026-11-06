@@ -199,7 +199,8 @@
  *   name        ABC Areal 18/24 500             10   the name in the sidebar
  *   title       TX-02 40/48 700 (32/40)         10   each page's h1
  *   lede        ABC Areal 19/28 (18/26)         7    the paragraph under the title
- *   heading     ABC Areal 22/28 600 (20/28)     10   section headings
+ *   heading     ABC Areal 22/28 600 (20/28)     10   section headings (h2)
+ *   subheading  ABC Areal 18/26 600             10   subsection headings (h3)
  *   body        ABC Areal 16/26                 8    prose; 9 for timeline entries
  *   detail      ABC Areal 15/22                 8    a step's detail
  *   nav         TX-02 14/28                     7    nav rows take nav-idle
@@ -276,6 +277,15 @@
     font-size: 1.25rem;
     line-height: 1.4;
   }
+}
+
+@utility role-subheading {
+  font-family: var(--font-text);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4445;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
 }
 
 @utility role-body {
@@ -358,13 +368,16 @@
  * the registry installs and would overwrite.
  *
  * System B's flow, one column with one left edge, 600 wide from about 1317px
- * up and narrower below. An h2 opens a section, and so does a Timeline, which carries its own heading. A
- * component (anything with a data-slot) keeps its own type.
+ * up and narrower below. An h2 opens a section, and so does a Timeline, which
+ * carries its own heading. An h3 opens a subsection inside one. A component
+ * (anything with a data-slot) keeps its own type.
  *
  *   between                                gap
  *   the page header and what follows       64 (48 below 1200px)
  *   anything and a section                 64 (48 below 1200px)
- *   a heading and its first block          12
+ *   anything and a subsection              40
+ *   a section heading and a subsection     24
+ *   a heading and its first block          12 (8 under an h3)
  *   paragraphs, lists and quotes           16
  *   a component and its neighbors          32
  */
@@ -385,6 +398,18 @@
     }
     & > :where(h2 + *) {
       margin-block-start: 0.75rem;
+    }
+    & :where(h3):not(:where(.typeset-site [data-slot] *)) {
+      @apply role-subheading;
+    }
+    & > :where(h3) {
+      margin-block-start: 2.5rem;
+    }
+    & > :where(h2 + h3) {
+      margin-block-start: 1.5rem;
+    }
+    & > :where(h3 + *) {
+      margin-block-start: 0.5rem;
     }
     /* Last, so it wins over the gaps above. */
     & > :where([data-slot="page-header"] + *) {

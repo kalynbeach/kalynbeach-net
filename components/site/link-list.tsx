@@ -1,9 +1,12 @@
-type Link = { service: string; label: string; href: string };
+import Link from "next/link";
+
+type Entry = { service: string; label: string; href: string };
 
 /**
- * Where else to find me, each service's name as a label beside its link.
+ * Where else to find me, each service's name as a label beside its link. A
+ * site path, such as /software#experience, navigates client-side.
  */
-export function LinkList({ links }: { links: readonly Link[] }) {
+export function LinkList({ links }: { links: readonly Entry[] }) {
   return (
     <ul data-slot="link-list">
       {links.map(({ service, label, href }) => (
@@ -11,12 +14,12 @@ export function LinkList({ links }: { links: readonly Link[] }) {
           <span className="role-mono-sm text-ramp-7 w-18 shrink-0">
             {service}
           </span>
-          <a
+          <Link
             href={href}
             className="role-body text-link underline decoration-1 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             {label}
-          </a>
+          </Link>
         </li>
       ))}
     </ul>

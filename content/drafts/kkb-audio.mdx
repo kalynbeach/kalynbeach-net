@@ -1,3 +1,4 @@
+import { LinkList } from "@/components/site/link-list";
 import { Meta } from "@/components/site/page-header";
 import { Screenshot } from "@/components/site/screenshot";
 import { Steps } from "@/components/site/steps";
@@ -5,22 +6,40 @@ import { Steps } from "@/components/site/steps";
 export const metadata = {
   title: "kkb-audio",
   description:
-    "A Rust foundation for my sound, audio and music software. One real-time render engine runs in the browser through WebAssembly and natively on macOS.",
+    "A Rust foundation for my sound, audio, and music software. One real-time render engine runs in the browser through WebAssembly and natively on macOS.",
 };
 
 <PageHeader {...metadata}>
   <Meta>Rust / WebAssembly / TypeScript</Meta>
 </PageHeader>
 
-kkb-audio is experimental. The engine is still in validation, and it has no public API yet.
+<LinkList
+  links={[
+    {
+      service: "GitHub",
+      label: "kalynbeach/kkb-audio",
+      href: "https://github.com/kalynbeach/kkb-audio",
+    },
+    {
+      service: "Demo",
+      label: "kkb-audio.vercel.app",
+      href: "https://kkb-audio.vercel.app",
+    },
+  ]}
+/>
 
-The code is public on [GitHub](https://github.com/kalynbeach/kkb-audio). You can try the demo at [kkb-audio.vercel.app](https://kkb-audio.vercel.app).
+[Kalyn: what kkb-audio is for, in a few lines.]
 
-## The engine
+## Engine
 
-In the browser, the engine runs as WebAssembly inside an AudioWorklet. On macOS, it runs as native code through CPAL. Each host handles its own files, devices and lifecycle outside the engine.
+Each host handles its own files, devices, and lifecycle outside the engine.
 
-## What works so far
+### Hosts
+
+- In the browser: WebAssembly inside an AudioWorklet
+- On macOS: native code through CPAL
+
+### What works so far
 
 - An offline kernel that never allocates while it renders
 - That same kernel in a browser AudioWorklet and on native macOS
@@ -28,11 +47,14 @@ In the browser, the engine runs as WebAssembly inside an AudioWorklet. On macOS,
 - A compiled render plan with mixing and sample-timed gain automation
 - Peak and RMS levels from the rendered output
 
+### Status
+
+- Experimental, in engine validation
+- No public engine API yet
+
 ## WavePlayer
 
-WavePlayer is a local audio player built on the engine. It plays WAV and MP3 files from your computer, up to 100 at a time, and prepares only the active track.
-
-It converts between 44.1 and 48 kHz. It supports sample-accurate seeking, A/B loops, volume and mute.
+A local audio player built on the kkb-audio engine. It plays WAV and MP3 files, converts between 44.1 and 48 kHz, and supports seeking and A/B loops.
 
 Audio can't wait on a file read or a UI update. A worker decodes files and hands PCM to the Rust engine in an AudioWorklet, so file and interface work stay out of the render callback. A WebGPU oscilloscope draws the left and right channels as an XY trace.
 
@@ -59,16 +81,18 @@ Audio can't wait on a file read or a UI update. A worker decodes files and hands
   caption="WavePlayer with a synthetic stereo test file."
 />
 
-## Where it came from
+## Lineage
 
-I've built a line of wave-named audio projects since 2021. wavy, a live audio visualizer, came first in 2021. wave-visions followed in 2023, wave-player-2024 in 2024 and wave-player in 2025.
+- 2021. wavy, a live audio visualizer
+- 2023. wave-visions
+- 2024. wave-player-2024
+- 2025. wave-player
+- 2026. wave-player-next, from July to October
+- 2026. kkb-audio, from August 28
 
-wave-player-next ran from July to October 2026. kkb-audio started on August 28, 2026, and replaced it.
-
-I designed the architecture of kkb-audio and built it with coding agents.
+[Kalyn: what carried over from one to the next.]
 
 ## kkb-audio and kkb
 
-kkb-audio works alongside [`kkb`](/drafts/kkb), my main monorepo. The player on this site comes from `kkb`, not from kkb-audio. It runs on the TypeScript audio package in `kkb` and on Kevelle's wave-player block.
-
-I'm building kkb-audio as the Rust foundation for my audio software from here on.
+- The player on this site comes from [kkb](/drafts/kkb), not from kkb-audio
+- It runs on kkb's TypeScript audio package and Kevelle's WavePlayer block

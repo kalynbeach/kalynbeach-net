@@ -3,52 +3,55 @@ import { LinkList } from "@/components/site/link-list";
 export const metadata = {
   title: "About",
   description:
-    "I taught myself to code while running shifts at Starbucks. I've worked on the web since 2015.",
+    "I love learning, creating and building. I like making complex things as simple as possible.",
 };
 
 <PageHeader {...metadata} />
 
-## Learning to code, 2012 to 2015
+## Who I am
 
-I'm Kalyn Kevelle Beach, a musician, artist and engineer in Los Angeles. I started writing software around 2012, the year I began computer science courses at Chapman University.
+I'm Kalyn Kevelle Beach, also known as kevelle and KKB. I'm a musician, artist and engineer.
 
-From 2013 I worked at Starbucks, first as a barista and then as a shift supervisor. I taught myself to code around my shifts.
+My interests include science, sound, music, art, history, systems thinking, software architecture, interface design, and AI and agents.
 
-In the spring of 2015 I got my first paid web work. I built client sites at CPR Interactive, including work for Oracle.
+[Kalyn: a few more lines about you, in one place.]
 
-## Content sites, 2015 to 2024
+## On this site
 
-That summer I started as an intern at Demand Media, the company behind eHow. I became an associate engineer and moved about 30 sites onto a new content platform. I also built React interfaces for Content Lab, its content pipeline app.
+### Music
 
-In 2016 I joined Leaf Group, a network of content sites with millions of readers a month. I was the primary frontend engineer for sites like Sciencing, Bizfluent, Legal Beagle and Garden Guides. I built the team's web performance platform, which queued Lighthouse audits across 50 sites. Its reports drove the fixes that brought our sites to green Core Web Vitals. I also pitched and built Music Notation and Chord Finder, two browser tools for learning music.
+<LinkList
+  links={[{ service: "Music", label: "Tracks and playlists", href: "/music" }]}
+/>
 
-In 2023 Leaf Group became World of Good Brands, and I stayed on as a senior engineer. I led our move from Python and Jinja templates to TypeScript, React and Next.js. I designed the typed GraphQL data layer for Zenith, our new multi-brand platform, and shipped it in the Only In Your State rebuild.
+### Software
 
-## Gist GEO, 2025 to 2026
+<LinkList
+  links={[
+    {
+      service: "Experience",
+      label: "Work history",
+      href: "/drafts/software#experience",
+    },
+    {
+      service: "Projects",
+      label: "kkb, Kevelle, kkb-audio and this site",
+      href: "/drafts/software#projects",
+    },
+    {
+      service: "Agents",
+      label: "How I build with AI agents",
+      href: "/drafts/agents",
+    },
+    {
+      service: "Timeline",
+      label: "Since 2012",
+      href: "/drafts/software#timeline",
+    },
+  ]}
+/>
 
-In 2025 I joined ProRata AI as lead engineer on Gist GEO, a generative engine optimization product. I owned its initial architecture, agentic workflows and infrastructure. I took it from concept to an alpha with its first customers.
-
-The team was a group of interns and junior engineers who built prototypes. I set up our GitHub org and standards, helped build our first CI/CD and added tests and code review. I mentored the team. It became a product team that shipped.
-
-## My own agents, 2023 to now
-
-My work with agents started on the side. In 2023 I built a chat tool for music makers with LangChain. Then came the Vercel AI SDK, local models with Ollama and coding with Aider and Sonnet. In late 2024 I wrote my first MCP servers, for music and audio. In early 2025 I wrote one for Ableton Live.
-
-By mid 2025 I was writing my own Claude Code commands and running AI code review on my pull requests. Since January 2026 my agent system has lived in `kkb`, my monorepo. Claude Code, Codex and Pi share one set of my instructions and skills. A CLI I wrote syncs that set to every agent and machine and reports any copy that drifts. GPT reviews what Claude writes. I review what ships.
-
-## Sound
-
-kkb-audio is my real-time audio engine in Rust. I designed it and built it with coding agents. The same engine runs in the browser inside an AudioWorklet and natively on macOS. Its WavePlayer plays local files and draws them on a WebGPU oscilloscope.
-
-I also designed Kevelle, the design system this site uses. Kevelle is my middle name.
-
-## Now
-
-This site is the latest thing I've built with my agents. The full timeline and my projects are on the [Software](/software) page.
-
-I'm open to work and can start immediately. Email me, or find me on GitHub and LinkedIn.
-
-## Contact
+## Elsewhere
 
 <LinkList
   links={[
@@ -59,13 +62,13 @@ I'm open to work and can start immediately. Email me, or find me on GitHub and L
     },
     {
       service: "GitHub",
-      label: "github.com/kalynbeach",
+      label: "kalynbeach",
       href: "https://github.com/kalynbeach",
     },
     {
       service: "LinkedIn",
-      label: "linkedin.com/in/kalynbeach",
-      href: "https://www.linkedin.com/in/kalynbeach",
+      label: "kalynbeach",
+      href: "https://www.linkedin.com/in/kalynbeach/",
     },
   ]}
 />
