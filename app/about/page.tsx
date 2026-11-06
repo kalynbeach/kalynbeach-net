@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
-import SitePage from "@/components/site/site-page";
+import { notFound } from "next/navigation";
+import Content, { metadata as page } from "@/content/about.mdx";
+import { served } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "about",
-};
+const isServed = served("/about");
 
-export default function About() {
-  return (
-    <SitePage>
-      <main className="flex size-full flex-col gap-4">
-        <section className="flex flex-col gap-2">
-          <p className="font-mono text-sm font-medium dark:font-normal">
-            thinking...
-          </p>
-        </section>
-      </main>
-    </SitePage>
-  );
+/**
+ * An unserved page sets no metadata, so its 404 keeps the root layout's
+ * title. notFound() alone leaves the page's title on a client navigation,
+ * because Next resolves metadata apart from the page's render.
+ */
+export const metadata: Metadata = isServed ? page : {};
+
+export default function AboutPage() {
+  if (!isServed) notFound();
+  return <Content />;
 }

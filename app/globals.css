@@ -2,36 +2,531 @@
 @import "./kevelle/kevelle.css";
 @import "@clerk/ui/themes/shadcn.css";
 
+/*
+ * Site tokens for the three-section shell. Kevelle (app/kevelle,
+ * registry-owned) supplies the neutral ramp, the signal colors and the font
+ * files. This file names the site's font roles, layout geometry, type roles
+ * and the few colors Kevelle lacks. Each value is set once here; components
+ * use the utility.
+ */
+
+/*
+ * TX-02 (Berkeley Mono v2), the UI face. Kevelle's base styles don't declare
+ * it. scripts/kevelle-fonts.ts fetches the file into public/fonts/tx-02/,
+ * which git ignores; never commit it.
+ */
+@font-face {
+  font-family: "TX-02";
+  src: url("/fonts/tx-02/TX-02-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 60% 100%;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  /* The sidebar and section 1 side by side at 1200px and up. Below it: top bar, nav sheet, player bar. */
+  --breakpoint-desktop: 75rem;
+
+  /*
+   * Font roles. ui: titles, nav, labels, values, dates and code; all site
+   * text that isn't the name, a heading or prose. text: the name, headings
+   * and body. long: long-form writing. --font-mono and --font-label follow
+   * ui, so code and Kevelle's labels (type-label, such as the player's
+   * Library heading) set in TX-02. The site sets no Departure Mono of its
+   * own; installed Kevelle parts, such as the player's time readouts, keep
+   * it.
+   */
+  --font-ui: "TX-02", "Paper Mono", ui-monospace, monospace;
+  --font-text: var(--font-sans);
+  --font-long: var(--font-serif);
+  --font-mono: var(--font-ui);
+  --font-label: var(--font-ui);
+
+  --spacing-sidebar: 15rem; /* 240: the sidebar, and the rail that mirrors it */
+  --spacing-sheet: 18.75rem; /* 300: the nav sheet below 1200px */
+  --spacing-top: 6rem; /* 96: the top line, the sections' top and bottom padding, the sticky top */
+  --spacing-header: 3.25rem; /* 52: the mobile top bar and the sheet header */
+  --spacing-row: 1.75rem; /* 28: nav, list and table rows */
+  --spacing-opening: 4rem; /* 64: a page's header to its content, and section to section; 48 below 1200px */
+  --spacing-edge: 0.75rem; /* 12: below 1200px, section 1, the sheet and the bar sit this far in */
+  --spacing-safe-top: env(safe-area-inset-top);
+  --spacing-safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
+
+  /*
+   * Layout E, from 1200px up: sidebar | gutter | section 1 | gutter | rail,
+   * centered as one block, so section 1 is centered on the window by
+   * construction.
+   *
+   *   sidebar = rail = 240
+   *   gutter    = clamp(64, 6.25cqi, 160)
+   *   section 1 = min(600, 100cqi - 480 - 2 * gutter - 72)
+   *   margin    = (100cqi - 480 - 2 * gutter - section 1) / 2, on both sides
+   *
+   * Section 1 is 600 from about 1317 up, then narrows (568 at 1280, 498 at
+   * 1200) so both outer margins stay at least 36. Everything measures the
+   * .root container (cqi), not the viewport (vw), so a classic scrollbar
+   * narrows the block without moving section 1 off center. The admin wide
+   * layout keeps the same margins and sidebar, and its one section spans
+   * section 1, the second gutter and the rail.
+   */
+  --spacing-gutter: clamp(4rem, 6.25cqi, 10rem);
+  --spacing-section: min(
+    37.5rem,
+    calc(
+      100cqi - 2 * var(--spacing-sidebar) - 2 * var(--spacing-gutter) - 4.5rem
+    )
+  );
+  --spacing-margin: calc(
+    (
+        100cqi - 2 * var(--spacing-sidebar) - 2 * var(--spacing-gutter) -
+          var(--spacing-section)
+      ) /
+      2
+  );
+  /* The window's height between the top line and the bottom line. */
+  --spacing-frame: calc(100dvh - 2 * var(--spacing-top));
+  /*
+   * Home's stage, dead center on the window: as tall as the frame allows, and
+   * as wide as section 1 plus the gutters less 48 on each side, so it keeps
+   * 48 clear of the sidebar and the rail.
+   */
+  --spacing-stage: min(
+    var(--spacing-frame),
+    calc(var(--spacing-section) + 2 * (var(--spacing-gutter) - 3rem))
+  );
+  /* Below 1200px: the column's width, short enough to leave 84 above and below it. */
+  --spacing-stage-compact: min(100%, calc(100dvh - 10.5rem));
+
+  --grid-template-columns-three: var(--spacing-sidebar) var(--spacing-section)
+    var(--spacing-sidebar);
+  --grid-template-columns-wide: var(--spacing-sidebar) minmax(0, 1fr);
+  /* Layout E's ease for the rail: the mini's first fade, the ghost and the waveform controls. */
+  --ease-controls: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
 @theme inline {
-  --grid-template-rows-layout-root: 80px minmax(320px, 1fr) 80px;
-  --grid-template-rows-layout-root-md: 96px minmax(512px, 1fr) 96px;
+  /*
+   * The neutral ramp by step. The frames name colors dark-N and light-N at
+   * the same N, so text-ramp-7 is dark-7 in dark and light-7 in light.
+   * Section and page backgrounds use bg-background (ramp 1).
+   */
+  --color-ramp-1: var(--neutral-1);
+  --color-ramp-2: var(--neutral-2);
+  --color-ramp-3: var(--neutral-3);
+  --color-ramp-4: var(--neutral-4);
+  --color-ramp-5: var(--neutral-5);
+  --color-ramp-6: var(--neutral-6);
+  --color-ramp-7: var(--neutral-7);
+  --color-ramp-8: var(--neutral-8);
+  --color-ramp-9: var(--neutral-9);
+  --color-ramp-10: var(--neutral-10);
+
+  --color-nav-idle: var(--nav-idle);
+  --color-nav-hover: var(--nav-hover);
+
+  /* The halo on a lit timeline marker. */
+  --shadow-lit-marker: var(--lit-marker);
 }
 
-@utility container {
-  margin-inline: auto;
-  padding-inline: 1rem;
-  @media (width >= --theme(--breakpoint-sm)) {
-    max-width: none;
-  }
-  @media (width >= 640px) {
-    max-width: 640px;
-  }
-  @media (width >= 768px) {
-    max-width: 768px;
-  }
-  @media (width >= 1024px) {
-    max-width: 1024px;
+:root {
+  /*
+   * Nav ink (V4's boards, Kalyn's pick). The current row takes the signal,
+   * astral here and phosphor in dark, idle rows ramp 7, and hover sits
+   * between the two. On the background: idle 7.46:1, hover 8.5:1 and
+   * current 8.64:1 in light; 8.02:1, 12.26:1 and 15.11:1 in dark.
+   */
+  --nav-idle: var(--neutral-7);
+  --nav-hover: color-mix(in oklab, var(--neutral-7) 75%, var(--neutral-8));
+  --lit-marker: 0 0 4px 0
+    color-mix(in oklab, var(--signal-dim) 45%, transparent);
+}
+
+.dark {
+  --nav-idle: var(--neutral-7);
+  --nav-hover: var(--neutral-8);
+  --lit-marker: 0 0 6px 0 color-mix(in oklab, var(--signal) 50%, transparent);
+}
+
+@media (width < 75rem) {
+  :root {
+    --spacing-opening: 3rem;
   }
 }
 
-::view-transition-group(*) {
-  animation-duration: 150ms;
+/*
+ * kevelle/waveform names its live canvas waveform (or lends the name to the
+ * mark); kevelle/wave-player names the player's frame wave-player. The root
+ * skips its old image and runs no animation, so the new page shows at once,
+ * as a navigation without a transition does. Only the waveform and the
+ * player's frame move.
+ */
+::view-transition-old(root) {
+  display: none;
 }
 
-::view-transition-old(.quick-out) {
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+::view-transition-new(root) {
+  animation: none;
 }
 
-::view-transition-new(.quick-out) {
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+/* kevelle/waveform's contract: the figure rides above the frames it crosses. */
+::view-transition-group(waveform) {
+  z-index: 1;
+}
+
+/* Kevelle's reduced-motion rule matches *, ::before and ::after, not these pseudo-elements. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/*
+ * The type scale. Each role sets family, size, weight, line height and
+ * tracking together, and steps down below 1200px where the phone needs it,
+ * so call sites never repeat a breakpoint. Sizes are rem so the reader's
+ * browser size applies. Line heights are unitless, each the role's
+ * whole-pixel line over its size, rounded up at four places. The role-
+ * prefix keeps them apart from Kevelle's type- utilities.
+ *
+ * Content system B, "Column" (V4's boards, Kalyn's pick), on Layout E's
+ * scale, with the ink each role takes in dark:
+ *
+ *   role        face and size (below 1200px)   ink  for
+ *   name        ABC Areal 18/24 500             10   the name in the sidebar
+ *   title       TX-02 40/48 600 (32/40)         10   each page's h1
+ *   lede        ABC Areal 19/28 (18/26)         7    the paragraph under the title
+ *   heading     ABC Areal 22/28 600 (20/28)     10   section headings (h2)
+ *   subheading  ABC Areal 18/26 600             10   subsection headings (h3)
+ *   body        ABC Areal 16/26                 8    prose; 9 for timeline entries
+ *   detail      ABC Areal 15/22                 8    a step's detail
+ *   nav         TX-02 14/28                     7    nav rows take nav-idle
+ *                                                    (signal current)
+ *   step        TX-02 14/20 (14/22)             7    a step's ordinal; its name
+ *                                                    is 500 in ink 10
+ *   stat-value  TX-02 24/32 (16/20)             10   figures in a stat row; 20/28
+ *                                                    in a row under 34rem
+ *   mono-sm     TX-02 12/16                     7    meta lines and labels: facts,
+ *                                                    captions, stat labels, dates,
+ *                                                    years (500, ink 9), tags
+ *   meta        ABC Areal 12/16                 7    small Areal text
+ *
+ * TX-02 sets all site text but the name, headings and prose; Departure Mono
+ * only the player's time readouts, which installed Kevelle parts draw
+ * (Kalyn, 2026-11-03). No text at 12px or smaller uses an ink below ramp 7.
+ */
+
+/*
+ * role-name and role-title trim to the cap top, so the name and a page's
+ * title align by their caps on the top line. The name also trims to its
+ * baseline; the title keeps its line box below, so the lede sits 16 under
+ * it as drawn. Below 1200px there is no top line, and the title keeps its
+ * whole line box, 20 under the top bar, as the 390 board draws it.
+ */
+@utility role-name {
+  font-family: var(--font-text);
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.3334;
+  letter-spacing: -0.005em;
+  text-box: trim-both cap alphabetic;
+  @variant max-desktop {
+    letter-spacing: 0;
+  }
+}
+
+@utility role-title {
+  font-family: var(--font-ui);
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  text-box: trim-start cap alphabetic;
+  text-wrap: balance;
+  @variant max-desktop {
+    font-size: 2rem;
+    line-height: 1.25;
+    text-box: normal;
+  }
+}
+
+@utility role-lede {
+  font-family: var(--font-text);
+  font-size: 1.1875rem;
+  font-weight: 400;
+  line-height: 1.4737;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+  @variant max-desktop {
+    font-size: 1.125rem;
+    line-height: 1.4445;
+  }
+}
+
+@utility role-heading {
+  font-family: var(--font-text);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.2728;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  @variant max-desktop {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+}
+
+@utility role-subheading {
+  font-family: var(--font-text);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4445;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+@utility role-body {
+  font-family: var(--font-text);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.625;
+  letter-spacing: 0;
+}
+
+@utility role-detail {
+  font-family: var(--font-text);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.4667;
+  letter-spacing: 0;
+}
+
+@utility role-nav {
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 2;
+  letter-spacing: 0;
+}
+
+@utility role-step {
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4286;
+  letter-spacing: 0;
+  @variant max-desktop {
+    line-height: 1.5715;
+  }
+}
+
+@utility role-stat-value {
+  font-family: var(--font-ui);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.3334;
+  letter-spacing: -0.01em;
+  /*
+   * Section 1 narrows below about 1255px, where a stat row's cells grow too
+   * narrow for a 24px value, so a row under 34rem (a container) sets 20/28.
+   * Before max-desktop, which wins on the phone.
+   */
+  @container (width < 34rem) {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+  @variant max-desktop {
+    font-size: 1rem;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+}
+
+@utility role-meta {
+  font-family: var(--font-text);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.3334;
+  letter-spacing: 0;
+}
+
+@utility role-mono-sm {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.3334;
+  letter-spacing: 0;
+}
+
+/*
+ * The site preset for Kevelle's typeset: content/*.mdx renders in
+ * `typeset typeset-site` (mdx-components.tsx), so markdown takes the scale
+ * with no per-page classes. It lives here rather than in typeset.css, which
+ * the registry installs and would overwrite.
+ *
+ * System B's flow, one column with one left edge, 600 wide from about 1317px
+ * up and narrower below. An h2 opens a section, and so does a Timeline, which
+ * carries its own heading. An h3 opens a subsection inside one. A component
+ * (anything with a data-slot) keeps its own type.
+ *
+ *   between                                gap
+ *   the page header and what follows       64 (48 below 1200px)
+ *   anything and a section                 64 (48 below 1200px)
+ *   anything and a subsection              40
+ *   a section heading and a subsection     24
+ *   a heading and its first block          12 (8 under an h3)
+ *   paragraphs, lists and quotes           16
+ *   a component and its neighbors          32
+ */
+@layer components {
+  .typeset-site {
+    @apply role-body;
+    color: var(--color-ramp-8);
+    --typeset-flow: 1rem;
+
+    & > :where(* + [data-slot], [data-slot] + *) {
+      margin-block-start: 2rem;
+    }
+    & :where(h2):not(:where(.typeset-site [data-slot] *)) {
+      @apply role-heading;
+    }
+    & > :where(h2, [data-slot="timeline"]) {
+      margin-block-start: var(--spacing-opening);
+    }
+    & > :where(h2 + *) {
+      margin-block-start: 0.75rem;
+    }
+    & :where(h3):not(:where(.typeset-site [data-slot] *)) {
+      @apply role-subheading;
+    }
+    & > :where(h3) {
+      margin-block-start: 2.5rem;
+    }
+    & > :where(h2 + h3) {
+      margin-block-start: 1.5rem;
+    }
+    & > :where(h3 + *) {
+      margin-block-start: 0.5rem;
+    }
+    /* Last, so it wins over the gaps above. */
+    & > :where([data-slot="page-header"] + *) {
+      margin-block-start: var(--spacing-opening);
+    }
+  }
+}
+
+/*
+ * Home's waveform controls (components/site/waveform-controls.tsx), with
+ * Layout E's motion. CSS transitions, so a close during the entrance
+ * reverses from where it is. Key presses never animate.
+ *
+ *   ghost in            opacity, scale 0.9, blur 4px   280ms Kevelle ease-out
+ *   ghost out           the same, after a 600ms linger 160ms Kevelle ease-out
+ *   ghost press         scale 0.97 on :active          120ms ease-out
+ *   controls in / out   the row's reveal, opacity,     220 / 160ms
+ *                       translateY -4px
+ *   the mini above      stays put; the row opens under it
+ *   a key's value       phosphor, then ink 8           held 1500ms, then 300ms ease
+ *
+ * Kevelle's reduced-motion rule cuts every transition to 0.01ms, so there
+ * the ghost's fade (280 in, 160 out) and the controls' opacity (120 in,
+ * 100 out) run as Web Animations, nothing slides, scales or blurs, and a
+ * closing row waits out the 100ms fade before it collapses.
+ */
+@layer components {
+  [data-slot="waveform-ghost"] {
+    opacity: 0;
+    pointer-events: none;
+    transition-property: opacity, scale, filter, transform;
+    transition-duration:
+      var(--duration-small), var(--duration-small), var(--duration-small), 120ms;
+    transition-timing-function:
+      var(--ease-out), var(--ease-out), var(--ease-out), ease-out;
+
+    &[data-shown] {
+      opacity: 1;
+      scale: 1;
+      filter: blur(0);
+      pointer-events: auto;
+      transition-duration:
+        var(--duration-large), var(--duration-large), var(--duration-large),
+        120ms;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      &:not([data-shown]) {
+        scale: 0.9;
+        filter: blur(4px);
+      }
+      &:active {
+        transform: scale(0.97);
+      }
+    }
+  }
+
+  /*
+   * The mini player, when the rail has one, keeps the top line, and the
+   * controls open under it. Closed, the row takes no room: grid rows 0fr,
+   * and after the mini its top margin cancels the rail's 40 gap. Open, it
+   * grows to the controls' height, 40 under the mini, which never moves. With
+   * no mini the row comes first, and its header rises 8 so the label's caps
+   * sit on the top line.
+   */
+  [data-slot="waveform-controls-frame"] {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: -0.5rem;
+    visibility: hidden;
+    transition:
+      grid-template-rows 160ms var(--ease-controls),
+      margin-top 160ms var(--ease-controls),
+      visibility 0s 160ms;
+
+    &:not(:first-child) {
+      margin-top: -2.5rem;
+    }
+    &[data-open] {
+      grid-template-rows: 1fr;
+      visibility: visible;
+      transition-duration: 220ms, 220ms, 0s;
+      transition-delay: 0s;
+
+      &:not(:first-child) {
+        margin-top: 0;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &:not([data-open]) {
+        transition-delay: 100ms;
+      }
+    }
+  }
+
+  [data-slot="waveform-controls"] {
+    opacity: 0;
+    translate: 0 -4px;
+    transition:
+      opacity 160ms var(--ease-controls),
+      translate 160ms var(--ease-controls);
+
+    [data-open] & {
+      opacity: 1;
+      translate: 0 0;
+      transition-duration: 220ms;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      translate: none;
+    }
+  }
+
+  /* A key's new value turns phosphor at once, holds, then eases to ink 8. */
+  [data-slot="waveform-value"] {
+    transition: color 300ms ease;
+
+    &[data-fresh] {
+      transition: none;
+    }
+  }
 }

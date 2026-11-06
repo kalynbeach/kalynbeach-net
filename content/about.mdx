@@ -1,0 +1,74 @@
+import { LinkList } from "@/components/site/link-list";
+
+export const metadata = {
+  title: "About",
+};
+
+<PageHeader {...metadata} />
+
+<Draft>
+
+I love learning, creating and building. I like making complex things as simple as possible.
+
+## Who I am
+
+I'm Kalyn Kevelle Beach, also known as kevelle and KKB. I'm a musician, artist and engineer.
+
+My interests include science, sound, music, art, history, systems thinking, software architecture, interface design, and AI and agents.
+
+## Work
+
+I've been developing software since around 2012, and professionally since 2015. Lately that means agents, audio and the design systems behind this site.
+
+</Draft>
+
+## Links
+
+<LinkList
+  links={[
+    {
+      service: "GitHub",
+      label: "kalynbeach",
+      href: "https://github.com/kalynbeach",
+    },
+  ]}
+/>
+
+<Draft>
+
+<LinkList
+  links={[
+    {
+      service: "Projects",
+      label: "kkb, Kevelle, kkb-audio and this site",
+      href: "/software",
+    },
+    {
+      service: "Agents",
+      label: "How I build with AI agents",
+      href: "/software/agents",
+    },
+  ]}
+/>
+
+<LinkList
+  links={[
+    {
+      service: "Email",
+      label: "kalynbeach@gmail.com",
+      href: "mailto:kalynbeach@gmail.com",
+    },
+    {
+      service: "GitHub",
+      label: "kalynbeach",
+      href: "https://github.com/kalynbeach",
+    },
+    {
+      service: "LinkedIn",
+      label: "kalynbeach",
+      href: "https://www.linkedin.com/in/kalynbeach/",
+    },
+  ]}
+/>
+
+</Draft>

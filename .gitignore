@@ -47,3 +47,4 @@ next-env.d.ts
 # restricted Kevelle fonts
 /public/fonts/abc-areal/
 /public/fonts/timeless-serif/
+/public/fonts/tx-02/

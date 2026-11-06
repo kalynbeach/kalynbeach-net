@@ -1,0 +1,106 @@
+"use client";
+
+import * as React from "react";
+import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
+import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group";
+import { type VariantProps } from "class-variance-authority";
+import { cn } from "cn";
+
+import { toggleVariants } from "@/components/ui/toggle";
+
+const ToggleGroupContext = React.createContext<
+  VariantProps<typeof toggleVariants> & {
+    spacing?: number;
+    orientation?: "horizontal" | "vertical";
+    face?: "value" | "label";
+  }
+>({
+  size: "default",
+  variant: "default",
+  spacing: 2,
+  orientation: "horizontal",
+  face: "value",
+});
+
+function ToggleGroup({
+  className,
+  variant,
+  size,
+  spacing = 2,
+  orientation = "horizontal",
+  face = "value",
+  style,
+  children,
+  ...props
+}: ToggleGroupPrimitive.Props &
+  VariantProps<typeof toggleVariants> & {
+    spacing?: number;
+    orientation?: "horizontal" | "vertical";
+    /** Values by default. "label" keeps the size and takes --font-label. */
+    face?: "value" | "label";
+  }) {
+  return (
+    <ToggleGroupPrimitive
+      data-slot="toggle-group"
+      data-variant={variant}
+      data-size={size}
+      data-spacing={spacing}
+      data-orientation={orientation}
+      orientation={orientation}
+      style={(state) =>
+        ({
+          "--gap": spacing,
+          ...(typeof style === "function" ? style(state) : style),
+        }) as React.CSSProperties
+      }
+      className={cn(
+        "group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-none data-[size=sm]:rounded-none data-[spacing=0]:alloy-housing data-vertical:flex-col data-vertical:items-stretch",
+        className
+      )}
+      {...props}
+    >
+      <ToggleGroupContext.Provider
+        value={{ variant, size, spacing, orientation, face }}
+      >
+        {children}
+      </ToggleGroupContext.Provider>
+    </ToggleGroupPrimitive>
+  );
+}
+
+function ToggleGroupItem({
+  className,
+  children,
+  variant = "default",
+  size = "default",
+  ...props
+}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>) {
+  const context = React.useContext(ToggleGroupContext);
+
+  return (
+    <TogglePrimitive
+      data-slot="toggle-group-item"
+      data-variant={context.variant || variant}
+      data-size={context.size || size}
+      data-spacing={context.spacing}
+      className={cn(
+        // Group values are type-pixel. The variant sorts the role after
+        // toggleVariants' text sizes and font-medium, which cn() cannot
+        // merge with a type role.
+        "shrink-0 group-data-[spacing=0]/toggle-group:rounded-none group-data-[spacing=0]/toggle-group:px-2 focus:z-10 focus-visible:z-10 in-data-[slot=toggle-group]:type-pixel group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:pr-1.5 group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:pl-1.5 group-data-horizontal/toggle-group:data-[spacing=0]:not-first:-ml-px group-data-vertical/toggle-group:data-[spacing=0]:not-first:-mt-px group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-none group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-none group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-none group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-none data-[spacing=0]:hover:z-[1] data-[spacing=0]:focus-visible:z-10! data-[spacing=0]:aria-pressed:z-[2]",
+        toggleVariants({
+          variant: context.variant || variant,
+          size: context.size || size,
+        }),
+        // Under type-pixel's variant, so it sorts after it and sets the face.
+        context.face === "label" && "in-data-[slot=toggle-group]:font-label",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </TogglePrimitive>
+  );
+}
+
+export { ToggleGroup, ToggleGroupItem };

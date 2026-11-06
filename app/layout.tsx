@@ -1,21 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
-import { ViewTransition } from "react";
 import { preload } from "react-dom";
+import { api } from "@/convex/_generated/api";
 import ConvexClerkProvider from "@/components/providers/convex-clerk-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import SiteHeader from "@/components/site/site-header";
-import SiteFooter from "@/components/site/site-footer";
+import { SiteShell } from "@/components/site/shell";
+import { fetchPublicQuery } from "@/lib/convex/server";
 import "./globals.css";
 
+// Every page sets text in these two. Departure Mono loads on use, since no
+// page text sets in it; only installed Kevelle parts, such as the player's
+// readouts, draw it.
 const fonts = [
   "/fonts/abc-areal/ABCArealVariable.woff2",
-  "/fonts/departure-mono/DepartureMono-Regular.woff2",
-  "/fonts/paper-mono/PaperMono-Variable.woff2",
-  "/fonts/timeless-serif/TimelessSerifVF.woff2",
+  "/fonts/tx-02/TX-02-Variable.woff2",
 ];
 
 export const metadata: Metadata = {
@@ -26,7 +27,10 @@ export const metadata: Metadata = {
   description: "kalynbeach",
 };
 
-export default function RootLayout({
+/** cover lets the mobile top bar, sheet and player bar use the safe-area insets. */
+export const viewport: Viewport = { viewportFit: "cover" };
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -35,19 +39,21 @@ export default function RootLayout({
     preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   }
 
+  // Both reads make every route render per request; see fetchPublicQuery.
+  const [tracks, liveLook] = await Promise.all([
+    fetchPublicQuery(api.tracks.list, {}, []),
+    fetchPublicQuery(api.looks.live, {}, null),
+  ]);
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="relative">
+      <body>
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClerkProvider>
             <ThemeProvider>
-              <ViewTransition name="root-layout">
-                <div className="grid-rows-layout-root md:grid-rows-layout-root-md container grid size-full min-h-screen">
-                  <SiteHeader />
-                  {children}
-                  <SiteFooter />
-                </div>
-              </ViewTransition>
+              <SiteShell tracks={tracks} liveLook={liveLook}>
+                {children}
+              </SiteShell>
             </ThemeProvider>
             <Analytics />
             <SpeedInsights />

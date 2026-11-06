@@ -1,12 +1,9 @@
 import { SignIn } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import SitePage from "@/components/site/site-page";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "login",
-};
+export const metadata = pageMetadata("/login");
 
 export default async function Login() {
   const { userId } = await auth();
@@ -15,11 +12,14 @@ export default async function Login() {
     redirect("/dashboard");
   }
 
+  // The shell's "Sign in" is the page's h1, on the top line. Clerk's title is a
+  // second h1 and no option turns it off, so it is hidden. Its subtitle and
+  // the email preview with its edit link stay.
   return (
-    <SitePage>
-      <main className="flex size-full flex-col items-center justify-center gap-4">
-        <SignIn routing="hash" fallbackRedirectUrl="/dashboard" />
-      </main>
-    </SitePage>
+    <SignIn
+      routing="hash"
+      fallbackRedirectUrl="/dashboard"
+      appearance={{ elements: { headerTitle: { display: "none" } } }}
+    />
   );
 }
