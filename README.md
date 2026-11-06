@@ -18,7 +18,7 @@ This site uses my `Kevelle` design system, which I'm building in my kkb monorepo
 
 ## Architecture
 
-`lib/site.ts` is the site map. It lists the public pages for the navigation, the admin pages for the Cmd+K menu, and the sign-in pages, and it says how each public page shows the music player. The root layout wraps every page in the shell, `components/site/shell.tsx`. The shell draws the sidebar, the Home waveform, and the player, and `lib/layout.ts` places them for desktop or for narrow screens below 1200px.
+`lib/site.ts` is the site map. It lists the public pages for the navigation, the admin pages for the Cmd+K menu, and the sign-in pages, and it says how each public page shows the music player. Each public page has a `published` flag, and production serves only the published ones. The root layout wraps every page in the shell, `components/site/shell.tsx`. The shell draws the sidebar, the Home waveform, and the player, and `lib/layout.ts` places them for desktop or for narrow screens below 1200px.
 
 Each public page's copy lives in an MDX file in `content/`. The file's `metadata` export sets the page title and lede, and `mdx-components.tsx` sets every page in Kevelle's typeset styles.
 

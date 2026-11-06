@@ -4,6 +4,12 @@ import createMDX from "@next/mdx";
 const nextConfig: NextConfig = {
   transpilePackages: ["three"],
   reactCompiler: true,
+  // lib/site.ts reads this to serve only published pages and drop <Draft>
+  // sections. Next inlines it into the server and client bundles.
+  env: {
+    SITE_PUBLISHED_ONLY:
+      process.env.VERCEL_ENV === "production" ? "true" : "false",
+  },
   redirects() {
     // tests/site.test.ts checks every destination here is a site map route.
     return [

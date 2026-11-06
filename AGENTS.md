@@ -35,6 +35,15 @@ Comments in these files cite kkb paths such as `tools/aura.ts`. Those paths exis
 
 Vercel builds every push. Its build command, set in the Vercel project, is `bunx convex deploy --cmd 'bun run build' --preview-run 'migrations:seedPreview'`. On a branch, it creates or reuses that branch's Convex preview deployment, builds the site, and pushes the functions. A new preview deployment then gets the `seedPreview` sample data. On `main`, it builds the site and pushes the production Convex functions, so a merge to `main` deploys production.
 
+## Publishing
+
+Production serves only published pages and drops every `<Draft>` block. Vercel previews and `bun run dev` show everything.
+
+- To publish a page or a software project, set its `published` flag in `lib/site.ts` to `true`.
+- To publish a section of a page, remove its `<Draft>` wrapper in the content file.
+
+`next.config.ts` sets `SITE_PUBLISHED_ONLY` to `true` when `VERCEL_ENV` is `production`. To check production locally, run `VERCEL_ENV=production bun run build`.
+
 ## Fonts
 
 `scripts/kevelle-fonts.ts` downloads the licensed ABC Areal, TX-02, and Timeless Serif files into `public/fonts/` before `dev` and `build`. Their licenses forbid committing them to a public repository, and `.gitignore` keeps them out of git. Keep the files, their license numbers, and any token out of commits, PRs, and issues.
@@ -53,7 +62,7 @@ bun run test run       # add a path, such as tests/site.test.ts, to run one file
 
 Run `bun run build` too when a change touches routes, config, or the build. It downloads the fonts first, as the Fonts section describes. `bun run dev` also needs the Convex and Clerk settings in Kalyn's `.env.local`. Never copy that file into another checkout.
 
-- To add, rename, or remove a public page or a software project, change `lib/site.ts`, `content/`, and `tests/site.test.ts` together. The test fails when the site map, the route files, and the content files disagree.
+- To add, rename, or remove a public page or a software project, change `lib/site.ts`, `content/`, and `tests/site.test.ts` together. The test fails when the site map, the route files, and the content files disagree. Each page and project also has a `published` flag in `lib/site.ts`.
 - To add a software project page, add `content/software/<slug>.mdx`, add its slug and navigation label to `software` in `lib/site.ts`, add `<Project slug="<slug>" />` to `content/software.mdx`, and add the project to the navigation and Cmd+K expectations in `tests/site.test.ts`.
 - After you upgrade `oxlint`, `@oxlint/plugins`, `@convex-dev/eslint-plugin`, or a rule in `tools/oxlint/`, run `bun run test run tests/tools`.
 

@@ -1,7 +1,10 @@
 // @vitest-environment node
 import { globSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { Draft } from "@/components/site/draft";
 import nextConfig from "@/next.config";
 import {
   commandItems,
@@ -57,6 +60,9 @@ describe("site map and page files", () => {
           `export const metadata = pageMetadata\\("${escape(route)}"\\)`
         ),
         new RegExp(`export \\{[^}]*\\bmetadata\\b[^}]*\\} from "${content}"`),
+        new RegExp(
+          `import [^;]*\\bmetadata\\b[^;]* from "${content}"[\\s\\S]*export const metadata\\b`
+        ),
         new RegExp(
           `export async function generateMetadata[\\s\\S]*${content}|${content}[\\s\\S]*export async function generateMetadata`
         ),
@@ -175,5 +181,95 @@ describe("site map", () => {
       ["Lab", "Admin"],
     ]);
     for (const { href } of commandItems) expect(routes).toContain(href);
+  });
+});
+
+describe("Draft", () => {
+  it("shows a draft section between its markers on previews and dev", () => {
+    const html = renderToStaticMarkup(
+      createElement(Draft, null, createElement("p", null, "Draft copy"))
+    );
+    expect(html).toContain("Draft. Hidden on production.");
+    expect(html).toContain("<p>Draft copy</p>");
+    expect(html).toContain('data-slot="draft-end"');
+  });
+});
+
+describe("production", () => {
+  // lib/site reads SITE_PUBLISHED_ONLY when it loads, so each import here is a fresh module.
+  let site: typeof import("@/lib/site");
+  let draft: typeof import("@/components/site/draft");
+  beforeAll(async () => {
+    vi.stubEnv("SITE_PUBLISHED_ONLY", "true");
+    vi.resetModules();
+    site = await import("@/lib/site");
+    draft = await import("@/components/site/draft");
+  });
+  afterAll(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it.each(["/software", "/software/agents", "/software/kkb-audio"])(
+    "lays out unpublished %s as not found",
+    (path) => {
+      const { nav: _, ...layout } = site.resolve(path);
+      expect(layout).toEqual({
+        kind: "page",
+        player: null,
+        title: "Not found",
+      });
+    }
+  );
+
+  it("draws nav rows for Home, About and Music only", () => {
+    for (const path of ["/", "/about", "/software/agents"]) {
+      expect(
+        site.resolve(path).nav.flatMap((row) => [row, ...row.rows]),
+        path
+      ).toMatchObject([
+        { label: "Home" },
+        { label: "About" },
+        { label: "Music" },
+      ]);
+    }
+    expect(site.resolve("/about").nav[1]).toMatchObject({
+      label: "About",
+      state: "active",
+    });
+  });
+
+  it("leaves unpublished pages out of Cmd+K", () => {
+    expect(site.commandItems.map(({ label }) => label)).toEqual([
+      "Home",
+      "About",
+      "Music",
+      "Dashboard",
+      "Lab",
+    ]);
+  });
+
+  it("builds no project pages and no routes for unpublished pages", () => {
+    expect(site.projects).toEqual([]);
+    expect(site.routes).toEqual([
+      "/",
+      "/about",
+      "/music",
+      "/dashboard",
+      "/lab",
+      "/login",
+      "/auth/unauthorized",
+    ]);
+    expect(site.served("/software")).toBe(false);
+    expect(site.served("/software/agents")).toBe(false);
+    expect(site.served("/about")).toBe(true);
+    expect(site.served("/music")).toBe(true);
+  });
+
+  it("drops draft sections", () => {
+    const html = renderToStaticMarkup(
+      createElement(draft.Draft, null, createElement("p", null, "Draft copy"))
+    );
+    expect(html).toBe("");
   });
 });
