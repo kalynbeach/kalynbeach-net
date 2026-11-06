@@ -4,7 +4,7 @@ type Entry = { service: string; label: string; href: string };
 
 /**
  * Where else to find me, each service's name as a label beside its link. A
- * site path, such as /software#experience, navigates client-side.
+ * site path, such as /software, navigates client-side.
  */
 export function LinkList({ links }: { links: readonly Entry[] }) {
   return (

@@ -1,11 +1,8 @@
 import { cn } from "@/lib/utils";
 
 type Entry = {
-  /**
-   * MM-DD, or MM when only the month is known. Unique within its year. Leave
-   * it out when only the year is known, and mark the entry inferred.
-   */
-  date?: string;
+  /** MM-DD, or MM when only the month is known. Unique within its year. */
+  date: string;
   text: string;
   /** The date is a guess: dashed marker, no rail. */
   inferred?: true;
@@ -27,7 +24,7 @@ const marker = {
  * years, oldest first, 12 apart. A year is a TX-02 label above its entries,
  * in gray ink; the signal is only for the lit markers. The first entry and
  * the latest one are lit, so adding a newer entry moves the latest highlight
- * with no other edit. Its id is "timeline", so a page links to #timeline.
+ * with no other edit.
  *
  * One row shape at every width: top-aligned, 26px lines to match role-body
  * (the 16px labels pad 5px above and below), so a one-line row is 26 tall and
@@ -43,7 +40,7 @@ export function Timeline({ years }: { years: readonly Year[] }) {
   };
 
   return (
-    <section data-slot="timeline" id="timeline">
+    <section data-slot="timeline">
       <div
         data-slot="timeline-header"
         className="flex items-center justify-between"
@@ -65,9 +62,9 @@ export function Timeline({ years }: { years: readonly Year[] }) {
             </h3>
             <ol>
               {entries.map((entry) => (
-                <li key={entry.date ?? entry.text} className="flex gap-3">
+                <li key={entry.date} className="flex gap-3">
                   <time
-                    dateTime={entry.date ? `${year}-${entry.date}` : `${year}`}
+                    dateTime={`${year}-${entry.date}`}
                     className="role-mono-sm text-ramp-7 desktop:w-12 w-10 shrink-0 py-1.25"
                   >
                     {entry.date}
