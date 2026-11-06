@@ -11,8 +11,8 @@ export const metadata = {
   <Stats
     items={[
       { label: "Since", value: "2023-04-09" },
-      { label: "@kkb/agents", value: "170 commits" },
-      { label: "Codex and Pi sessions", short: "Sessions", value: "2,807" },
+      { label: "@kkb/agents", value: "180 commits" },
+      { label: "Agent sessions", short: "Sessions", value: "2,660" },
     ]}
   />
 </PageHeader>
@@ -61,6 +61,10 @@ This site's November 2026 redesign shipped the same way, as stacked PRs with a s
           text: '"AI tools for music makers," a LangChain chat and PDF tool',
         },
         { date: "06-18", text: "Vercel AI SDK chat and document Q&A" },
+        {
+          date: "08-31",
+          text: "A personal AI assistant, first in Python, then as a CLI",
+        },
         { date: "12-28", text: "Local models with Ollama" },
       ],
     },
@@ -79,9 +83,10 @@ This site's November 2026 redesign shipped the same way, as stacked PRs with a s
       entries: [
         { date: "02-27", text: "An MCP server for Ableton Live" },
         { date: "03-07", text: "First Claude Code run", inferred: true },
+        { date: "06-10", text: "A Claude Code toolkit", tag: "kkb-code" },
         {
-          date: "06-10",
-          text: "Claude Code commands, prompts and specs",
+          date: "06-26",
+          text: "Custom Claude Code commands, then subagents in July",
           tag: "kkb-code",
         },
         {
@@ -93,10 +98,17 @@ This site's November 2026 redesign shipped the same way, as stacked PRs with a s
           date: "07-11",
           text: "Claude PR assistant and code review on this site",
         },
+        { date: "07-18", text: "An AI SDK 5 coding agent in Vercel Sandbox" },
         {
           date: "08-16",
-          text: "Subagents, slash commands and MCP",
+          text: "A Next.js app for AI SDK agents",
           tag: "kkb-agentic",
+        },
+        { date: "09-16", text: "First Codex session" },
+        {
+          date: "11-13",
+          text: "First Claude Code skills, in a plugin marketplace",
+          tag: "kkb-claude",
         },
         {
           date: "11-14",
@@ -110,19 +122,22 @@ This site's November 2026 redesign shipped the same way, as stacked PRs with a s
       entries: [
         { date: "01-24", text: "The kkb monorepo", tag: "kkb" },
         { date: "03-20", text: "First PRs written by Codex" },
-        { date: "04-12", text: "Pi joins Claude Code and Codex" },
-        {
-          date: "06-18",
-          text: "Overnight research agents with morning reports",
-        },
+        { date: "04-03", text: "Pi joins Claude Code and Codex" },
+        { date: "06-18", text: "A morning briefing run by a Codex automation" },
         {
           date: "08-20",
-          text: "Skills, global context and a sync CLI",
+          text: "Skills move into the @kkb/agents package",
           tag: "kkb",
         },
         {
-          date: "10-15",
-          text: "pstack, one global instruction file and a router skill",
+          date: "08-25",
+          text: "A CLI syncs them to every agent and machine",
+          tag: "kkb",
+        },
+        { date: "10-15", text: "pstack and the kkb router", tag: "kkb" },
+        {
+          date: "10-16",
+          text: "GLOBAL.md, one instruction file for every agent",
           tag: "kkb",
         },
         { date: "10-27", text: "This site's redesign, built as stacked PRs" },
