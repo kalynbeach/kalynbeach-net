@@ -2,7 +2,7 @@
  * The site map: the nav, Cmd+K, and the layout each route takes.
  *
  * The shell in the root layout resolves the entry for the current pathname
- * and draws the sidebar, Home's stage and Music's player views from it. A
+ * and draws the sidebar, Home's stage and Sound's player views from it. A
  * content page's title and lede live in its file in content/, with the rest
  * of its copy.
  *
@@ -83,8 +83,8 @@ const nav = [
   },
   {
     kind: "page",
-    label: "Music",
-    route: "/music",
+    label: "Sound",
+    route: "/sound",
     player: "full",
     published: true,
   },

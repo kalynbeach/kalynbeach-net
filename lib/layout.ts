@@ -48,7 +48,7 @@ export type Placement =
  * itself. The card brings the Library with it.
  *
  * `active` is useWavePlayer().active: from the first play until the last
- * track ends, pauses included. The card stays on Music whatever playback
+ * track ends, pauses included. The card stays on Sound whatever playback
  * does, while the mini player and the bar follow only while it is active.
  * `layout` is null on the server and through hydration; until it is known
  * nothing that depends on it renders (the mark, the mini player, the bar),
@@ -80,7 +80,7 @@ export function place(
   }
 }
 
-/** The frame that follows the visitor off Music while playback is active. */
+/** The frame that follows the visitor off Sound while playback is active. */
 const followers = {
   desktop: "mini",
   narrow: "bar",

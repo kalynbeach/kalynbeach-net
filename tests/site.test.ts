@@ -16,9 +16,9 @@ vi.mock("@/content/software.mdx", () => ({
   default: () => null,
   metadata: { title: "Software" },
 }));
-vi.mock("@/content/music.mdx", () => ({
+vi.mock("@/content/sound.mdx", () => ({
   default: () => null,
-  metadata: { title: "Music" },
+  metadata: { title: "Sound" },
 }));
 import {
   commandItems,
@@ -118,7 +118,7 @@ describe("site map", () => {
     ["/about", { kind: "page", player: "follow", title: null }],
     ["/software", { kind: "page", player: "follow", title: null }],
     ["/software/agents", { kind: "page", player: "follow", title: null }],
-    ["/music", { kind: "page", player: "full", title: null }],
+    ["/sound", { kind: "page", player: "full", title: null }],
     ["/dashboard", { kind: "wide" }],
     ["/lab", { kind: "wide" }],
     ["/login", { kind: "page", player: null, title: "Sign in" }],
@@ -154,7 +154,7 @@ describe("site map", () => {
   });
 
   it("collapses Software on other pages", () => {
-    const software = resolve("/music").nav.find(
+    const software = resolve("/sound").nav.find(
       (row) => row.label === "Software"
     );
     expect(software).toMatchObject({ state: "idle", rows: [] });
@@ -165,7 +165,7 @@ describe("site map", () => {
     ["/about", "About"],
     ["/software", "Software"],
     ["/software/kkb-audio", "kkb-audio"],
-    ["/music/", "Music"],
+    ["/sound/", "Sound"],
   ])("marks exactly one nav row active on %s", (path, label) => {
     const active = rows(path).filter((row) => row.state === "active");
     expect(active.map((row) => row.label)).toEqual([label]);
@@ -190,7 +190,7 @@ describe("site map", () => {
       ["Software", "Pages"],
       ["Software / Agents", "Pages"],
       ["Software / kkb-audio", "Pages"],
-      ["Music", "Pages"],
+      ["Sound", "Pages"],
       ["Dashboard", "Admin"],
       ["Lab", "Admin"],
     ]);
@@ -236,7 +236,7 @@ describe("production", () => {
     }
   );
 
-  it("draws nav rows for Home, About and Music only", () => {
+  it("draws nav rows for Home, About and Sound only", () => {
     for (const path of ["/", "/about", "/software/agents"]) {
       expect(
         site.resolve(path).nav.flatMap((row) => [row, ...row.rows]),
@@ -244,7 +244,7 @@ describe("production", () => {
       ).toMatchObject([
         { label: "Home" },
         { label: "About" },
-        { label: "Music" },
+        { label: "Sound" },
       ]);
     }
     expect(site.resolve("/about").nav[1]).toMatchObject({
@@ -257,7 +257,7 @@ describe("production", () => {
     expect(site.commandItems.map(({ label }) => label)).toEqual([
       "Home",
       "About",
-      "Music",
+      "Sound",
       "Dashboard",
       "Lab",
     ]);
@@ -268,7 +268,7 @@ describe("production", () => {
     expect(site.routes).toEqual([
       "/",
       "/about",
-      "/music",
+      "/sound",
       "/dashboard",
       "/lab",
       "/login",
@@ -277,7 +277,7 @@ describe("production", () => {
     expect(site.served("/software")).toBe(false);
     expect(site.served("/software/agents")).toBe(false);
     expect(site.served("/about")).toBe(true);
-    expect(site.served("/music")).toBe(true);
+    expect(site.served("/sound")).toBe(true);
   });
 
   it.each([["/software", () => import("@/app/software/page")]])(
@@ -293,7 +293,7 @@ describe("production", () => {
 
   it.each([
     ["/about", () => import("@/app/about/page")],
-    ["/music", () => import("@/app/music/page")],
+    ["/sound", () => import("@/app/sound/page")],
   ])("renders published %s with its title", async (_, load) => {
     const route = await load();
     expect(route.metadata).toHaveProperty("title");

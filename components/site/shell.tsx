@@ -163,18 +163,18 @@ function Sections({ children }: { children: ReactNode }) {
   const placement = place(entry, useWavePlayer().active, layout);
   const reducedMotion = useReducedMotion();
   const page = entry.kind === "page" ? entry : null;
-  const music = placement.frame === "card";
+  const sound = placement.frame === "card";
   // Home's waveform controls show on desktop only. Below 1200px the keys
   // still play, and the block's own key guide answers ?.
   const controlsShown = placement.stage && layout === "desktop";
   const controls = useWaveformControls(controlsShown);
   // What the rail holds, top to bottom: the mini player and the open
-  // waveform controls, or Music's Library. The controls' state closes only
+  // waveform controls, or Sound's Library. The controls' state closes only
   // in an effect after they unmount, so it counts only while they render.
   const railHolds =
     (controlsShown && controls.state.panel.kind === "open") ||
     placement.frame === "mini" ||
-    music;
+    sound;
   // A landmark only while it holds something, so screen readers never land
   // in an empty one. The empty column keeps its box. On Home's desktop the
   // element stays an aside, role none while empty, so opening the controls
@@ -234,12 +234,12 @@ function Sections({ children }: { children: ReactNode }) {
           id="site-primary"
           data-slot="site-primary"
           className={cn(
-            // 64 from a page's header to what follows it here: a system page's body, Music's card below 1200px.
+            // 64 from a page's header to what follows it here: a system page's body, Sound's card below 1200px.
             "max-desktop:mx-edge max-desktop:p-5 gap-opening flex min-w-0 flex-1 flex-col",
             // The frame's height, so the stage centers on the window.
             placement.stage && "desktop:min-h-frame desktop:justify-center",
             /*
-             * Music's card, dead center: its top is max((window - card) / 2,
+             * Sound's card, dead center: its top is max((window - card) / 2,
              * header bottom + 32). The page's MDX body (.typeset) above the
              * card and main's ::after below it grow by equal shares from
              * flex bases that sum to 0: the body's -32 top margin offsets its
@@ -251,7 +251,7 @@ function Sections({ children }: { children: ReactNode }) {
              * can't do this: under an indefinite height its empty 1fr row
              * takes the header row's size.
              */
-            music &&
+            sound &&
               "desktop:min-h-frame desktop:gap-0 desktop:after:flex-[1_1_0px] desktop:[&>.typeset]:-mt-8 desktop:[&>.typeset]:mb-8 desktop:[&>.typeset]:flex-[1_1_0px] desktop:[&>.typeset]:before:block desktop:[&>.typeset]:before:h-8"
           )}
         >
@@ -276,12 +276,12 @@ function Sections({ children }: { children: ReactNode }) {
           )}
           {page?.title && <PageHeader title={page.title} />}
           {children}
-          {music && (
+          {sound && (
             // Below 1200px the Library follows the card; on desktop it is in the rail.
             <div className="desktop:contents flex flex-col items-center gap-5">
               {/* kevelle/wave-player's card fills this box up to 340px. */}
               <div
-                data-slot="music-card"
+                data-slot="sound-card"
                 className="w-full max-w-85 self-center"
               >
                 <WavePlayerCard />
@@ -317,7 +317,7 @@ function Sections({ children }: { children: ReactNode }) {
                 underMini={placement.frame === "mini"}
               />
             )}
-            {music && (
+            {sound && (
               <div
                 data-slot="rail-library"
                 // The block's Library header is a 52 row that centers its
@@ -375,7 +375,7 @@ function RailPlayer({
 
   return (
     <div ref={box} data-slot="rail-player">
-      <WavePlayerMini expand={<Link href="/music" />} />
+      <WavePlayerMini expand={<Link href="/sound" />} />
     </div>
   );
 }

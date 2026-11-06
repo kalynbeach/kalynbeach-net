@@ -62,19 +62,19 @@ describe("placement", () => {
     ["/", true, "narrow", { stage: true, frame: "bar", mark: null }],
     ["/", true, null, { stage: true, frame: null, mark: null }],
     [
-      "/music",
+      "/sound",
       false,
       "desktop",
       { stage: false, frame: "card", mark: "desktop" },
     ],
     [
-      "/music",
+      "/sound",
       true,
       "desktop",
       { stage: false, frame: "card", mark: "desktop" },
     ],
-    ["/music", true, "narrow", { stage: false, frame: "card", mark: "narrow" }],
-    ["/music", false, null, { stage: false, frame: "card", mark: null }],
+    ["/sound", true, "narrow", { stage: false, frame: "card", mark: "narrow" }],
+    ["/sound", false, null, { stage: false, frame: "card", mark: null }],
     [
       "/about",
       false,
@@ -137,7 +137,7 @@ describe("placement", () => {
     }
   });
 
-  test("shows no player view outside playback except Music's card", () => {
+  test("shows no player view outside playback except Sound's card", () => {
     for (const { route, active, placement } of cases) {
       if (!active) expect([null, "card"], route).toContain(placement.frame);
     }
