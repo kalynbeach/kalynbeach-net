@@ -6,6 +6,20 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Draft } from "@/components/site/draft";
 import nextConfig from "@/next.config";
+
+// Vitest has no MDX transform. The route files only pass these through.
+vi.mock("@/content/about.mdx", () => ({
+  default: () => null,
+  metadata: { title: "About" },
+}));
+vi.mock("@/content/software.mdx", () => ({
+  default: () => null,
+  metadata: { title: "Software" },
+}));
+vi.mock("@/content/music.mdx", () => ({
+  default: () => null,
+  metadata: { title: "Music" },
+}));
 import {
   commandItems,
   pageMetadata,
@@ -266,10 +280,54 @@ describe("production", () => {
     expect(site.served("/music")).toBe(true);
   });
 
+  it.each([["/software", () => import("@/app/software/page")]])(
+    "renders the 404 for unpublished %s, with no title",
+    async (_, load) => {
+      const route = await load();
+      expect(route.metadata).toEqual({});
+      expect(() => route.default()).toThrow(
+        expect.objectContaining({ digest: "NEXT_HTTP_ERROR_FALLBACK;404" })
+      );
+    }
+  );
+
+  it.each([
+    ["/about", () => import("@/app/about/page")],
+    ["/music", () => import("@/app/music/page")],
+  ])("renders published %s with its title", async (_, load) => {
+    const route = await load();
+    expect(route.metadata).toHaveProperty("title");
+    expect(() => route.default()).not.toThrow();
+  });
+
+  it("404s every unpublished project slug", async () => {
+    const route = await import("@/app/software/[slug]/page");
+    expect(route.dynamicParams).toBe(false);
+    expect(route.generateStaticParams()).toEqual([]);
+  });
+
   it("drops draft sections", () => {
     const html = renderToStaticMarkup(
       createElement(draft.Draft, null, createElement("p", null, "Draft copy"))
     );
     expect(html).toBe("");
+  });
+});
+
+describe("next.config", () => {
+  afterAll(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it.each([
+    ["production", "true"],
+    ["preview", "false"],
+    [undefined, "false"],
+  ])("sets SITE_PUBLISHED_ONLY for VERCEL_ENV=%s to %s", async (env, flag) => {
+    vi.stubEnv("VERCEL_ENV", env);
+    vi.resetModules();
+    const { default: config } = await import("@/next.config");
+    expect(config.env?.SITE_PUBLISHED_ONLY).toBe(flag);
   });
 });
