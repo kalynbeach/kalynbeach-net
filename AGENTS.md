@@ -33,7 +33,7 @@ Comments in these files cite kkb paths such as `tools/aura.ts`. Those paths exis
 
 ## Deploys
 
-Vercel builds every push. Its build command, set in the Vercel project, is `bunx convex deploy --cmd 'bun run build' --preview-run 'migrations:seedPreview'`. On a branch, it creates or reuses that branch's Convex preview deployment, builds the site, and pushes the functions. A new preview deployment then gets the `seedPreview` sample data. On `main`, it builds the site and pushes the production Convex functions, so a merge to `main` deploys production.
+Vercel builds every push. `vercel.json` sets its install command to `bun install --frozen-lockfile` and its build command to `bunx convex deploy --cmd 'bun run build' --preview-run 'migrations:seedPreview'`. Both override the Vercel project settings. On a branch, it creates or reuses that branch's Convex preview deployment, builds the site, and pushes the functions. A new preview deployment then gets the `seedPreview` sample data. On `main`, it builds the site and pushes the production Convex functions, so a merge to `main` deploys production.
 
 ## Publishing
 
@@ -50,7 +50,7 @@ Production serves only published pages and drops every `<Draft>` block. Vercel p
 
 ## Checks
 
-Run these before you commit. Every one must pass.
+Run these before you commit. Every one must pass. The `CI` workflow, `.github/workflows/ci.yml`, runs the same checks on every PR and every push to `main`.
 
 ```sh
 bun run lint
