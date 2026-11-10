@@ -689,6 +689,7 @@ function EditForm({
 
     if (patch === null) return onDone();
 
+    setFailure(null);
     startSaving(async () => {
       try {
         await update({ id: track.id, track: patch });

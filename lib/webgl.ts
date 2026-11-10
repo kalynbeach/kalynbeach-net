@@ -1,18 +1,13 @@
-import { cache } from "react";
-
 /**
- * Checks if WebGL is available in the current browser
- * @returns Boolean indicating WebGL availability or null if run on server
+ * Whether the browser can create a WebGL 2 context, which three.js needs.
+ * Returns null on the server.
  */
-export const checkWebGLAvailability = cache(() => {
+export function checkWebGLAvailability(): boolean | null {
   if (typeof window === "undefined") return null;
 
   try {
-    const canvas = document.createElement("canvas");
-    const gl =
-      canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-    return !!gl;
-  } catch (e) {
+    return !!document.createElement("canvas").getContext("webgl2");
+  } catch {
     return false;
   }
-});
+}
