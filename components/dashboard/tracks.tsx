@@ -145,7 +145,7 @@ function TrackTable() {
     );
   }
 
-  // At 1100px and up the frame's height ends here, so the table scrolls
+  // At 1200px and up the frame's height ends here, so the table scrolls
   // inside it. The negative margin keeps focus rings clear of the clip, and
   // `relative` keeps the absolute sr-only header inside it too.
   return (

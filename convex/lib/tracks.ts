@@ -35,10 +35,10 @@ export const trackAudioValidator = v.object({
 });
 
 /**
- * A production track from before Convex storage, field for field. No
- * function creates one or serves its `src`; attachAudio converts it. Delete
- * this branch once no legacy track remains, and Convex refuses that schema
- * push while one does.
+ * A production track from before Convex storage, field for field. Only
+ * seedPreview creates one, and no function serves its `src`; attachAudio
+ * converts it. Delete this branch once no legacy track remains, and Convex
+ * refuses that schema push while one does.
  */
 const legacyTrackValidator = v.object({
   ...trackFields,
@@ -293,12 +293,6 @@ export function toPublicTrack(
   };
 }
 
-/**
- * The only path from tracks to what the site plays, in the order given.
- * Leaves out legacy tracks and tracks whose blob is gone. Reads each look
- * once, however many tracks share it. A look row that is gone gives null,
- * since a throw here would reach every visitor. Never reads the site row.
- */
 /** The reads resolvePublicTracks makes: look rows and blob URLs. A QueryCtx is one. */
 export type PublicTrackReader = {
   readonly db: {
@@ -309,6 +303,12 @@ export type PublicTrackReader = {
   };
 };
 
+/**
+ * The only path from tracks to what the site plays, in the order given.
+ * Leaves out legacy tracks and tracks whose blob is gone. Reads each look
+ * once, however many tracks share it. A look row that is gone gives null,
+ * since a throw here would reach every visitor. Never reads the site row.
+ */
 export async function resolvePublicTracks(
   ctx: PublicTrackReader,
   tracks: readonly Track[]
