@@ -2,90 +2,6 @@ import * as THREE from "three";
 import { SVGRenderer } from "three/examples/jsm/renderers/SVGRenderer.js";
 
 /**
- * Converts a Three.js mesh to SVG path data
- */
-export function meshToSVG(
-  mesh: THREE.Mesh | THREE.LineSegments,
-  camera: THREE.Camera,
-  width: number,
-  height: number
-) {
-  const meshClone = mesh.clone();
-  const edges = extractEdges(meshClone);
-  const svgPaths = projectToSVG(edges, camera, width, height);
-
-  return {
-    svgPaths,
-    edges,
-  };
-}
-
-function extractEdges(mesh: THREE.Mesh | THREE.LineSegments): THREE.Line3[] {
-  const edges: THREE.Line3[] = [];
-
-  if (mesh instanceof THREE.LineSegments) {
-    const position = mesh.geometry.getAttribute("position");
-
-    for (let i = 0; i < position.count; i += 2) {
-      const start = new THREE.Vector3().fromBufferAttribute(position, i);
-      const end = new THREE.Vector3().fromBufferAttribute(position, i + 1);
-
-      start.applyMatrix4(mesh.matrixWorld);
-      end.applyMatrix4(mesh.matrixWorld);
-
-      edges.push(new THREE.Line3(start, end));
-    }
-  } else if (mesh instanceof THREE.Mesh) {
-    const wireframe = new THREE.WireframeGeometry(mesh.geometry);
-    const line = new THREE.LineSegments(wireframe);
-    line.matrix.copy(mesh.matrixWorld);
-    line.matrixWorld.copy(mesh.matrixWorld);
-
-    return extractEdges(line);
-  }
-
-  return edges;
-}
-
-function projectToSVG(
-  edges: THREE.Line3[],
-  camera: THREE.Camera,
-  width: number,
-  height: number
-): string[] {
-  const svgPaths: string[] = [];
-
-  edges.forEach((edge) => {
-    const startNDC = edge.start.clone().project(camera);
-    const endNDC = edge.end.clone().project(camera);
-
-    // Skip edges outside the frustum
-    if (
-      Math.abs(startNDC.x) > 1 ||
-      Math.abs(startNDC.y) > 1 ||
-      Math.abs(startNDC.z) > 1 ||
-      Math.abs(endNDC.x) > 1 ||
-      Math.abs(endNDC.y) > 1 ||
-      Math.abs(endNDC.z) > 1
-    ) {
-      return;
-    }
-
-    // Convert NDC to SVG coordinates
-    // The correct transformation: map from [-1,1] to [0,width/height]
-    const startX = (startNDC.x + 1) * 0.5 * width;
-    const startY = (1 - startNDC.y) * 0.5 * height;
-    const endX = (endNDC.x + 1) * 0.5 * width;
-    const endY = (1 - endNDC.y) * 0.5 * height;
-
-    const path = `M${startX},${startY} L${endX},${endY}`;
-    svgPaths.push(path);
-  });
-
-  return svgPaths;
-}
-
-/**
  * Settings for SVG export
  */
 export interface SVGExportSettings {
@@ -105,8 +21,6 @@ export function generateSVGString(
   settings: SVGExportSettings = {}
 ): string {
   try {
-    console.log("Starting SVG generation", { width, height });
-
     // Verify mesh has geometry and material
     if (!mesh || !mesh.geometry) {
       console.error("Invalid mesh for SVG generation", {
@@ -162,11 +76,6 @@ export function generateSVGString(
     // Get the SVG element
     const svgElement = renderer.domElement.querySelector("svg");
 
-    console.log("SVG renderer result:", {
-      hasElement: !!svgElement,
-      elementType: svgElement ? svgElement.tagName : "none",
-    });
-
     // Add styling to the SVG
     if (svgElement) {
       // Add viewBox for better scaling
@@ -188,7 +97,6 @@ export function generateSVGString(
     }
 
     // If SVGRenderer failed, create a simple SVG manually
-    console.log("Creating fallback SVG");
     return createFallbackSVG(mesh, camera, width, height, settings);
   } catch (error) {
     console.error("Error generating SVG:", error);
@@ -210,9 +118,6 @@ export function downloadSVG(svgString: string, filename: string): void {
 
   URL.revokeObjectURL(url);
 }
-
-// Re-export SVGRenderer for convenience
-export { SVGRenderer };
 
 /**
  * Creates a fallback SVG when the SVGRenderer fails
