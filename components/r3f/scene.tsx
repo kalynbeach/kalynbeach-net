@@ -19,6 +19,15 @@ function getWebGLAvailabilitySnapshot() {
   return cachedWebGLAvailability;
 }
 
+/** Whether the browser has WebGL 2. Null on the server and until hydration. */
+export function useWebGLAvailability(): boolean | null {
+  return useSyncExternalStore(
+    subscribeToBrowserEnvironment,
+    getWebGLAvailabilitySnapshot,
+    getServerWebGLAvailability
+  );
+}
+
 export function ThreeScene({
   children,
   className = "three-scene relative size-96",
@@ -30,11 +39,7 @@ export function ThreeScene({
   glProps?: GLProps;
   fallback?: ReactNode;
 }) {
-  const isWebGLAvailable = useSyncExternalStore(
-    subscribeToBrowserEnvironment,
-    getWebGLAvailabilitySnapshot,
-    getServerWebGLAvailability
-  );
+  const isWebGLAvailable = useWebGLAvailability();
 
   if (isWebGLAvailable === null) return <ThreeSceneSkeleton />;
   if (!isWebGLAvailable) return <div className={className}>{fallback}</div>;
