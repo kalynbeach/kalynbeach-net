@@ -15,7 +15,6 @@ import type * as lib_migration from "../lib/migration.js";
 import type * as lib_tracks from "../lib/tracks.js";
 import type * as looks from "../looks.js";
 import type * as migrations from "../migrations.js";
-import type * as playlists from "../playlists.js";
 import type * as tracks from "../tracks.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
@@ -34,7 +33,6 @@ declare const fullApi: ApiFromModules<{
   "lib/tracks": typeof lib_tracks;
   looks: typeof looks;
   migrations: typeof migrations;
-  playlists: typeof playlists;
   tracks: typeof tracks;
   users: typeof users;
   validators: typeof validators;

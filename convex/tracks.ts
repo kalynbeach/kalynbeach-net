@@ -239,15 +239,6 @@ export const remove = mutation({
       return null;
     }
 
-    const playlistTrack = await ctx.db
-      .query("playlistTracks")
-      .withIndex("by_track_id", (query) => query.eq("trackId", args.id))
-      .first();
-
-    if (playlistTrack) {
-      throw new ConvexError(`Track ${args.id} is still used by a playlist`);
-    }
-
     await ctx.db.delete("tracks", track._id);
     await retireTrackId(ctx, track.publicId);
 

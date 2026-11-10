@@ -45,29 +45,6 @@ describe("Convex migration data", () => {
           updatedAt: 1_742_955_802_391,
         },
       ],
-      playlists: [
-        {
-          publicId: 1,
-          title: "loops",
-          description: "initial sounds",
-          createdAt: 1_743_041_682_462,
-          updatedAt: 1_743_041_682_462,
-        },
-      ],
-      playlistTracks: [
-        {
-          playlistId: 1,
-          trackId: 1,
-          position: 1,
-          createdAt: 1_743_041_907_088,
-        },
-        {
-          playlistId: 1,
-          trackId: 2,
-          position: 2,
-          createdAt: 1_743_041_924_327,
-        },
-      ],
     });
   });
 
@@ -78,35 +55,6 @@ describe("Convex migration data", () => {
         tracks: [...repositorySeedData.tracks, repositorySeedData.tracks[0]],
       })
     ).toThrow("tracks contains duplicate public IDs");
-  });
-
-  it("rejects invalid playlist references", () => {
-    expect(() =>
-      validateMigrationData({
-        ...repositorySeedData,
-        playlistTracks: [
-          {
-            ...repositorySeedData.playlistTracks[0],
-            trackId: 3,
-          },
-        ],
-      })
-    ).toThrow("playlist track references missing track 3");
-  });
-
-  it("rejects duplicate playlist positions", () => {
-    expect(() =>
-      validateMigrationData({
-        ...repositorySeedData,
-        playlistTracks: [
-          repositorySeedData.playlistTracks[0],
-          {
-            ...repositorySeedData.playlistTracks[1],
-            position: 1,
-          },
-        ],
-      })
-    ).toThrow("duplicate playlist track position 1:1");
   });
 });
 

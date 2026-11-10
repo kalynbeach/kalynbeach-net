@@ -281,8 +281,8 @@ describe("checkMetadata and metadataPatch", () => {
 describe("errorMessage", () => {
   it("shows a ConvexError's message", () => {
     expect(
-      errorMessage(new ConvexError("Track 1 is still used by a playlist"))
-    ).toBe("Track 1 is still used by a playlist");
+      errorMessage(new ConvexError("Audio already belongs to track 1"))
+    ).toBe("Audio already belongs to track 1");
   });
 
   it("shows an AudioProblem's message", () => {

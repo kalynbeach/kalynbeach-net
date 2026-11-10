@@ -14,32 +14,8 @@ import { planCreate } from "./lib/looks";
 
 const migrationResultValidator = v.object({
   tracks: v.number(),
-  playlists: v.number(),
-  playlistTracks: v.number(),
   looks: v.number(),
 });
-
-async function assertNoPositionConflicts(ctx: MutationCtx): Promise<void> {
-  for (const relation of repositorySeedData.playlistTracks) {
-    const existingRelations = await ctx.db
-      .query("playlistTracks")
-      .withIndex("by_playlist_id_and_position", (query) =>
-        query.eq("playlistId", relation.playlistId)
-      )
-      .collect();
-    const conflict = existingRelations.find(
-      (candidate) =>
-        candidate.position === relation.position &&
-        candidate.trackId !== relation.trackId
-    );
-
-    if (conflict) {
-      throw new Error(
-        `playlist ${relation.playlistId} position ${relation.position} is already occupied`
-      );
-    }
-  }
-}
 
 async function trackByPublicId(ctx: MutationCtx, publicId: number) {
   return ctx.db
@@ -76,8 +52,8 @@ async function previewLook(
 }
 
 /**
- * Gives a preview the production catalog (legacy S3 tracks, a playlist) and
- * stored sample tracks it can play, each with a saved look of its own.
+ * Gives a preview the production catalog (legacy S3 tracks) and stored
+ * sample tracks it can play, each with a saved look of its own.
  * Inserts only the rows that are missing, and gives a sample track its look
  * only in the run that creates that look, so a rerun converges any preview
  * without undoing a look chosen on the dashboard, the player's default
@@ -90,9 +66,8 @@ export const seedPreview = internalMutation({
   returns: migrationResultValidator,
   handler: async (ctx) => {
     validateMigrationData(repositorySeedData);
-    await assertNoPositionConflicts(ctx);
 
-    const inserted = { tracks: 0, playlists: 0, playlistTracks: 0, looks: 0 };
+    const inserted = { tracks: 0, looks: 0 };
 
     for (const track of repositorySeedData.tracks) {
       if (!(await hasTrack(ctx, track.publicId))) {
@@ -130,36 +105,6 @@ export const seedPreview = internalMutation({
         updatedAt: now,
       });
       inserted.tracks += 1;
-    }
-
-    for (const playlist of repositorySeedData.playlists) {
-      const existing = await ctx.db
-        .query("playlists")
-        .withIndex("by_public_id", (query) =>
-          query.eq("publicId", playlist.publicId)
-        )
-        .unique();
-
-      if (!existing) {
-        await ctx.db.insert("playlists", playlist);
-        inserted.playlists += 1;
-      }
-    }
-
-    for (const playlistTrack of repositorySeedData.playlistTracks) {
-      const existing = await ctx.db
-        .query("playlistTracks")
-        .withIndex("by_playlist_id_and_track_id", (query) =>
-          query
-            .eq("playlistId", playlistTrack.playlistId)
-            .eq("trackId", playlistTrack.trackId)
-        )
-        .unique();
-
-      if (!existing) {
-        await ctx.db.insert("playlistTracks", playlistTrack);
-        inserted.playlistTracks += 1;
-      }
     }
 
     return inserted;
