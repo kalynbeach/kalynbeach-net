@@ -13,7 +13,7 @@ export default function Error({
 
   return (
     <div className="flex w-full flex-col items-start justify-start gap-4">
-      <h1 className="font-mono text-xl font-bold">ERROR</h1>
+      <h2 className="font-mono text-xl font-bold">ERROR</h2>
       <p className="font-mono font-medium">something went wrong...</p>
       <p className="font-mono text-sm font-medium">{error.message}</p>
     </div>

@@ -288,13 +288,13 @@ export function lookUsage(
   return { live: site?.liveLook === look._id, usedBy };
 }
 
+/** Why remove() refuses a look that exists. */
+export type RemoveProblem = "live" | "used";
+
 /**
  * Why a look can't be deleted, or null. Live wins over used. remove()
  * refuses by it and the editor holds Delete by it, so both apply one rule.
  */
-/** Why remove() refuses a look that exists. */
-export type RemoveProblem = "live" | "used";
-
 export function removeProblem(usage: LookUsage): RemoveProblem | null {
   if (usage.live) {
     return "live";

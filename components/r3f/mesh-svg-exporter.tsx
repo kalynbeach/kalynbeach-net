@@ -172,8 +172,7 @@ export default function MeshSVGExporter() {
       {/* Canvas Container */}
       <div
         ref={canvasRef}
-        className="border-primary/60 w-full overflow-hidden rounded-lg border bg-black md:w-2/3"
-        style={{ aspectRatio: "1/1" }}
+        className="border-primary/60 aspect-square w-full overflow-hidden rounded-lg border bg-black md:w-2/3"
       >
         <Suspense fallback={<ThreeSceneSkeleton />}>
           <ThreeScene
@@ -243,17 +242,11 @@ export default function MeshSVGExporter() {
         {/* SVG Preview Section */}
         <div className="border-primary/30 space-y-2 border p-2">
           <h3 className="font-mono text-lg font-medium">SVG Preview</h3>
-          <div
-            className="flex w-full items-center justify-center overflow-hidden bg-black"
-            style={{ aspectRatio: "1/1", maxWidth: "100%" }}
-          >
+          <div className="flex aspect-square w-full max-w-full items-center justify-center overflow-hidden bg-black">
             {isLoading ? (
               <Skeleton className="h-3/4 w-3/4" />
             ) : svgData && svgData.includes("<svg") ? (
-              <div
-                className="flex h-full w-full items-center justify-center overflow-hidden"
-                style={{ maxWidth: "100%" }}
-              >
+              <div className="flex h-full w-full max-w-full items-center justify-center overflow-hidden">
                 <div
                   className="flex h-full w-full items-center justify-center"
                   dangerouslySetInnerHTML={{

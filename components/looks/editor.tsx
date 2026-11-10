@@ -6,12 +6,12 @@
  *   // components/dashboard/frame.tsx
  *   <LooksEditor />
  *
- * At 1100px and up it fills the frame's height in three columns: the looks
+ * At 1200px and up it fills the frame's height in three columns: the looks
  * with the selected look's name and commands, its preview as large as the
  * column allows, and WaveformPanel. The first and last scroll on their own,
  * so the preview stays in view. Where the frame is too narrow for a useful
  * middle column, the preview moves to the top of the panel's column, still
- * in view above the controls. Below 1100px they stack in that order.
+ * in view above the controls. Below 1200px they stack in that order.
  *
  * The preview and the panel share the editor's own WaveformProvider with
  * no audio. It takes viewTransitionName={null}: on /dashboard the shell's

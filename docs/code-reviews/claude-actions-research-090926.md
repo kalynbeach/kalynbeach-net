@@ -107,4 +107,6 @@ Local validation passed actionlint 1.7.12, Bash syntax checks, supported-input c
 
 PR #21 follow-up: history JSON uses multiline formatting so Claude's Read tool can paginate larger discussions. The 512 KiB limit applies to the formatted output.
 
+PR #52 follow-up: three statements above are out of date. Automatic review now gets 35 turns and records a failed review. The mention-driven workflow, `.github/workflows/claude.yml`, is deleted, so the link to it above is dead. The separate CI workflow now exists. [`ci.yml`](../../.github/workflows/ci.yml) runs format, lint, typecheck, and tests on every PR and on every push to `main`.
+
 The OAuth secret still needs a fresh CI token. End-to-end review and mention-assistant verification remain pending until authentication is repaired and the approved workflow is available on the default branch. Workflow syntax success or a validation skip is not evidence that Claude reviewed a PR.
