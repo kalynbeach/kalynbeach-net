@@ -5,9 +5,7 @@ import { internalMutation } from "./_generated/server";
 import {
   previewSamples,
   renderSampleWav,
-  repositorySeedData,
   seedsSampleLook,
-  validateMigrationData,
   type PreviewSample,
 } from "./lib/migration";
 import { planCreate } from "./lib/looks";
@@ -22,10 +20,6 @@ async function trackByPublicId(ctx: MutationCtx, publicId: number) {
     .query("tracks")
     .withIndex("by_public_id", (query) => query.eq("publicId", publicId))
     .unique();
-}
-
-async function hasTrack(ctx: MutationCtx, publicId: number): Promise<boolean> {
-  return (await trackByPublicId(ctx, publicId)) !== null;
 }
 
 /** The sample's saved look, inserted on the first run and found by its createKey after. */
@@ -52,12 +46,11 @@ async function previewLook(
 }
 
 /**
- * Gives a preview the production catalog (legacy S3 tracks) and stored
- * sample tracks it can play, each with a saved look of its own.
- * Inserts only the rows that are missing, and gives a sample track its look
- * only in the run that creates that look, so a rerun converges any preview
- * without undoing a look chosen on the dashboard, the player's default
- * included. One transaction, so a failure stores nothing.
+ * Gives a preview sample tracks it can play, each with a saved look of its
+ * own. Inserts only the rows that are missing, and gives a sample track its
+ * look only in the run that creates that look, so a rerun converges any
+ * preview without undoing a look chosen on the dashboard, the player's
+ * default included. One transaction, so a failure stores nothing.
  * Returns the rows it inserted. Run it on preview and local deployments
  * only.
  */
@@ -65,16 +58,7 @@ export const seedPreview = internalMutation({
   args: {},
   returns: migrationResultValidator,
   handler: async (ctx) => {
-    validateMigrationData(repositorySeedData);
-
     const inserted = { tracks: 0, looks: 0 };
-
-    for (const track of repositorySeedData.tracks) {
-      if (!(await hasTrack(ctx, track.publicId))) {
-        await ctx.db.insert("tracks", track);
-        inserted.tracks += 1;
-      }
-    }
 
     for (const sample of previewSamples) {
       const look = await previewLook(ctx, sample);

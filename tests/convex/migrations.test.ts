@@ -2,12 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   previewSamples,
   renderSampleWav,
-  repositorySeedData,
   seedsSampleLook,
   SAMPLE_PEAKS,
   SAMPLE_RATE,
   SAMPLE_SECONDS,
-  validateMigrationData,
 } from "@/convex/lib/migration";
 import { audioFileProblem, trackAudioProblem } from "@/convex/lib/tracks";
 import { lookNameProblem, planCreate } from "@/convex/lib/looks";
@@ -17,57 +15,7 @@ import {
   parseWaveformConfig,
 } from "@/components/waveform/settings";
 
-describe("Convex migration data", () => {
-  it("keeps the canonical repository seed exact, valid, and S3-backed", () => {
-    expect(() => validateMigrationData(repositorySeedData)).not.toThrow();
-    expect(repositorySeedData).toEqual({
-      tracks: [
-        {
-          publicId: 1,
-          title: "0_initializer",
-          artist: "Kalyn Beach",
-          record: "loops",
-          src: "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/0_initializer.wav",
-          image: { src: "/icon.svg", alt: "0_initializer" },
-          isLoop: true,
-          createdAt: 1_742_955_735_839,
-          updatedAt: 1_742_955_735_839,
-        },
-        {
-          publicId: 2,
-          title: "1_workflows",
-          artist: "Kalyn Beach",
-          record: "loops",
-          src: "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/1_workflows.wav",
-          image: { src: "/globe.svg", alt: "1_workflows" },
-          isLoop: true,
-          createdAt: 1_742_955_802_391,
-          updatedAt: 1_742_955_802_391,
-        },
-      ],
-    });
-  });
-
-  it("rejects duplicate public IDs", () => {
-    expect(() =>
-      validateMigrationData({
-        ...repositorySeedData,
-        tracks: [...repositorySeedData.tracks, repositorySeedData.tracks[0]],
-      })
-    ).toThrow("tracks contains duplicate public IDs");
-  });
-});
-
 describe("preview samples", () => {
-  it("never reuse a production track's public ID", () => {
-    const ids = [
-      ...repositorySeedData.tracks.map((track) => track.publicId),
-      ...previewSamples.map((sample) => sample.publicId),
-    ];
-
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
   it("render a 16-bit mono WAV whose duration and peaks pass the upload rules", () => {
     const { wav, duration, peaks } = renderSampleWav(previewSamples[0]);
     const view = new DataView(wav.buffer);

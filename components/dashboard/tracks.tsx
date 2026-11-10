@@ -2,8 +2,7 @@
 
 /**
  * The dashboard's track manager: New track, then a table of every track
- * with its audio, its look, and Edit, Attach audio or Replace audio, and
- * Remove.
+ * with its audio, its look, and Edit, Replace audio, and Remove.
  *
  * Rules and derivations live in model.ts and work in flight in upload.ts;
  * these components draw a view and send commands. New track and each row own
@@ -74,7 +73,6 @@ import {
   checkMetadata,
   describeUpload,
   errorMessage,
-  legacyFileName,
   metadataPatch,
   trackLookView,
   type LooksResult,
@@ -306,7 +304,6 @@ function TrackRow({
   const [view, send] = useAudioUpload();
   const title = useId();
   const { audio } = track;
-  const legacy = audio.kind === "legacy";
 
   return (
     <tbody>
@@ -324,27 +321,14 @@ function TrackRow({
         </th>
         <td className="py-3 pe-6">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {audio.kind === "legacy" ? (
-              <>
-                <Badge variant="outline" face="label">
-                  Legacy
-                </Badge>
-                <span className="role-mono-sm text-ramp-6">
-                  {legacyFileName(audio.src)}
-                </span>
-              </>
-            ) : (
-              <>
-                {audio.src === null && (
-                  <Badge variant="destructive" face="label">
-                    Missing
-                  </Badge>
-                )}
-                <span className="role-mono-sm text-ramp-7">
-                  {formatClock(audio.duration)}
-                </span>
-              </>
+            {audio.src === null && (
+              <Badge variant="destructive" face="label">
+                Missing
+              </Badge>
             )}
+            <span className="role-mono-sm text-ramp-7">
+              {formatClock(audio.duration)}
+            </span>
           </span>
         </td>
         <td className="py-3 pe-6">
@@ -359,7 +343,7 @@ function TrackRow({
           <div className="flex min-w-44 flex-wrap justify-end gap-2">
             <EditTrack track={track} disabled={view.busy} />
             <AudioPicker
-              label={legacy ? "Attach audio" : "Replace audio"}
+              label="Replace audio"
               disabled={view.busy}
               send={send}
             />
@@ -374,8 +358,7 @@ function TrackRow({
               <UploadStatus view={view} send={send} />
               {view.canStart && (
                 // The confirm step: the row shows the picked file and its
-                // length before attachAudio drops the legacy src or deletes
-                // the old blob.
+                // length before attachAudio deletes the old blob.
                 <div className="flex gap-2">
                   <Button
                     className="pointer-coarse:h-11"
@@ -386,7 +369,7 @@ function TrackRow({
                       })
                     }
                   >
-                    {legacy ? "Attach" : "Replace"}
+                    Replace
                   </Button>
                   <Button
                     variant="secondary"

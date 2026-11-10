@@ -16,7 +16,6 @@ import {
   checkMetadata,
   describeUpload,
   errorMessage,
-  legacyFileName,
   metadataPatch,
   parseUploadResponse,
   roundPeaks,
@@ -319,14 +318,6 @@ describe("boundaries", () => {
 
   it("rounds peaks to 3 decimals and keeps their count", () => {
     expect(roundPeaks([0.12345, 0.9996, 1, 0])).toEqual([0.123, 1, 1, 0]);
-  });
-
-  it("names a legacy track's S3 file", () => {
-    expect(
-      legacyFileName(
-        "https://kkb-sounds.s3.us-west-1.amazonaws.com/loops/0_initializer.wav"
-      )
-    ).toBe("0_initializer.wav");
   });
 });
 
