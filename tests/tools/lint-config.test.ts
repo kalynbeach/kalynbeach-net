@@ -73,6 +73,13 @@ it("keeps native and custom rules active across overrides and excludes generated
         import schema from "./schema";
         export const trackId = schema.id("tracks");
       `,
+      "lib/correctness.ts": `
+        export function probe() {
+          debugger;
+          const value: unknown = 1;
+          return value as number;
+        }
+      `,
       "tests/probe.test.ts": `
         import { expect, it } from "vitest";
         it.only("focused", () => { expect(true).toBe(true); });
@@ -135,6 +142,12 @@ it("keeps native and custom rules active across overrides and excludes generated
         "@convex-dev(no-old-registered-function-syntax)",
         "@convex-dev(no-filter-in-query)",
         "anti-slop(no-chained-type-assertions)",
+      ])
+    );
+    expect(codes("lib/correctness.ts")).toEqual(
+      expect.arrayContaining([
+        "eslint(no-debugger)",
+        "anti-slop(no-widen-then-assert)",
       ])
     );
     expect(codes("convex/crons.ts")).toContain(
