@@ -3,11 +3,13 @@ import {
   previewSamples,
   renderSampleWav,
   seedsSampleLook,
+  seedsSampleTrack,
   SAMPLE_PEAKS,
   SAMPLE_RATE,
   SAMPLE_SECONDS,
 } from "@/convex/lib/migration";
 import { audioFileProblem, trackAudioProblem } from "@/convex/lib/tracks";
+import { seedPreview } from "@/convex/migrations";
 import { lookNameProblem, planCreate } from "@/convex/lib/looks";
 import {
   DEFAULT_WAVEFORM_CONFIG,
@@ -87,5 +89,109 @@ describe("seedPreview's look for an existing sample track", () => {
   it("never replaces a look chosen on the dashboard", () => {
     expect(seedsSampleLook({ look: "chosen" }, true)).toBe(false);
     expect(seedsSampleLook({ look: "chosen" }, false)).toBe(false);
+  });
+});
+
+describe("seedPreview's sample tracks", () => {
+  it("inserts every sample on a deployment that has removed no track", () => {
+    for (const sample of previewSamples) {
+      expect(seedsSampleTrack(sample.publicId, null)).toBe(true);
+    }
+  });
+
+  it("never gives a sample the publicId of a removed track or one below it", () => {
+    expect(seedsSampleTrack(4, { highest: 4 })).toBe(false);
+    expect(seedsSampleTrack(3, { highest: 4 })).toBe(false);
+  });
+
+  it("inserts a sample above the highest removed publicId", () => {
+    expect(seedsSampleTrack(4, { highest: 3 })).toBe(true);
+  });
+});
+
+type Row = Record<string, unknown>;
+type Tables = Record<"tracks" | "looks" | "retiredTrackIds", Row[]>;
+
+/** The slice of a Convex mutation context that seedPreview uses, over arrays. */
+function seedContext(tables: Tables) {
+  let issued = 0;
+
+  return {
+    db: {
+      query: (table: keyof Tables) => ({
+        withIndex(
+          _name: string,
+          range: (query: { eq(field: string, value: unknown): unknown }) => void
+        ) {
+          const wanted: [string, unknown][] = [];
+          const query = {
+            eq(field: string, value: unknown) {
+              wanted.push([field, value]);
+              return query;
+            },
+          };
+          range(query);
+
+          return {
+            unique: async () =>
+              tables[table].find((row) =>
+                wanted.every(([field, value]) => row[field] === value)
+              ) ?? null,
+          };
+        },
+        unique: async () => tables[table][0] ?? null,
+      }),
+      insert: async (table: keyof Tables, row: Row) => {
+        const _id = `${table}:${issued++}`;
+        tables[table].push({ _id, ...row });
+        return _id;
+      },
+      patch: async (table: keyof Tables, id: string, patch: Row) => {
+        Object.assign(tables[table].find((row) => row._id === id) ?? {}, patch);
+      },
+    },
+    storage: { store: async () => `blob:${issued++}` },
+  };
+}
+
+function runSeed(tables: Tables): Promise<{ tracks: number; looks: number }> {
+  // Convex keeps the registered handler here. Calling it skips only the
+  // argument and return validation a deployment adds.
+  const handler: unknown = Reflect.get(seedPreview, "_handler");
+
+  if (typeof handler !== "function") {
+    throw new Error("seedPreview has no handler");
+  }
+
+  return handler(seedContext(tables), {});
+}
+
+describe("seedPreview", () => {
+  it("seeds every sample with its look on a new deployment, and nothing on a rerun", async () => {
+    const tables: Tables = { tracks: [], looks: [], retiredTrackIds: [] };
+
+    expect(await runSeed(tables)).toEqual({
+      tracks: previewSamples.length,
+      looks: previewSamples.length,
+    });
+    expect(tables.tracks.map((track) => track.publicId)).toEqual(
+      previewSamples.map((sample) => sample.publicId)
+    );
+    expect(await runSeed(tables)).toEqual({ tracks: 0, looks: 0 });
+  });
+
+  it("leaves removed samples removed when it reruns, and makes no look for them", async () => {
+    const highest = Math.max(
+      ...previewSamples.map((sample) => sample.publicId)
+    );
+    const tables: Tables = {
+      tracks: [],
+      looks: [],
+      retiredTrackIds: [{ highest }],
+    };
+
+    expect(await runSeed(tables)).toEqual({ tracks: 0, looks: 0 });
+    expect(tables.tracks).toEqual([]);
+    expect(tables.looks).toEqual([]);
   });
 });

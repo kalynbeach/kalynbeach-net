@@ -190,3 +190,15 @@ export function renderSampleWav(
     peaks: peaks.map((peak) => Math.round(peak * 1000) / 1000),
   };
 }
+
+/**
+ * Whether seedPreview inserts a sample track that no row holds. Like
+ * tracks.create, it never issues a publicId at or below the highest one a
+ * removed track had, so a sample removed on the dashboard stays removed.
+ */
+export function seedsSampleTrack(
+  publicId: number,
+  retired: { readonly highest: number } | null
+): boolean {
+  return publicId > (retired?.highest ?? 0);
+}

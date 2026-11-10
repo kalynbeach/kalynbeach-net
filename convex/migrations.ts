@@ -6,6 +6,7 @@ import {
   previewSamples,
   renderSampleWav,
   seedsSampleLook,
+  seedsSampleTrack,
   type PreviewSample,
 } from "./lib/migration";
 import { planCreate } from "./lib/looks";
@@ -50,20 +51,26 @@ async function previewLook(
  * own. Inserts only the rows that are missing, and gives a sample track its
  * look only in the run that creates that look, so a rerun converges any
  * preview without undoing a look chosen on the dashboard, the player's
- * default included. One transaction, so a failure stores nothing.
- * Returns the rows it inserted. Run it on preview and local deployments
- * only.
+ * default included. A sample track removed on the dashboard stays removed.
+ * One transaction, so a failure stores nothing. Returns the rows it
+ * inserted. Run it on preview and local deployments only.
  */
 export const seedPreview = internalMutation({
   args: {},
   returns: migrationResultValidator,
   handler: async (ctx) => {
     const inserted = { tracks: 0, looks: 0 };
+    const retired = await ctx.db.query("retiredTrackIds").unique();
 
     for (const sample of previewSamples) {
+      const track = await trackByPublicId(ctx, sample.publicId);
+
+      if (!track && !seedsSampleTrack(sample.publicId, retired)) {
+        continue;
+      }
+
       const look = await previewLook(ctx, sample);
       inserted.looks += Number(look.inserted);
-      const track = await trackByPublicId(ctx, sample.publicId);
 
       if (track) {
         if (seedsSampleLook(track, look.inserted)) {
