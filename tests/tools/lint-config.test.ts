@@ -106,15 +106,11 @@ it("keeps native and custom rules active across overrides and excludes generated
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, source);
     }
+    // `bun run lint` and CI run the oxlint bin under Node, as its shebang
+    // says. process.execPath is that same Node here, since Vitest runs under it.
     const result = spawnSync(
-      "bun",
-      [
-        "run",
-        join(root, "node_modules/oxlint/bin/oxlint"),
-        "--format",
-        "json",
-        ".",
-      ],
+      process.execPath,
+      [join(root, "node_modules/oxlint/bin/oxlint"), "--format", "json", "."],
       {
         cwd: directory,
         encoding: "utf8",
