@@ -3,9 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
-    "build:turbo": "next build --turbopack",
     "start": "next start",
     "lint": "oxlint .",
     "test": "vitest",
@@ -13,8 +12,7 @@
     "format:check": "oxfmt --check",
     "typecheck": "tsc --noEmit --incremental false",
     "predev": "bun scripts/kevelle-fonts.ts",
-    "prebuild": "bun scripts/kevelle-fonts.ts",
-    "prebuild:turbo": "bun scripts/kevelle-fonts.ts"
+    "prebuild": "bun scripts/kevelle-fonts.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -36,15 +34,13 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "shadcn": "^4.22.0",
-    "three": "^0.186.1",
-    "zod": "^4.6.7"
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "5.0.0",
     "@oxlint/plugins": "1.89.0",
     "@shadcn/lint": "^0.2.3",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/bun": "^1.4.4",
     "@types/mdx": "^2.0.14",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
@@ -58,7 +54,6 @@
     "tw-animate-css": "^1.4.0",
     "typescript": "7.0.2",
     "vite": "^8.3.5",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.5"
   }
 }
