@@ -86,8 +86,19 @@ const storedTrack = {
     duration: 8,
     peaks: [0.1, 0.5, 1],
   },
-  createdAt: 1_760_000_000_000,
-  updatedAt: 1_760_000_000_000,
+};
+
+const storedLook = {
+  name: "Dusk",
+  config: { source: "tones", tones: { x: { hz: 140 } } },
+  version: 2,
+  createKey: "0b6f7a52-9c1d-4e3b-8f20-5d4c3b2a1908",
+};
+
+const storedRows = {
+  users: { clerkUserId: "user_2x7Kq9", role: "admin" },
+  tracks: storedTrack,
+  looks: storedLook,
 };
 
 describe("schema", () => {
@@ -133,20 +144,27 @@ describe("schema", () => {
   });
 
   it("accepts a look and the site row as stored today", () => {
-    expect(
-      conforms(documentType("looks"), {
-        name: "Dusk",
-        config: { source: "tones", tones: { x: { hz: 140 } } },
-        version: 2,
-        createKey: "0b6f7a52-9c1d-4e3b-8f20-5d4c3b2a1908",
-        createdAt: 1_760_000_000_000,
-        updatedAt: 1_760_000_100_000,
-      })
-    ).toBe(true);
+    expect(conforms(documentType("looks"), storedLook)).toBe(true);
     expect(
       conforms(documentType("site"), {
         liveLook: "j57a9k3m2x8v1c4b6n0p5q7r2s9t3w1y",
       })
     ).toBe(true);
   });
+
+  it.each(["users", "tracks", "looks"] as const)(
+    "accepts a %s row with or without the timestamps dropTimestamps removes",
+    (table) => {
+      const row = storedRows[table];
+
+      expect(conforms(documentType(table), row)).toBe(true);
+      expect(
+        conforms(documentType(table), {
+          ...row,
+          createdAt: 1_760_000_000_000,
+          updatedAt: 1_760_000_100_000,
+        })
+      ).toBe(true);
+    }
+  );
 });

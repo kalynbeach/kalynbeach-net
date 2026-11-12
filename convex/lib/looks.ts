@@ -24,8 +24,12 @@ export const lookValidator = v.object({
    * that already has a look returns that look, so a double click makes one.
    */
   createKey: v.string(),
-  createdAt: v.number(),
-  updatedAt: v.number(),
+  /**
+   * Unread. Optional only so rows written before migrations:dropTimestamps
+   * validate. Remove them once it has run.
+   */
+  createdAt: v.optional(v.number()),
+  updatedAt: v.optional(v.number()),
 });
 
 /**
@@ -172,8 +176,7 @@ export type CreatePlan =
  */
 export function planCreate(
   existing: Look | null,
-  input: CreateInput,
-  now: number
+  input: CreateInput
 ): CreatePlan {
   if (existing) {
     return { kind: "existing", id: existing._id };
@@ -193,8 +196,6 @@ export function planCreate(
       config: input.config,
       version: 0,
       createKey: input.createKey,
-      createdAt: now,
-      updatedAt: now,
     },
   };
 }
@@ -210,7 +211,6 @@ export type SavePlan =
       readonly patch: {
         readonly config: LookConfig;
         readonly version: number;
-        readonly updatedAt: number;
       };
     }
   | { readonly kind: "unchanged"; readonly version: number }
@@ -223,11 +223,7 @@ export type SavePlan =
  * A config that is already stored writes nothing, so a retry of a save that
  * landed succeeds with the version it made.
  */
-export function planSave(
-  look: Look | null,
-  input: SaveInput,
-  now: number
-): SavePlan {
+export function planSave(look: Look | null, input: SaveInput): SavePlan {
   if (!look) {
     return { kind: "refuse", code: "missing" };
   }
@@ -246,22 +242,18 @@ export function planSave(
 
   return {
     kind: "patch",
-    patch: { config: input.config, version: look.version + 1, updatedAt: now },
+    patch: { config: input.config, version: look.version + 1 },
   };
 }
 
 export type RenamePlan =
   | {
       readonly kind: "patch";
-      readonly patch: { readonly name: string; readonly updatedAt: number };
+      readonly patch: { readonly name: string };
     }
   | { readonly kind: "refuse"; readonly code: "missing" | "name" };
 
-export function planRename(
-  look: Look | null,
-  name: string,
-  now: number
-): RenamePlan {
+export function planRename(look: Look | null, name: string): RenamePlan {
   if (!look) {
     return { kind: "refuse", code: "missing" };
   }
@@ -270,7 +262,7 @@ export function planRename(
 
   return problem
     ? { kind: "refuse", code: problem }
-    : { kind: "patch", patch: { name: cleanName(name), updatedAt: now } };
+    : { kind: "patch", patch: { name: cleanName(name) } };
 }
 
 /** What uses a look. Either use keeps it from being deleted. An AdminLook is one. */

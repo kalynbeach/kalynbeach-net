@@ -101,14 +101,11 @@ export const create = mutation({
     ]);
     const publicId =
       Math.max(lastTrack?.publicId ?? 0, retired?.highest ?? 0) + 1;
-    const now = Date.now();
 
     await ctx.db.insert("tracks", {
       publicId,
       ...args.track,
       audio: args.audio,
-      createdAt: now,
-      updatedAt: now,
     });
 
     return publicId;
@@ -140,7 +137,7 @@ export const attachAudio = mutation({
       );
     }
 
-    const plan = planAttach(track, args.audio, Date.now());
+    const plan = planAttach(track, args.audio);
 
     if (plan.kind === "patch") {
       await ctx.db.patch("tracks", track._id, plan.patch);
@@ -171,10 +168,7 @@ export const update = mutation({
       throw new ConvexError(`Track ${args.id} not found`);
     }
 
-    await ctx.db.patch("tracks", track._id, {
-      ...args.track,
-      updatedAt: Date.now(),
-    });
+    await ctx.db.patch("tracks", track._id, args.track);
 
     return null;
   },
@@ -204,7 +198,7 @@ export const setLook = mutation({
             kind: (await ctx.db.get("looks", args.look)) ? "found" : "gone",
             id: args.look,
           };
-    const plan = planSetLook(track, requested, Date.now());
+    const plan = planSetLook(track, requested);
 
     switch (plan.kind) {
       case "unchanged":

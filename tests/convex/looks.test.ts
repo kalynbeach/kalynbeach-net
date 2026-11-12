@@ -44,8 +44,6 @@ function look(id: string, fields: Partial<Look> = {}): Look {
     config,
     version: 0,
     createKey: `key-${id}`,
-    createdAt: 10,
-    updatedAt: 20,
     ...fields,
   };
 }
@@ -83,15 +81,13 @@ describe("planCreate", () => {
   const input = { createKey: "k1", name: " Dusk ", config };
 
   it("inserts the cleaned name and the config as sent", () => {
-    expect(planCreate(null, input, 5)).toEqual({
+    expect(planCreate(null, input)).toEqual({
       kind: "insert",
       look: {
         name: "Dusk",
         config,
         version: 0,
         createKey: "k1",
-        createdAt: 5,
-        updatedAt: 5,
       },
     });
   });
@@ -99,7 +95,7 @@ describe("planCreate", () => {
   it("returns the look already made with the same createKey", () => {
     const made = look("made", { createKey: "k1" });
 
-    expect(planCreate(made, input, 9)).toEqual({
+    expect(planCreate(made, input)).toEqual({
       kind: "existing",
       id: lookId("made"),
     });
@@ -108,18 +104,17 @@ describe("planCreate", () => {
   it("never refuses a retry, even when the input would be refused now", () => {
     const made = look("made", { createKey: "k1" });
 
-    expect(planCreate(made, { ...input, name: "" }, 9).kind).toBe("existing");
+    expect(planCreate(made, { ...input, name: "" }).kind).toBe("existing");
     expect(
-      planCreate(
-        made,
-        { ...input, config: configOfBytes(MAX_CONFIG_BYTES + 1) },
-        9
-      ).kind
+      planCreate(made, {
+        ...input,
+        config: configOfBytes(MAX_CONFIG_BYTES + 1),
+      }).kind
     ).toBe("existing");
   });
 
   it("refuses a blank name", () => {
-    expect(planCreate(null, { ...input, name: "  " }, 5)).toEqual({
+    expect(planCreate(null, { ...input, name: "  " })).toEqual({
       kind: "refuse",
       code: "name",
     });
@@ -128,7 +123,7 @@ describe("planCreate", () => {
   it("refuses a config holding a value JSON can't carry", () => {
     for (const odd of [new ArrayBuffer(8), BigInt(5), Number.NaN, Infinity]) {
       expect(
-        planCreate(null, { ...input, config: { ...config, odd } }, 5)
+        planCreate(null, { ...input, config: { ...config, odd } })
       ).toEqual({ kind: "refuse", code: "config" });
     }
   });
@@ -136,7 +131,7 @@ describe("planCreate", () => {
   it("measures the size cap in UTF-8 bytes, not characters", () => {
     const twoByteChars = { pad: "é".repeat(MAX_CONFIG_BYTES / 2) };
 
-    expect(planCreate(null, { ...input, config: twoByteChars }, 5)).toEqual({
+    expect(planCreate(null, { ...input, config: twoByteChars })).toEqual({
       kind: "refuse",
       code: "config",
     });
@@ -144,15 +139,14 @@ describe("planCreate", () => {
 
   it("accepts a config at the size cap and refuses one byte more", () => {
     expect(
-      planCreate(null, { ...input, config: configOfBytes(MAX_CONFIG_BYTES) }, 5)
+      planCreate(null, { ...input, config: configOfBytes(MAX_CONFIG_BYTES) })
         .kind
     ).toBe("insert");
     expect(
-      planCreate(
-        null,
-        { ...input, config: configOfBytes(MAX_CONFIG_BYTES + 1) },
-        5
-      )
+      planCreate(null, {
+        ...input,
+        config: configOfBytes(MAX_CONFIG_BYTES + 1),
+      })
     ).toEqual({ kind: "refuse", code: "config" });
   });
 });
@@ -161,83 +155,76 @@ describe("planSave", () => {
   const saved = { ...a, config: otherConfig, version: 1 };
 
   it("refuses a missing look", () => {
-    expect(planSave(null, { baseVersion: 0, config }, 5)).toEqual({
+    expect(planSave(null, { baseVersion: 0, config })).toEqual({
       kind: "refuse",
       code: "missing",
     });
   });
 
   it("saves a draft from the stored version as the next version, leaving the name alone", () => {
-    expect(planSave(a, { baseVersion: 0, config: otherConfig }, 9)).toEqual({
+    expect(planSave(a, { baseVersion: 0, config: otherConfig })).toEqual({
       kind: "patch",
-      patch: { config: otherConfig, version: 1, updatedAt: 9 },
+      patch: { config: otherConfig, version: 1 },
     });
   });
 
   it("refuses a draft from an older version, so it never replaces another tab's save", () => {
-    expect(
-      planSave(saved, { baseVersion: 0, config: thirdConfig }, 12)
-    ).toEqual({
+    expect(planSave(saved, { baseVersion: 0, config: thirdConfig })).toEqual({
       kind: "refuse",
       code: "stale",
     });
   });
 
   it("writes nothing when the config is already stored, so a retry of a landed save returns its version", () => {
-    expect(
-      planSave(saved, { baseVersion: 0, config: otherConfig }, 12)
-    ).toEqual({
+    expect(planSave(saved, { baseVersion: 0, config: otherConfig })).toEqual({
       kind: "unchanged",
       version: 1,
     });
     expect(
       planSave(
         { ...saved, config: { b: 2, a: { d: 4, c: 3 } } },
-        { baseVersion: 0, config: { a: { c: 3, d: 4 }, b: 2 } },
-        12
+        { baseVersion: 0, config: { a: { c: 3, d: 4 }, b: 2 } }
       ).kind
     ).toBe("unchanged");
   });
 
   it("refuses a config holding bytes", () => {
     expect(
-      planSave(
-        a,
-        { baseVersion: 0, config: { ...config, blob: new ArrayBuffer(8) } },
-        9
-      )
+      planSave(a, {
+        baseVersion: 0,
+        config: { ...config, blob: new ArrayBuffer(8) },
+      })
     ).toEqual({ kind: "refuse", code: "config" });
   });
 
   it("refuses a config over the size cap", () => {
     expect(
-      planSave(
-        a,
-        { baseVersion: 0, config: configOfBytes(MAX_CONFIG_BYTES + 1) },
-        9
-      )
+      planSave(a, {
+        baseVersion: 0,
+        config: configOfBytes(MAX_CONFIG_BYTES + 1),
+      })
     ).toEqual({ kind: "refuse", code: "config" });
   });
 });
 
 describe("planRename", () => {
   it("refuses a missing look", () => {
-    expect(planRename(null, "Night", 5)).toEqual({
+    expect(planRename(null, "Night")).toEqual({
       kind: "refuse",
       code: "missing",
     });
   });
 
   it("stores the cleaned name and leaves the config alone", () => {
-    expect(planRename(a, "  Night   sky ", 9)).toEqual({
+    expect(planRename(a, "  Night   sky ")).toEqual({
       kind: "patch",
-      patch: { name: "Night sky", updatedAt: 9 },
+      patch: { name: "Night sky" },
     });
   });
 
   it("refuses a blank or too long name", () => {
-    expect(planRename(a, " ", 9)).toEqual({ kind: "refuse", code: "name" });
-    expect(planRename(a, "x".repeat(MAX_NAME_LENGTH + 1), 9)).toEqual({
+    expect(planRename(a, " ")).toEqual({ kind: "refuse", code: "name" });
+    expect(planRename(a, "x".repeat(MAX_NAME_LENGTH + 1))).toEqual({
       kind: "refuse",
       code: "name",
     });

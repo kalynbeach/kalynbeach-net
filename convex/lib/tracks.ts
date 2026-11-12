@@ -31,8 +31,12 @@ export const trackValidator = v.object({
    */
   look: v.optional(v.id("looks")),
   audio: trackAudioValidator,
-  createdAt: v.number(),
-  updatedAt: v.number(),
+  /**
+   * Unread. Optional only so rows written before migrations:dropTimestamps
+   * validate. Remove them once it has run.
+   */
+  createdAt: v.optional(v.number()),
+  updatedAt: v.optional(v.number()),
 });
 
 export const trackMetadataValidator = v.object({
@@ -160,7 +164,7 @@ export type AttachPlan =
   | { kind: "unchanged" }
   | {
       kind: "patch";
-      patch: { readonly audio: TrackAudio; readonly updatedAt: number };
+      patch: { readonly audio: TrackAudio };
       deleteBlob: Id<"_storage">;
     };
 
@@ -168,11 +172,7 @@ export type AttachPlan =
  * What attaching `audio` does to `track`. A blob's duration and peaks never
  * change, so the same blob again is a retry and changes nothing.
  */
-export function planAttach(
-  track: Track,
-  audio: TrackAudio,
-  now: number
-): AttachPlan {
+export function planAttach(track: Track, audio: TrackAudio): AttachPlan {
   const current = track.audio.storageId;
 
   if (current === audio.storageId) {
@@ -181,7 +181,7 @@ export function planAttach(
 
   return {
     kind: "patch",
-    patch: { audio, updatedAt: now },
+    patch: { audio },
     deleteBlob: current,
   };
 }
@@ -197,10 +197,7 @@ export type SetLookPlan =
   | {
       readonly kind: "patch";
       /** `look` is required even when undefined: db.patch removes a field only when its key is present. */
-      readonly patch: {
-        readonly look: LookId | undefined;
-        readonly updatedAt: number;
-      };
+      readonly patch: { readonly look: LookId | undefined };
     }
   | { readonly kind: "refuse"; readonly message: string };
 
@@ -212,8 +209,7 @@ export type SetLookPlan =
  */
 export function planSetLook(
   track: Track,
-  requested: RequestedLook,
-  now: number
+  requested: RequestedLook
 ): SetLookPlan {
   const next = requested.kind === "none" ? null : requested.id;
 
@@ -224,7 +220,7 @@ export function planSetLook(
     return { kind: "refuse", message: "Look not found" };
   }
 
-  return { kind: "patch", patch: { look: next ?? undefined, updatedAt: now } };
+  return { kind: "patch", patch: { look: next ?? undefined } };
 }
 
 export function toPublicTrack(

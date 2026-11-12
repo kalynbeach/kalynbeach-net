@@ -34,7 +34,7 @@ async function previewLook(
       query.eq("createKey", sample.look.createKey)
     )
     .unique();
-  const plan = planCreate(existing, sample.look, Date.now());
+  const plan = planCreate(existing, sample.look);
 
   switch (plan.kind) {
     case "existing":
@@ -83,7 +83,6 @@ export const seedPreview = internalMutation({
       const storageId = await ctx.storage.store(
         new Blob([wav], { type: "audio/wav" })
       );
-      const now = Date.now();
 
       await ctx.db.insert("tracks", {
         publicId: sample.publicId,
@@ -92,12 +91,60 @@ export const seedPreview = internalMutation({
         record: sample.record,
         audio: { storageId, duration, peaks },
         look: look.id,
-        createdAt: now,
-        updatedAt: now,
       });
       inserted.tracks += 1;
     }
 
     return inserted;
+  },
+});
+
+const droppedTimestampsValidator = v.object({
+  users: v.number(),
+  tracks: v.number(),
+  looks: v.number(),
+});
+
+function stamped(row: { createdAt?: number; updatedAt?: number }): boolean {
+  return row.createdAt !== undefined || row.updatedAt !== undefined;
+}
+
+/** A patch that removes both fields: db.patch drops a key whose value is undefined. */
+const unstamped = { createdAt: undefined, updatedAt: undefined };
+
+/**
+ * Removes the unread createdAt and updatedAt fields from every users, tracks,
+ * and looks row, so a later schema can drop them. Patches only rows that
+ * hold either field, so a rerun changes nothing. Returns the rows it changed
+ * per table.
+ */
+export const dropTimestamps = internalMutation({
+  args: {},
+  returns: droppedTimestampsValidator,
+  handler: async (ctx) => {
+    const [users, tracks, looks] = await Promise.all([
+      ctx.db.query("users").collect(),
+      ctx.db.query("tracks").collect(),
+      ctx.db.query("looks").collect(),
+    ]);
+    const changed = {
+      users: users.filter(stamped),
+      tracks: tracks.filter(stamped),
+      looks: looks.filter(stamped),
+    };
+
+    await Promise.all([
+      ...changed.users.map((row) => ctx.db.patch("users", row._id, unstamped)),
+      ...changed.tracks.map((row) =>
+        ctx.db.patch("tracks", row._id, unstamped)
+      ),
+      ...changed.looks.map((row) => ctx.db.patch("looks", row._id, unstamped)),
+    ]);
+
+    return {
+      users: changed.users.length,
+      tracks: changed.tracks.length,
+      looks: changed.looks.length,
+    };
   },
 });

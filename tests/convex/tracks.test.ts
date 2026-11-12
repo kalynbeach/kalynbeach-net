@@ -42,7 +42,7 @@ function patched(doc: object, patch: object): object {
 
 /** The track attachAudio leaves behind and the blob it deletes, or the plan when it writes nothing. */
 function attached(track: Track, blob: TrackAudio) {
-  const plan = planAttach(track, blob, 500);
+  const plan = planAttach(track, blob);
 
   return plan.kind === "patch"
     ? { next: patched(track, plan.patch), deleteBlob: plan.deleteBlob }
@@ -51,7 +51,7 @@ function attached(track: Track, blob: TrackAudio) {
 
 /** The track setLook leaves behind, or the plan when it writes nothing. */
 function setTo(track: Track, requested: RequestedLook) {
-  const plan = planSetLook(track, requested, 500);
+  const plan = planSetLook(track, requested);
 
   return plan.kind === "patch" ? patched(track, plan.patch) : plan;
 }
@@ -62,8 +62,6 @@ const storedTrack: Track = {
   artist: "Kalyn Beach",
   record: "loops",
   audio: audio("blob-old"),
-  createdAt: 100,
-  updatedAt: 200,
 };
 
 describe("audioFileProblem", () => {
@@ -165,7 +163,7 @@ describe("trackMetadataProblems", () => {
 describe("planAttach", () => {
   it("replaces a stored track's audio and deletes the old blob", () => {
     expect(attached(storedTrack, audio("blob-new"))).toStrictEqual({
-      next: { ...storedTrack, updatedAt: 500, audio: audio("blob-new") },
+      next: { ...storedTrack, audio: audio("blob-new") },
       deleteBlob: storageId("blob-old"),
     });
   });
@@ -174,7 +172,7 @@ describe("planAttach", () => {
     const track = { ...storedTrack, look: lookId("dusk") };
 
     expect(attached(track, audio("blob-new"))).toStrictEqual({
-      next: { ...track, updatedAt: 500, audio: audio("blob-new") },
+      next: { ...track, audio: audio("blob-new") },
       deleteBlob: storageId("blob-old"),
     });
   });
@@ -193,11 +191,10 @@ describe("planSetLook", () => {
     return { kind: "found", id: lookId(id) };
   }
 
-  it("points a track at a look and stamps updatedAt", () => {
+  it("points a track at a look", () => {
     expect(setTo(storedTrack, found("dusk"))).toStrictEqual({
       ...storedTrack,
       look: lookId("dusk"),
-      updatedAt: 500,
     });
   });
 
@@ -205,14 +202,12 @@ describe("planSetLook", () => {
     expect(setTo(dusk, found("dawn"))).toStrictEqual({
       ...storedTrack,
       look: lookId("dawn"),
-      updatedAt: 500,
     });
   });
 
   it("clears a look by removing the field", () => {
     expect(setTo(dusk, { kind: "none" })).toStrictEqual({
       ...storedTrack,
-      updatedAt: 500,
     });
   });
 
