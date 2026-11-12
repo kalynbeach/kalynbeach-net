@@ -13,6 +13,9 @@
     "convex/_generated/**",
     "tools/oxlint/vendor/**"
   ],
+  "categories": {
+    "correctness": "error"
+  },
   "plugins": ["nextjs", "typescript"],
   "jsPlugins": [
     "./tools/oxlint/anti-slop.ts",
@@ -60,8 +63,8 @@
     "typescript/prefer-as-const": "error",
     "typescript/prefer-namespace-keyword": "error",
     "typescript/triple-slash-reference": "error",
-    "anti-slop/no-chained-type-assertions": "warn",
-    "anti-slop/no-widen-then-assert": "warn",
+    "anti-slop/no-chained-type-assertions": "error",
+    "anti-slop/no-widen-then-assert": "error",
     "shadcn/no-restyle": [
       "warn",
       {
@@ -116,6 +119,11 @@
         "jsx-a11y/interactive-supports-focus": "warn",
         "jsx-a11y/no-static-element-interactions": "warn",
         "jsx-a11y/tabindex-no-positive": "warn",
+        "jsx-a11y/anchor-has-content": "warn",
+        "jsx-a11y/label-has-associated-control": "warn",
+        "jsx-a11y/no-autofocus": "warn",
+        "jsx-a11y/no-noninteractive-element-interactions": "warn",
+        "jsx-a11y/prefer-tag-over-role": "warn",
         "react/rules-of-hooks": "error",
         "react/exhaustive-deps": "warn",
         "react/static-components": "error",

@@ -70,6 +70,7 @@ Run `bun run build` too when a change touches routes, config, or the build. It d
 
 - Oxlint is the only linter and Oxfmt is the only formatter. The rules live in `.oxlintrc.json`.
 - The Convex lint rules run without type information. They recognize literal `query` and `mutation` registrars, `ctx.db` calls, and inline query chains. Code that passes them can still break a rule, so read Convex code against the rules in `.oxlintrc.json`.
+- Oxlint's `correctness` rules and the `anti-slop` rules report errors, so a `debugger` statement or a chained type assertion fails `bun run lint`. Five `jsx-a11y` rules stay warnings. Three of them fire on installed Kevelle files in `components/ui/`. The other hits are deliberate site code, such as the `autoFocus` on the looks editor's Delete confirm and the MDX link that gets its text from props.
 - The `@shadcn/lint` rules report warnings, so `bun run lint` passes with them. `components/ui/**` is exempt from `no-restyle`, `no-arbitrary-values`, and `require-static-classes`.
 - Keep `oxlint` and `@oxlint/plugins` pinned to the same version. Oxlint's JavaScript plugin API is alpha, so read the lint output after every upgrade.
 - TypeScript is pinned to 7.0.2. The lint plugins' `@typescript-eslint` packages declare TypeScript peer ranges below 7. Lint and tests pass today, so recheck both when you upgrade these tools.

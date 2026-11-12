@@ -39,7 +39,7 @@ export type UploadEnv = {
     onProgress: (sent: number) => void,
     signal: AbortSignal
   ) => Promise<Id<"_storage">>;
-  /** create or attachAudio. It takes no signal, since a mutation can't be recalled. */
+  /** create or replaceAudio. It takes no signal, since a mutation can't be recalled. */
   readonly save: (save: AudioSave, audio: TrackAudio) => Promise<void>;
   /** Deletes an uploaded blob unless a track holds it. */
   readonly discard: (storageId: Id<"_storage">) => Promise<void>;
@@ -184,7 +184,7 @@ export function browserUploadEnv(convex: ConvexReactClient): UploadEnv {
     save: async (save, audio) => {
       await (save.kind === "create"
         ? convex.mutation(api.tracks.create, { track: save.track, audio })
-        : convex.mutation(api.tracks.attachAudio, { id: save.id, audio }));
+        : convex.mutation(api.tracks.replaceAudio, { id: save.id, audio }));
     },
     discard: async (storageId) => {
       await convex.mutation(api.tracks.discardUpload, { storageId });

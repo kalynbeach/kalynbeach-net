@@ -31,15 +31,13 @@
   /*
    * Font roles. ui: titles, nav, labels, values, dates and code; all site
    * text that isn't the name, a heading or prose. text: the name, headings
-   * and body. long: long-form writing. --font-mono and --font-label follow
-   * ui, so code and Kevelle's labels (type-label, such as the player's
-   * Library heading) set in TX-02. The site sets no Departure Mono of its
-   * own; installed Kevelle parts, such as the player's time readouts, keep
-   * it.
+   * and body. --font-mono and --font-label follow ui, so code and Kevelle's
+   * labels (type-label, such as the player's Library heading) set in TX-02.
+   * The site sets no Departure Mono of its own; installed Kevelle parts, such
+   * as the player's time readouts, keep it.
    */
   --font-ui: "TX-02", "Paper Mono", ui-monospace, monospace;
   --font-text: var(--font-sans);
-  --font-long: var(--font-serif);
   --font-mono: var(--font-ui);
   --font-label: var(--font-ui);
 

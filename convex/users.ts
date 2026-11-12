@@ -29,12 +29,9 @@ export const ensureCurrent = mutation({
       return { role: existingUser.role };
     }
 
-    const now = Date.now();
     await ctx.db.insert("users", {
       clerkUserId: identity.subject,
       role: "guest",
-      createdAt: now,
-      updatedAt: now,
     });
 
     return { role: "guest" as const };
@@ -59,21 +56,14 @@ export const claimConfiguredAdmin = mutation({
       return { role: existingUser?.role ?? ("guest" as const) };
     }
 
-    const now = Date.now();
-
     if (!existingUser) {
       const userId = await ctx.db.insert("users", {
         clerkUserId: identity.subject,
         role: "guest",
-        createdAt: now,
-        updatedAt: now,
       });
-      await ctx.db.patch("users", userId, { role: "admin", updatedAt: now });
+      await ctx.db.patch("users", userId, { role: "admin" });
     } else if (existingUser.role !== "admin") {
-      await ctx.db.patch("users", existingUser._id, {
-        role: "admin",
-        updatedAt: now,
-      });
+      await ctx.db.patch("users", existingUser._id, { role: "admin" });
     }
 
     return { role: "admin" as const };

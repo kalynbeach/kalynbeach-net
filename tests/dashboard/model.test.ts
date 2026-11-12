@@ -29,7 +29,7 @@ const wav = (size = 1000) =>
   new File([new Uint8Array(size)], "take.wav", { type: "audio/wav" });
 const audio = { duration: toSeconds(8), peaks: toPeaks([0.2, 1])! };
 const blob = "blob-1" as Id<"_storage">;
-const attach: AudioSave = { kind: "attach", id: 3 };
+const replace: AudioSave = { kind: "replace", id: 3 };
 
 const pick = (file: File) => advance(EMPTY_UPLOAD, { type: "pick", file });
 
@@ -40,7 +40,7 @@ function ready(): UploadState {
 }
 
 function saving(): UploadState {
-  const uploading = advance(ready(), { type: "start", save: attach });
+  const uploading = advance(ready(), { type: "start", save: replace });
 
   return advance(uploading, {
     type: "uploaded",
@@ -135,13 +135,13 @@ describe("picking a file", () => {
 
 describe("sending", () => {
   it("starts one upload for a double click", () => {
-    const once = advance(ready(), { type: "start", save: attach });
+    const once = advance(ready(), { type: "start", save: replace });
 
-    expect(advance(once, { type: "start", save: attach })).toBe(once);
+    expect(advance(once, { type: "start", save: replace })).toBe(once);
   });
 
   it("reports upload progress as a percentage of the file", () => {
-    const uploading = advance(ready(), { type: "start", save: attach });
+    const uploading = advance(ready(), { type: "start", save: replace });
     const view = describeUpload(
       advance(uploading, { type: "progress", run: uploading.run, sent: 250 })
     );
@@ -154,7 +154,7 @@ describe("sending", () => {
   });
 
   it("retries a failed upload by uploading again", () => {
-    const uploading = advance(ready(), { type: "start", save: attach });
+    const uploading = advance(ready(), { type: "start", save: replace });
     const failed = advance(uploading, {
       type: "failed",
       run: uploading.run,
@@ -184,7 +184,7 @@ describe("sending", () => {
   });
 
   it("locks the metadata from Upload until the upload is saved or dismissed", () => {
-    const uploading = advance(ready(), { type: "start", save: attach });
+    const uploading = advance(ready(), { type: "start", save: replace });
     const failed = advance(uploading, {
       type: "failed",
       run: uploading.run,
@@ -231,7 +231,7 @@ describe("sending", () => {
   });
 
   it("cancels an upload, and the cancelled request's failure changes nothing", () => {
-    const uploading = advance(ready(), { type: "start", save: attach });
+    const uploading = advance(ready(), { type: "start", save: replace });
     const cleared = advance(uploading, { type: "clear" });
 
     expect(cleared.step).toBe("empty");

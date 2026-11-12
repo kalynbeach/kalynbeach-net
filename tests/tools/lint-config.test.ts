@@ -124,12 +124,17 @@ it("keeps native and custom rules active across overrides and excludes generated
       }
     );
     expect(result.status, result.stderr || result.stdout).toBe(1);
-    const output: { diagnostics: { filename: string; code: string }[] } =
-      JSON.parse(result.stdout);
+    const output: {
+      diagnostics: { filename: string; code: string; severity: string }[];
+    } = JSON.parse(result.stdout);
     const codes = (filename: string) =>
       output.diagnostics
         .filter((item) => item.filename === filename)
         .map((item) => item.code);
+    const severity = (filename: string, code: string) =>
+      output.diagnostics.find(
+        (item) => item.filename === filename && item.code === code
+      )?.severity;
     expect(codes("app/probe.tsx")).toContain("react(immutability)");
     expect(codes("app/probe.tsx")).toContain("typescript(no-explicit-any)");
     expect(codes("app/probe.tsx")).toEqual(
@@ -144,12 +149,14 @@ it("keeps native and custom rules active across overrides and excludes generated
         "anti-slop(no-chained-type-assertions)",
       ])
     );
-    expect(codes("lib/correctness.ts")).toEqual(
-      expect.arrayContaining([
-        "eslint(no-debugger)",
-        "anti-slop(no-widen-then-assert)",
-      ])
-    );
+    // Correctness and anti-slop findings fail CI, not only warn.
+    expect(severity("lib/correctness.ts", "eslint(no-debugger)")).toBe("error");
+    expect(
+      severity("lib/correctness.ts", "anti-slop(no-widen-then-assert)")
+    ).toBe("error");
+    expect(
+      severity("convex/probe.ts", "anti-slop(no-chained-type-assertions)")
+    ).toBe("error");
     expect(codes("convex/crons.ts")).toContain(
       "@convex-dev(no-top-of-hour-crons)"
     );

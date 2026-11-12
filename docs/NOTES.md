@@ -8,9 +8,9 @@ i basically want to redesign and rebuild this entire personal site.
 
 currently, this site is super stale and it needs a lot of love. it has nearly zero information, content, or experiences of value; its design, UI, and UX is very far off from what i'm envisioning; and on the whole it just doesn't fully reflect who and where i am today as an engineer, as an artist, and as a human in general.
 
-this repo's current `README.md` is an absolute mess. it will need not only a complete rewrite, but also a totally different purpose and style of writing going forward. what i mainly mean here is this: i want `README.md` to be written for **human** readers, both in terms of the information it contains about the project and the style of its writing.
+`README.md` is now written for **human** readers. it covers the project, its stack, and its architecture, and agents get their rules from `AGENTS.md` instead.
 
-the `docs/` directory's markdown documents (besides this `NOTES.md` doc) are pretty much completely out of date. just about all of them will need to be archived, which i'll probably just keep locally.
+the out-of-date markdown documents in `docs/` are gone. besides this `NOTES.md` doc, `docs/` keeps only the research behind the Claude GitHub Actions workflows.
 
 ---
 

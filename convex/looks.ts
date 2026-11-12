@@ -81,7 +81,7 @@ export const create = mutation({
         query.eq("createKey", args.createKey)
       )
       .unique();
-    const plan = planCreate(existing, args, Date.now());
+    const plan = planCreate(existing, args);
 
     switch (plan.kind) {
       case "existing":
@@ -108,7 +108,7 @@ export const save = mutation({
   returns: v.number(),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const plan = planSave(await ctx.db.get("looks", args.id), args, Date.now());
+    const plan = planSave(await ctx.db.get("looks", args.id), args);
 
     switch (plan.kind) {
       case "refuse":
@@ -128,11 +128,7 @@ export const rename = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const plan = planRename(
-      await ctx.db.get("looks", args.id),
-      args.name,
-      Date.now()
-    );
+    const plan = planRename(await ctx.db.get("looks", args.id), args.name);
 
     if (plan.kind === "refuse") {
       refuse(plan.code);
