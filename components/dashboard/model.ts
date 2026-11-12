@@ -68,11 +68,6 @@ export function metadataPatch(
   return Object.keys(patch).length > 0 ? patch : null;
 }
 
-/** The S3 file a legacy row names, so Kalyn knows which file to upload again: ".../loops/0_initializer.wav" is "0_initializer.wav". */
-export function legacyFileName(src: string): string {
-  return src.slice(src.lastIndexOf("/") + 1);
-}
-
 /**
  * Peaks at 3 decimals, the precision the seed stores. Every document carries
  * every stored track's peaks, so the dashboard keeps each one short.
@@ -188,7 +183,7 @@ export type DecodedAudio = {
   readonly peaks: readonly number[];
 };
 
-/** Where a finished upload goes. attach covers both attaching to a legacy track and replacing, as attachAudio does. */
+/** Where a finished upload goes. attach replaces a track's audio, as attachAudio does. */
 export type AudioSave =
   | { readonly kind: "create"; readonly track: CheckedMetadata }
   | { readonly kind: "attach"; readonly id: number };

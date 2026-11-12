@@ -9,13 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ThreeScene, ThreeSceneSkeleton } from "@/components/r3f/scene";
+import {
+  ThreeScene,
+  ThreeSceneSkeleton,
+  useWebGLAvailability,
+} from "@/components/r3f/scene";
 
 type MeshType = "sphere" | "torus" | "box";
 
-/**
- * Component that renders a 3D mesh and captures it as SVG
- */
+/** onCapture gets null when a capture fails, so the exporter can stop waiting and retry. */
 function MeshCapture({
   meshType = "sphere",
   wireframe = true,
@@ -24,35 +26,26 @@ function MeshCapture({
 }: {
   meshType: MeshType;
   wireframe: boolean;
-  onCapture: (svg: string) => void;
+  onCapture: (svg: string | null) => void;
   registerCapture: (captureMethod: () => void) => void;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
 
   const capture = useCallback(() => {
-    if (!meshRef.current || !camera) {
-      console.error("Missing required refs for SVG capture", {
-        hasMesh: !!meshRef.current,
-        hasCamera: !!camera,
-      });
-      return;
-    }
+    if (!meshRef.current) return onCapture(null);
 
     try {
-      const svg = generateSVGString(meshRef.current, camera, 400, 400, {
-        stroke: "#ffffff",
-        strokeWidth: 1,
-        background: "#000000",
-      });
-
-      if (svg && svg.includes("<svg")) {
-        onCapture(svg);
-      } else {
-        console.error("Failed to generate valid SVG");
-      }
+      onCapture(
+        generateSVGString(meshRef.current, camera, 400, 400, {
+          stroke: "#ffffff",
+          strokeWidth: 1,
+          background: "#000000",
+        })
+      );
     } catch (error) {
       console.error("Error during SVG capture:", error);
+      onCapture(null);
     }
   }, [camera, onCapture]);
 
@@ -84,7 +77,7 @@ function CaptureableScene({
   registerCapture,
 }: {
   meshType: MeshType;
-  onCapture: (svg: string) => void;
+  onCapture: (svg: string | null) => void;
   registerCapture: (captureMethod: () => void) => void;
 }) {
   return (
@@ -120,8 +113,11 @@ export default function MeshSVGExporter() {
   const [meshType, setMeshType] = useState<MeshType>("sphere");
   const [isLoading, setIsLoading] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
+  // Without WebGL the scene never mounts, so no capture ever ends the wait.
+  const canCapture = useWebGLAvailability() !== false;
+  const capturing = isLoading && canCapture;
 
-  const handleCapture = useCallback((svg: string) => {
+  const handleCapture = useCallback((svg: string | null) => {
     setSvgData(svg);
     setIsLoading(false);
   }, []);
@@ -139,27 +135,10 @@ export default function MeshSVGExporter() {
   }, []);
 
   function triggerCapture() {
+    if (!captureMethodRef.current) return;
+
     setIsLoading(true);
-
-    if (!captureMethodRef.current) {
-      console.error("No capture method registered");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setTimeout(() => {
-        try {
-          captureMethodRef.current?.();
-        } catch (error) {
-          console.error("Error executing capture method:", error);
-          setIsLoading(false);
-        }
-      }, 100);
-    } catch (error) {
-      console.error("Error during manual capture:", error);
-      setIsLoading(false);
-    }
+    setTimeout(() => captureMethodRef.current?.(), 100);
   }
 
   function handleMeshTypeChange(value: string) {
@@ -225,13 +204,13 @@ export default function MeshSVGExporter() {
             <Button
               onClick={triggerCapture}
               className="w-full cursor-pointer"
-              disabled={isLoading}
+              disabled={capturing || !canCapture}
             >
-              {isLoading ? "Capturing..." : "Capture SVG"}
+              {capturing ? "Capturing..." : "Capture SVG"}
             </Button>
             <Button
               onClick={handleDownload}
-              disabled={!svgData || isLoading}
+              disabled={!svgData || capturing}
               variant="outline"
               className="w-full cursor-pointer"
             >
@@ -243,9 +222,9 @@ export default function MeshSVGExporter() {
         <div className="border-primary/30 space-y-2 border p-2">
           <h3 className="font-mono text-lg font-medium">SVG Preview</h3>
           <div className="flex aspect-square w-full max-w-full items-center justify-center overflow-hidden bg-black">
-            {isLoading ? (
+            {capturing ? (
               <Skeleton className="h-3/4 w-3/4" />
-            ) : svgData && svgData.includes("<svg") ? (
+            ) : svgData ? (
               <div className="flex h-full w-full max-w-full items-center justify-center overflow-hidden">
                 <div
                   className="flex h-full w-full items-center justify-center"

@@ -1,8 +1,5 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "categories": {
-    "correctness": "off"
-  },
   "env": {
     "builtin": true,
     "browser": true,
@@ -183,6 +180,9 @@
       "files": ["**/*.{test,spec}.{ts,tsx,js,jsx}"],
       "plugins": ["vitest"],
       "rules": {
+        "vitest/expect-expect": "off",
+        "vitest/no-conditional-expect": "off",
+        "vitest/require-mock-type-parameters": "off",
         "vitest/no-focused-tests": "error",
         "vitest/valid-expect": ["error", { "maxArgs": 2 }],
         "vitest/valid-expect-in-promise": "error"

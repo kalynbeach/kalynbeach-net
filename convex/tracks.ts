@@ -7,7 +7,6 @@ import { assertPositiveInteger } from "./lib/domain";
 import {
   adminTrackValidator,
   audioFileProblem,
-  isStored,
   planAttach,
   planSetLook,
   publicTrackValidator,
@@ -28,7 +27,7 @@ import {
  * such as a non-integer id, stay plain Errors.
  */
 
-/** Every track whose audio is in Convex storage, by publicId, with its look. */
+/** Every track whose blob still exists, by publicId, with its look. */
 export const list = query({
   args: {},
   returns: v.array(publicTrackValidator),
@@ -43,7 +42,7 @@ export const list = query({
   },
 });
 
-/** Every track in either shape, by publicId, for the dashboard. */
+/** Every track by publicId, for the dashboard. */
 export const adminList = query({
   args: {},
   returns: v.array(adminTrackValidator),
@@ -117,8 +116,8 @@ export const create = mutation({
 });
 
 /**
- * Gives a track an uploaded blob. Converts a legacy track, or replaces a
- * stored track's audio and deletes the old blob. A retry changes nothing.
+ * Replaces a track's audio with an uploaded blob and deletes the old blob.
+ * A retry changes nothing.
  */
 export const attachAudio = mutation({
   args: { id: v.number(), audio: trackAudioValidator },
@@ -145,10 +144,7 @@ export const attachAudio = mutation({
 
     if (plan.kind === "patch") {
       await ctx.db.patch("tracks", track._id, plan.patch);
-
-      if (plan.deleteBlob) {
-        await deleteBlob(ctx, plan.deleteBlob);
-      }
+      await deleteBlob(ctx, plan.deleteBlob);
     }
 
     return null;
@@ -239,21 +235,9 @@ export const remove = mutation({
       return null;
     }
 
-    const playlistTrack = await ctx.db
-      .query("playlistTracks")
-      .withIndex("by_track_id", (query) => query.eq("trackId", args.id))
-      .first();
-
-    if (playlistTrack) {
-      throw new ConvexError(`Track ${args.id} is still used by a playlist`);
-    }
-
     await ctx.db.delete("tracks", track._id);
     await retireTrackId(ctx, track.publicId);
-
-    if (isStored(track)) {
-      await deleteBlob(ctx, track.audio.storageId);
-    }
+    await deleteBlob(ctx, track.audio.storageId);
 
     return null;
   },

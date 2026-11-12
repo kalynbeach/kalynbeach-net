@@ -8,7 +8,17 @@ import {
   type LookId,
 } from "./looks";
 
-const trackFields = {
+/**
+ * Audio in Convex file storage. `duration` (seconds) and `peaks` (0 to 1)
+ * describe this blob, so the WavePlayer never downloads a track to draw it.
+ */
+export const trackAudioValidator = v.object({
+  storageId: v.id("_storage"),
+  duration: v.number(),
+  peaks: v.array(v.number()),
+});
+
+export const trackValidator = v.object({
   publicId: v.number(),
   title: v.string(),
   artist: v.string(),
@@ -20,43 +30,10 @@ const trackFields = {
    * names.
    */
   look: v.optional(v.id("looks")),
+  audio: trackAudioValidator,
   createdAt: v.number(),
   updatedAt: v.number(),
-};
-
-/**
- * Audio in Convex file storage. `duration` (seconds) and `peaks` (0 to 1)
- * describe this blob, so the WavePlayer never downloads a track to draw it.
- */
-export const trackAudioValidator = v.object({
-  storageId: v.id("_storage"),
-  duration: v.number(),
-  peaks: v.array(v.number()),
 });
-
-/**
- * A production track from before Convex storage, field for field. Only
- * seedPreview creates one, and no function serves its `src`; attachAudio
- * converts it. Delete this branch once no legacy track remains, and Convex
- * refuses that schema push while one does.
- */
-const legacyTrackValidator = v.object({
-  ...trackFields,
-  src: v.string(),
-  image: v.object({ src: v.string(), alt: v.string() }),
-  isLoop: v.boolean(),
-});
-
-const storedTrackValidator = v.object({
-  ...trackFields,
-  audio: trackAudioValidator,
-});
-
-/** Object validators reject unknown fields, so a track has `src` or `audio`, never both or neither. */
-export const trackValidator = v.union(
-  legacyTrackValidator,
-  storedTrackValidator
-);
 
 export const trackMetadataValidator = v.object({
   title: v.string(),
@@ -80,28 +57,22 @@ export const publicTrackValidator = v.object({
   look: v.union(lookConfigValidator, v.null()),
 });
 
-/** A dashboard row. A legacy row's `src` names the S3 file to upload again. */
+/** A dashboard row. `audio.src` is null when the track's blob is gone. */
 export const adminTrackValidator = v.object({
   id: v.number(),
   title: v.string(),
   artist: v.string(),
   record: v.string(),
   look: v.union(v.id("looks"), v.null()),
-  audio: v.union(
-    v.object({ kind: v.literal("legacy"), src: v.string() }),
-    v.object({
-      kind: v.literal("stored"),
-      src: v.union(v.string(), v.null()),
-      duration: v.number(),
-    })
-  ),
+  audio: v.object({
+    src: v.union(v.string(), v.null()),
+    duration: v.number(),
+  }),
 });
 
 export type TrackAudio = Infer<typeof trackAudioValidator>;
 export type TrackMetadata = Infer<typeof trackMetadataValidator>;
-export type LegacyTrack = Infer<typeof legacyTrackValidator>;
-export type StoredTrack = Infer<typeof storedTrackValidator>;
-export type Track = LegacyTrack | StoredTrack;
+export type Track = Infer<typeof trackValidator>;
 export type PublicTrack = Infer<typeof publicTrackValidator>;
 export type AdminTrack = Infer<typeof adminTrackValidator>;
 
@@ -122,10 +93,6 @@ export const AUDIO_CONTENT_TYPES: ReadonlySet<string> = new Set([
 export const MAX_AUDIO_BYTES = 100 * 1024 * 1024;
 
 export const MAX_PEAKS = 1024;
-
-export function isStored(track: Track): track is StoredTrack {
-  return "audio" in track;
-}
 
 /**
  * Why a file can't be track audio, or null. The server passes the blob's
@@ -189,40 +156,24 @@ export function trackMetadataProblems(
   );
 }
 
-/**
- * db.patch removes a field set to undefined. `satisfies` fails the build
- * unless this names exactly the fields only a legacy track has.
- */
-const DROP_LEGACY = {
-  src: undefined,
-  image: undefined,
-  isLoop: undefined,
-} as const satisfies {
-  readonly [K in Exclude<keyof LegacyTrack, keyof StoredTrack>]: undefined;
-};
-
-type AttachPatch = typeof DROP_LEGACY & {
-  readonly audio: TrackAudio;
-  readonly updatedAt: number;
-};
-
 export type AttachPlan =
   | { kind: "unchanged" }
-  | { kind: "patch"; patch: AttachPatch; deleteBlob: Id<"_storage"> | null };
+  | {
+      kind: "patch";
+      patch: { readonly audio: TrackAudio; readonly updatedAt: number };
+      deleteBlob: Id<"_storage">;
+    };
 
 /**
  * What attaching `audio` does to `track`. A blob's duration and peaks never
- * change, so the same blob again is a retry and changes nothing. Otherwise
- * it is a patch, so every field it doesn't name survives. A legacy track
- * drops `src`, `image`, and `isLoop` and becomes stored. A stored track takes
- * the new audio, and the old blob is deleted.
+ * change, so the same blob again is a retry and changes nothing.
  */
 export function planAttach(
   track: Track,
   audio: TrackAudio,
   now: number
 ): AttachPlan {
-  const current = isStored(track) ? track.audio.storageId : null;
+  const current = track.audio.storageId;
 
   if (current === audio.storageId) {
     return { kind: "unchanged" };
@@ -230,7 +181,7 @@ export function planAttach(
 
   return {
     kind: "patch",
-    patch: { ...DROP_LEGACY, audio, updatedAt: now },
+    patch: { audio, updatedAt: now },
     deleteBlob: current,
   };
 }
@@ -277,7 +228,7 @@ export function planSetLook(
 }
 
 export function toPublicTrack(
-  track: StoredTrack,
+  track: Track,
   src: string,
   look: LookConfig | null
 ): PublicTrack {
@@ -305,17 +256,16 @@ export type PublicTrackReader = {
 
 /**
  * The only path from tracks to what the site plays, in the order given.
- * Leaves out legacy tracks and tracks whose blob is gone. Reads each look
- * once, however many tracks share it. A look row that is gone gives null,
- * since a throw here would reach every visitor. Never reads the site row.
+ * Leaves out tracks whose blob is gone. Reads each look once, however many
+ * tracks share it. A look row that is gone gives null, since a throw here
+ * would reach every visitor. Never reads the site row.
  */
 export async function resolvePublicTracks(
   ctx: PublicTrackReader,
   tracks: readonly Track[]
 ): Promise<PublicTrack[]> {
-  const stored = tracks.filter(isStored);
   const lookIds = new Set(
-    stored.flatMap((track) => (track.look ? [track.look] : []))
+    tracks.flatMap((track) => (track.look ? [track.look] : []))
   );
   const [entries, srcs] = await Promise.all([
     Promise.all(
@@ -325,12 +275,12 @@ export async function resolvePublicTracks(
       )
     ),
     Promise.all(
-      stored.map((track) => ctx.storage.getUrl(track.audio.storageId))
+      tracks.map((track) => ctx.storage.getUrl(track.audio.storageId))
     ),
   ]);
   const looks = new Map(entries);
 
-  return stored.flatMap((track, index) => {
+  return tracks.flatMap((track, index) => {
     const src = srcs[index];
     const look = track.look ? (looks.get(track.look) ?? null) : null;
 
@@ -348,12 +298,9 @@ export async function toAdminTrack(
     artist: track.artist,
     record: track.record,
     look: track.look ?? null,
-    audio: isStored(track)
-      ? {
-          kind: "stored",
-          src: await ctx.storage.getUrl(track.audio.storageId),
-          duration: track.audio.duration,
-        }
-      : { kind: "legacy", src: track.src },
+    audio: {
+      src: await ctx.storage.getUrl(track.audio.storageId),
+      duration: track.audio.duration,
+    },
   };
 }

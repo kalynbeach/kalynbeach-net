@@ -1,7 +1,6 @@
 import type { ValidatorJSON } from "convex/values";
 import { describe, expect, it } from "vitest";
 import schema from "@/convex/schema";
-import { repositorySeedData } from "@/convex/lib/migration";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return (
@@ -92,12 +91,6 @@ const storedTrack = {
 };
 
 describe("schema", () => {
-  it("accepts the production seed's legacy tracks", () => {
-    expect(
-      repositorySeedData.tracks.filter((track) => !conforms(tracks, track))
-    ).toEqual([]);
-  });
-
   it("accepts a stored track without a look", () => {
     expect(conforms(tracks, storedTrack)).toBe(true);
   });
@@ -111,13 +104,32 @@ describe("schema", () => {
     ).toBe(true);
   });
 
-  it("refuses a track with both src and audio", () => {
+  it("refuses a track that also has a src", () => {
     expect(
       conforms(tracks, {
-        ...repositorySeedData.tracks[0],
-        audio: storedTrack.audio,
+        ...storedTrack,
+        src: "https://example.test/take.wav",
       })
     ).toBe(false);
+  });
+
+  it("refuses a legacy track, which has a src and no audio", () => {
+    const { audio: _audio, ...metadata } = storedTrack;
+
+    expect(
+      conforms(tracks, {
+        ...metadata,
+        src: "https://example.test/take.wav",
+        image: { src: "/icon.svg", alt: "Take" },
+        isLoop: true,
+      })
+    ).toBe(false);
+  });
+
+  it("refuses a track whose audio names no blob", () => {
+    const { storageId: _storageId, ...audio } = storedTrack.audio;
+
+    expect(conforms(tracks, { ...storedTrack, audio })).toBe(false);
   });
 
   it("accepts a look and the site row as stored today", () => {

@@ -11,14 +11,11 @@ import {
   toPublicTrack,
   trackAudioProblem,
   trackMetadataProblems,
-  type LegacyTrack,
   type PublicTrackReader,
   type RequestedLook,
-  type StoredTrack,
   type Track,
   type TrackAudio,
 } from "@/convex/lib/tracks";
-import { repositorySeedData } from "@/convex/lib/migration";
 
 const duskConfig: LookConfig = { source: "tones", tones: { x: { hz: 140 } } };
 
@@ -59,9 +56,7 @@ function setTo(track: Track, requested: RequestedLook) {
   return plan.kind === "patch" ? patched(track, plan.patch) : plan;
 }
 
-const legacyTrack: LegacyTrack = repositorySeedData.tracks[0];
-
-const storedTrack: StoredTrack = {
+const storedTrack: Track = {
   publicId: 3,
   title: "stored",
   artist: "Kalyn Beach",
@@ -168,21 +163,6 @@ describe("trackMetadataProblems", () => {
 });
 
 describe("planAttach", () => {
-  it("turns a legacy track into a stored track and keeps its identity", () => {
-    expect(attached(legacyTrack, audio("blob-new"))).toStrictEqual({
-      next: {
-        publicId: 1,
-        title: "0_initializer",
-        artist: "Kalyn Beach",
-        record: "loops",
-        createdAt: 1_742_955_735_839,
-        updatedAt: 500,
-        audio: audio("blob-new"),
-      },
-      deleteBlob: null,
-    });
-  });
-
   it("replaces a stored track's audio and deletes the old blob", () => {
     expect(attached(storedTrack, audio("blob-new"))).toStrictEqual({
       next: { ...storedTrack, updatedAt: 500, audio: audio("blob-new") },
@@ -196,24 +176,6 @@ describe("planAttach", () => {
     expect(attached(track, audio("blob-new"))).toStrictEqual({
       next: { ...track, updatedAt: 500, audio: audio("blob-new") },
       deleteBlob: storageId("blob-old"),
-    });
-  });
-
-  it("keeps a legacy track's look when it converts the track", () => {
-    const track = { ...legacyTrack, look: lookId("dusk") };
-
-    expect(attached(track, audio("blob-new"))).toStrictEqual({
-      next: {
-        publicId: 1,
-        title: "0_initializer",
-        artist: "Kalyn Beach",
-        record: "loops",
-        look: lookId("dusk"),
-        createdAt: 1_742_955_735_839,
-        updatedAt: 500,
-        audio: audio("blob-new"),
-      },
-      deleteBlob: null,
     });
   });
 
@@ -243,14 +205,6 @@ describe("planSetLook", () => {
     expect(setTo(dusk, found("dawn"))).toStrictEqual({
       ...storedTrack,
       look: lookId("dawn"),
-      updatedAt: 500,
-    });
-  });
-
-  it("gives a legacy track a look", () => {
-    expect(setTo(legacyTrack, found("dusk"))).toStrictEqual({
-      ...legacyTrack,
-      look: lookId("dusk"),
       updatedAt: 500,
     });
   });
@@ -299,7 +253,7 @@ describe("toPublicTrack", () => {
 });
 
 describe("resolvePublicTracks", () => {
-  function stored(publicId: number, look?: string): StoredTrack {
+  function stored(publicId: number, look?: string): Track {
     return {
       ...storedTrack,
       publicId,
@@ -329,9 +283,9 @@ describe("resolvePublicTracks", () => {
     return { ctx, lookReads };
   }
 
-  it("keeps the given order and leaves out legacy tracks and tracks whose blob is gone", async () => {
+  it("keeps the given order and leaves out tracks whose blob is gone", async () => {
     const { ctx } = reader(["blob-5", "blob-4"], {});
-    const tracks = [stored(5), legacyTrack, stored(3), stored(4)];
+    const tracks = [stored(5), stored(3), stored(4)];
 
     expect(
       (await resolvePublicTracks(ctx, tracks)).map(({ id, src }) => ({

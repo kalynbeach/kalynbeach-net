@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["three"],
   reactCompiler: true,
   // lib/site.ts reads this to serve only published pages and drop <Draft>
   // sections. Next inlines it into the server and client bundles.
