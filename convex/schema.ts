@@ -8,12 +8,6 @@ export default defineSchema({
   users: defineTable({
     clerkUserId: v.string(),
     role: userRoleValidator,
-    /**
-     * Unread. Optional only so rows written before migrations:dropTimestamps
-     * validate. Remove them once it has run.
-     */
-    createdAt: v.optional(v.number()),
-    updatedAt: v.optional(v.number()),
   }).index("by_clerk_user_id", ["clerkUserId"]),
 
   tracks: defineTable(trackValidator)

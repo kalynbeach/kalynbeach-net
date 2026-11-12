@@ -9,7 +9,7 @@ import {
   SAMPLE_SECONDS,
 } from "@/convex/lib/migration";
 import { audioFileProblem, trackAudioProblem } from "@/convex/lib/tracks";
-import { dropTimestamps, seedPreview } from "@/convex/migrations";
+import { seedPreview } from "@/convex/migrations";
 import { lookNameProblem, planCreate } from "@/convex/lib/looks";
 import {
   DEFAULT_WAVEFORM_CONFIG,
@@ -110,9 +110,9 @@ describe("seedPreview's sample tracks", () => {
 });
 
 type Row = Record<string, unknown>;
-type Tables = Record<"users" | "tracks" | "looks" | "retiredTrackIds", Row[]>;
+type Tables = Record<"tracks" | "looks" | "retiredTrackIds", Row[]>;
 
-/** The slice of a Convex mutation context that the migrations use, over arrays. */
+/** The slice of a Convex mutation context that seedPreview uses, over arrays. */
 function seedContext(tables: Tables) {
   let issued = 0;
 
@@ -140,7 +140,6 @@ function seedContext(tables: Tables) {
           };
         },
         unique: async () => tables[table][0] ?? null,
-        collect: async () => [...tables[table]],
       }),
       insert: async (table: keyof Tables, row: Row) => {
         const _id = `${table}:${issued++}`;
@@ -148,48 +147,28 @@ function seedContext(tables: Tables) {
         return _id;
       },
       patch: async (table: keyof Tables, id: string, patch: Row) => {
-        const row = tables[table].find((row) => row._id === id) ?? {};
-
-        for (const [field, value] of Object.entries(patch)) {
-          if (value === undefined) {
-            delete row[field];
-          } else {
-            row[field] = value;
-          }
-        }
+        Object.assign(tables[table].find((row) => row._id === id) ?? {}, patch);
       },
     },
     storage: { store: async () => `blob:${issued++}` },
   };
 }
 
-function runMigration<Result>(
-  migration: object,
-  tables: Tables
-): Promise<Result> {
+function runSeed(tables: Tables): Promise<{ tracks: number; looks: number }> {
   // Convex keeps the registered handler here. Calling it skips only the
   // argument and return validation a deployment adds.
-  const handler: unknown = Reflect.get(migration, "_handler");
+  const handler: unknown = Reflect.get(seedPreview, "_handler");
 
   if (typeof handler !== "function") {
-    throw new Error("migration has no handler");
+    throw new Error("seedPreview has no handler");
   }
 
   return handler(seedContext(tables), {});
 }
 
-function runSeed(tables: Tables): Promise<{ tracks: number; looks: number }> {
-  return runMigration(seedPreview, tables);
-}
-
 describe("seedPreview", () => {
   it("seeds every sample with its look on a new deployment, and nothing on a rerun", async () => {
-    const tables: Tables = {
-      users: [],
-      tracks: [],
-      looks: [],
-      retiredTrackIds: [],
-    };
+    const tables: Tables = { tracks: [], looks: [], retiredTrackIds: [] };
 
     expect(await runSeed(tables)).toEqual({
       tracks: previewSamples.length,
@@ -206,7 +185,6 @@ describe("seedPreview", () => {
       ...previewSamples.map((sample) => sample.publicId)
     );
     const tables: Tables = {
-      users: [],
       tracks: [],
       looks: [],
       retiredTrackIds: [{ highest }],
@@ -215,45 +193,5 @@ describe("seedPreview", () => {
     expect(await runSeed(tables)).toEqual({ tracks: 0, looks: 0 });
     expect(tables.tracks).toEqual([]);
     expect(tables.looks).toEqual([]);
-  });
-});
-
-describe("dropTimestamps", () => {
-  const stamps = { createdAt: 100, updatedAt: 200 };
-
-  it("removes createdAt and updatedAt from every row that holds them, and changes nothing on a rerun", async () => {
-    const tables: Tables = {
-      users: [
-        { _id: "users:0", clerkUserId: "user_a", role: "admin", ...stamps },
-      ],
-      tracks: [
-        { _id: "tracks:0", publicId: 1, title: "One", ...stamps },
-        { _id: "tracks:1", publicId: 2, title: "Two", updatedAt: 300 },
-        { _id: "tracks:2", publicId: 3, title: "Three" },
-      ],
-      looks: [{ _id: "looks:0", name: "Dusk", version: 2, createdAt: 100 }],
-      retiredTrackIds: [],
-    };
-
-    expect(await runMigration(dropTimestamps, tables)).toEqual({
-      users: 1,
-      tracks: 2,
-      looks: 1,
-    });
-    expect(tables).toStrictEqual({
-      users: [{ _id: "users:0", clerkUserId: "user_a", role: "admin" }],
-      tracks: [
-        { _id: "tracks:0", publicId: 1, title: "One" },
-        { _id: "tracks:1", publicId: 2, title: "Two" },
-        { _id: "tracks:2", publicId: 3, title: "Three" },
-      ],
-      looks: [{ _id: "looks:0", name: "Dusk", version: 2 }],
-      retiredTrackIds: [],
-    });
-    expect(await runMigration(dropTimestamps, tables)).toEqual({
-      users: 0,
-      tracks: 0,
-      looks: 0,
-    });
   });
 });

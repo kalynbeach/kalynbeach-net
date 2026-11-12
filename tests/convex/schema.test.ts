@@ -153,18 +153,17 @@ describe("schema", () => {
   });
 
   it.each(["users", "tracks", "looks"] as const)(
-    "accepts a %s row with or without the timestamps dropTimestamps removes",
+    "accepts a %s row as stored today, and refuses the timestamps dropTimestamps removed",
     (table) => {
       const row = storedRows[table];
 
       expect(conforms(documentType(table), row)).toBe(true);
       expect(
-        conforms(documentType(table), {
-          ...row,
-          createdAt: 1_760_000_000_000,
-          updatedAt: 1_760_000_100_000,
-        })
-      ).toBe(true);
+        conforms(documentType(table), { ...row, createdAt: 1_760_000_000_000 })
+      ).toBe(false);
+      expect(
+        conforms(documentType(table), { ...row, updatedAt: 1_760_000_100_000 })
+      ).toBe(false);
     }
   );
 });

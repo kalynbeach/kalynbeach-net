@@ -24,12 +24,6 @@ export const lookValidator = v.object({
    * that already has a look returns that look, so a double click makes one.
    */
   createKey: v.string(),
-  /**
-   * Unread. Optional only so rows written before migrations:dropTimestamps
-   * validate. Remove them once it has run.
-   */
-  createdAt: v.optional(v.number()),
-  updatedAt: v.optional(v.number()),
 });
 
 /**
