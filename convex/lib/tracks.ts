@@ -31,12 +31,6 @@ export const trackValidator = v.object({
    */
   look: v.optional(v.id("looks")),
   audio: trackAudioValidator,
-  /**
-   * Unread. Optional only so rows written before migrations:dropTimestamps
-   * validate. Remove them once it has run.
-   */
-  createdAt: v.optional(v.number()),
-  updatedAt: v.optional(v.number()),
 });
 
 export const trackMetadataValidator = v.object({
