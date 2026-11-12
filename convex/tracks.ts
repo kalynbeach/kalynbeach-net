@@ -7,7 +7,7 @@ import { assertPositiveInteger } from "./lib/domain";
 import {
   adminTrackValidator,
   audioFileProblem,
-  planAttach,
+  planReplaceAudio,
   planSetLook,
   publicTrackValidator,
   resolvePublicTracks,
@@ -60,7 +60,7 @@ export const adminList = query({
 
 /**
  * Upload step 1. POST the file to the URL with its Content-Type, then pass
- * the returned storageId to create or attachAudio.
+ * the returned storageId to create or replaceAudio.
  */
 export const generateUploadUrl = mutation({
   args: {},
@@ -116,7 +116,7 @@ export const create = mutation({
  * Replaces a track's audio with an uploaded blob and deletes the old blob.
  * A retry changes nothing.
  */
-export const attachAudio = mutation({
+export const replaceAudio = mutation({
   args: { id: v.number(), audio: trackAudioValidator },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -137,7 +137,7 @@ export const attachAudio = mutation({
       );
     }
 
-    const plan = planAttach(track, args.audio);
+    const plan = planReplaceAudio(track, args.audio);
 
     if (plan.kind === "patch") {
       await ctx.db.patch("tracks", track._id, plan.patch);
@@ -148,7 +148,7 @@ export const attachAudio = mutation({
   },
 });
 
-/** Edits metadata. Audio changes go through attachAudio. */
+/** Edits metadata. Audio changes go through replaceAudio. */
 export const update = mutation({
   args: { id: v.number(), track: trackMetadataValidator.partial() },
   returns: v.null(),
@@ -296,7 +296,7 @@ function findTrack(
 
 /**
  * Throws when the blob is missing or isn't usable audio, and returns the
- * track that already holds it, if any. A rejected blob stays unattached
+ * track that already holds it, if any. A rejected blob belongs to no track
  * until the dashboard discards it.
  */
 async function checkUpload(

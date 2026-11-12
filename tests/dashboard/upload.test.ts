@@ -23,7 +23,7 @@ const decoded: DecodedAudio = {
   peaks: toPeaks([0.2, 1])!,
 };
 const blob = "blob-1" as Id<"_storage">;
-const attach: AudioSave = { kind: "attach", id: 3 };
+const replace: AudioSave = { kind: "replace", id: 3 };
 
 function fakeEnv(overrides: Partial<UploadEnv> = {}) {
   return {
@@ -90,7 +90,7 @@ describe("createAudioUpload", () => {
 
     const reading = upload.getSnapshot();
 
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
 
     expect(listener).toHaveBeenCalledTimes(1);
     expect(upload.getSnapshot()).toBe(reading);
@@ -128,7 +128,7 @@ describe("createAudioUpload", () => {
 
     upload.send({ type: "pick", file });
     await tick();
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
     await tick();
 
     expect(describeUpload(upload.getSnapshot()).failure).toBe(
@@ -154,7 +154,7 @@ describe("createAudioUpload", () => {
 
     upload.send({ type: "pick", file });
     await tick();
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
     await tick();
 
     expect(describeUpload(upload.getSnapshot()).failure).toBe(
@@ -167,7 +167,7 @@ describe("createAudioUpload", () => {
     expect(env.put).toHaveBeenCalledTimes(1);
     expect(env.save).toHaveBeenCalledTimes(2);
     expect(env.save).toHaveBeenLastCalledWith(
-      attach,
+      replace,
       expect.objectContaining({ storageId: blob })
     );
     expect(upload.getSnapshot().step).toBe("saved");
@@ -189,7 +189,7 @@ describe("createAudioUpload", () => {
 
       upload.send({ type: "pick", file });
       await tick();
-      upload.send({ type: "start", save: attach });
+      upload.send({ type: "start", save: replace });
       await tick();
       upload.send(command);
 
@@ -207,7 +207,7 @@ describe("createAudioUpload", () => {
 
     upload.send({ type: "pick", file });
     await tick();
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
     await tick();
     release();
     log.mockRestore();
@@ -223,7 +223,7 @@ describe("createAudioUpload", () => {
 
     upload.send({ type: "pick", file });
     await tick();
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
     await tick();
     release();
     save.reject(new ConvexError("Track 3 not found"));
@@ -240,7 +240,7 @@ describe("createAudioUpload", () => {
 
     upload.send({ type: "pick", file });
     await tick();
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
     await tick();
     release();
     save.resolve();
@@ -259,7 +259,7 @@ describe("createAudioUpload", () => {
     upload.hold();
     upload.send({ type: "pick", file });
     await tick();
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
     await tick();
     save.reject(new ConvexError("Track 3 not found"));
     await tick();
@@ -280,7 +280,7 @@ describe("createAudioUpload", () => {
 
     upload.send({ type: "pick", file });
     await tick();
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
     await tick();
     upload.send({ type: "clear" });
 
@@ -301,7 +301,7 @@ describe("createAudioUpload", () => {
 
     upload.send({ type: "pick", file });
     await tick();
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
     upload.send({ type: "clear" });
     request.resolve(blob);
     await tick();
@@ -325,7 +325,7 @@ describe("createAudioUpload", () => {
 
     upload.send({ type: "pick", file });
     await tick();
-    upload.send({ type: "start", save: attach });
+    upload.send({ type: "start", save: replace });
     upload.send({ type: "clear" });
     await tick();
 

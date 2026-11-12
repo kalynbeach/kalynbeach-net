@@ -289,7 +289,7 @@ function UploadLine({ view }: { view: UploadView }) {
 /**
  * One tbody per track: its row, then its upload's status and confirm step
  * in a full-width row while the upload holds a file. While the upload is
- * busy, Edit and Remove are off, so Remove can't race the row's own attach.
+ * busy, Edit and Remove are off, so Remove can't race the row's own Replace.
  */
 function TrackRow({
   track,
@@ -358,14 +358,14 @@ function TrackRow({
               <UploadStatus view={view} send={send} />
               {view.canStart && (
                 // The confirm step: the row shows the picked file and its
-                // length before attachAudio deletes the old blob.
+                // length before replaceAudio deletes the old blob.
                 <div className="flex gap-2">
                   <Button
                     className="pointer-coarse:h-11"
                     onClick={() =>
                       send({
                         type: "start",
-                        save: { kind: "attach", id: track.id },
+                        save: { kind: "replace", id: track.id },
                       })
                     }
                   >

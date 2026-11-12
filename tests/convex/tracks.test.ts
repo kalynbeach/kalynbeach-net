@@ -5,7 +5,7 @@ import {
   audioFileProblem,
   MAX_AUDIO_BYTES,
   MAX_PEAKS,
-  planAttach,
+  planReplaceAudio,
   planSetLook,
   resolvePublicTracks,
   toPublicTrack,
@@ -40,9 +40,9 @@ function patched(doc: object, patch: object): object {
   );
 }
 
-/** The track attachAudio leaves behind and the blob it deletes, or the plan when it writes nothing. */
-function attached(track: Track, blob: TrackAudio) {
-  const plan = planAttach(track, blob);
+/** The track replaceAudio leaves behind and the blob it deletes, or the plan when it writes nothing. */
+function replaced(track: Track, blob: TrackAudio) {
+  const plan = planReplaceAudio(track, blob);
 
   return plan.kind === "patch"
     ? { next: patched(track, plan.patch), deleteBlob: plan.deleteBlob }
@@ -160,9 +160,9 @@ describe("trackMetadataProblems", () => {
   });
 });
 
-describe("planAttach", () => {
+describe("planReplaceAudio", () => {
   it("replaces a stored track's audio and deletes the old blob", () => {
-    expect(attached(storedTrack, audio("blob-new"))).toStrictEqual({
+    expect(replaced(storedTrack, audio("blob-new"))).toStrictEqual({
       next: { ...storedTrack, audio: audio("blob-new") },
       deleteBlob: storageId("blob-old"),
     });
@@ -171,14 +171,14 @@ describe("planAttach", () => {
   it("keeps a stored track's look through Replace audio", () => {
     const track = { ...storedTrack, look: lookId("dusk") };
 
-    expect(attached(track, audio("blob-new"))).toStrictEqual({
+    expect(replaced(track, audio("blob-new"))).toStrictEqual({
       next: { ...track, audio: audio("blob-new") },
       deleteBlob: storageId("blob-old"),
     });
   });
 
   it("treats the same blob again as a retry", () => {
-    expect(attached(storedTrack, audio("blob-old"))).toEqual({
+    expect(replaced(storedTrack, audio("blob-old"))).toEqual({
       kind: "unchanged",
     });
   });

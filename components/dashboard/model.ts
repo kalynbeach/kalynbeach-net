@@ -177,16 +177,16 @@ export function parseUploadResponse(
   throw new AudioProblem("Upload failed: Convex sent no storage id");
 }
 
-/** What create and attachAudio need besides the blob, from the block's own loaders, so the stored numbers match what the player measures. */
+/** What create and replaceAudio need besides the blob, from the block's own loaders, so the stored numbers match what the player measures. */
 export type DecodedAudio = {
   readonly duration: Seconds;
   readonly peaks: readonly number[];
 };
 
-/** Where a finished upload goes. attach replaces a track's audio, as attachAudio does. */
+/** Where a finished upload goes. replace swaps a track's audio through replaceAudio. */
 export type AudioSave =
   | { readonly kind: "create"; readonly track: CheckedMetadata }
-  | { readonly kind: "attach"; readonly id: number };
+  | { readonly kind: "replace"; readonly id: number };
 
 /**
  * One file on its way to a track. Each step holds exactly what the next
@@ -240,7 +240,7 @@ export type UploadState =
       readonly message: string;
     }
   | {
-      /** The save failed after the blob landed. Retry saves the same blob, which create and attachAudio treat as a retry. */
+      /** The save failed after the blob landed. Retry saves the same blob, which create and replaceAudio treat as a retry. */
       readonly step: "failed";
       readonly run: number;
       readonly file: File;
@@ -451,7 +451,7 @@ export type UploadView = {
    * as it was at Upload.
    */
   readonly locked: boolean;
-  /** Read and checked, so Upload, Attach, or Replace is on. */
+  /** Read and checked, so Upload or Replace is on. */
   readonly canStart: boolean;
   readonly saved: boolean;
 };

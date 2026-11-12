@@ -160,7 +160,7 @@ export function trackMetadataProblems(
   );
 }
 
-export type AttachPlan =
+export type ReplaceAudioPlan =
   | { kind: "unchanged" }
   | {
       kind: "patch";
@@ -169,10 +169,14 @@ export type AttachPlan =
     };
 
 /**
- * What attaching `audio` does to `track`. A blob's duration and peaks never
- * change, so the same blob again is a retry and changes nothing.
+ * What replacing the audio of `track` with `audio` does. A blob's duration
+ * and peaks never change, so the same blob again is a retry and changes
+ * nothing.
  */
-export function planAttach(track: Track, audio: TrackAudio): AttachPlan {
+export function planReplaceAudio(
+  track: Track,
+  audio: TrackAudio
+): ReplaceAudioPlan {
   const current = track.audio.storageId;
 
   if (current === audio.storageId) {
