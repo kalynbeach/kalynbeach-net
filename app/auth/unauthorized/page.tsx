@@ -4,6 +4,9 @@ import SiteAuth from "@/components/site/site-auth";
 
 export const metadata = pageMetadata("/auth/unauthorized");
 
+/** SiteAuth reads the visitor's session, so this page renders per request. */
+export const instant = false;
+
 export default function Unauthorized() {
   return (
     <>
