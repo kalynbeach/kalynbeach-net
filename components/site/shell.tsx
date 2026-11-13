@@ -38,11 +38,9 @@ import {
   ViewTransition,
   useDeferredValue,
   useEffect,
-  useEffectEvent,
   useLayoutEffect,
   useRef,
   useMemo,
-  useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -175,12 +173,6 @@ function Sections({ children }: { children: ReactNode }) {
     (controlsShown && controls.state.panel.kind === "open") ||
     placement.frame === "mini" ||
     sound;
-  // A landmark only while it holds something, so screen readers never land
-  // in an empty one. The empty column keeps its box. On Home's desktop the
-  // element stays an aside, role none while empty, so opening the controls
-  // doesn't remount the rail and cut their entrance.
-  const Rail = railHolds || controlsShown ? "aside" : "div";
-  const [miniShown, setMiniShown] = useState(false);
 
   useScrollToTop(pathname);
 
@@ -297,19 +289,20 @@ function Sections({ children }: { children: ReactNode }) {
           // within the frame. It starts 8 above the top line, padded back
           // down, so a labelled item's header, which rises 8 to put its
           // label's caps on the line, isn't clipped. The mini player goes
-          // first, and the waveform controls open under it.
-          <Rail
+          // first, and the waveform controls open under it. A landmark only
+          // while it holds something, so screen readers never land in an
+          // empty one; the empty column keeps its box. It stays an aside,
+          // role none while empty, so nothing above the mini player's
+          // ViewTransition mounts with it and its fade in and out runs.
+          <aside
             data-slot="site-rail"
-            role={Rail === "aside" && !railHolds ? "none" : undefined}
+            role={railHolds ? undefined : "none"}
             aria-label={railHolds ? "Player and controls" : undefined}
             className="max-desktop:hidden desktop:top-[calc(var(--spacing-top)-0.5rem)] desktop:max-h-[calc(var(--spacing-frame)+0.5rem)] desktop:sticky desktop:-mt-2 desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto desktop:pt-2"
             {...(controlsShown ? pointerZone(controls, "rail") : {})}
           >
             {placement.frame === "mini" && (
-              <RailPlayer
-                first={!miniShown}
-                onShown={() => setMiniShown(true)}
-              />
+              <WavePlayerMini expand={<Link href="/sound" />} />
             )}
             {controlsShown && (
               <WaveformControls
@@ -328,7 +321,7 @@ function Sections({ children }: { children: ReactNode }) {
                 <WavePlayerTracks />
               </div>
             )}
-          </Rail>
+          </aside>
         )}
         {placement.frame === "bar" && (
           // Sticky and last in the column: it rests on the window's bottom
@@ -338,44 +331,6 @@ function Sections({ children }: { children: ReactNode }) {
         )}
       </div>
       <CommandMenu />
-    </div>
-  );
-}
-
-/**
- * The mini player in the rail. Its first appearance in a visit fades it in,
- * rising 4px; later ones arrive with the block's own fade or morph alone. A
- * Web Animation, since Kevelle's reduced-motion rule cuts every CSS animation
- * short, and under reduced motion the fade keeps only the opacity. During a
- * view transition the browser draws the frame's own morph over the page, so
- * this fade shows only where no transition runs, as under reduced motion.
- */
-function RailPlayer({
-  first,
-  onShown,
-}: {
-  /** No mini player has appeared yet this visit. Read when it mounts. */
-  first: boolean;
-  onShown: () => void;
-}) {
-  const box = useRef<HTMLDivElement>(null);
-  const enter = useEffectEvent(() => {
-    if (!first) return;
-    onShown();
-    const reduced = window.matchMedia(reducedMotionMedia).matches;
-    box.current?.animate(
-      reduced
-        ? { opacity: [0, 1] }
-        : { opacity: [0, 1], translate: ["0 4px", "0 0"] },
-      { duration: 200, easing: "cubic-bezier(0.23, 1, 0.32, 1)" }
-    );
-  });
-
-  useLayoutEffect(() => enter(), []);
-
-  return (
-    <div ref={box} data-slot="rail-player">
-      <WavePlayerMini expand={<Link href="/sound" />} />
     </div>
   );
 }
