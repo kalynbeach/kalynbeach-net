@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { globSync, readFileSync } from "node:fs";
+import { globSync, readFileSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -246,6 +246,23 @@ describe("Image", () => {
     expect(tag).toContain('src="/photo.jpg"');
     expect(tag).not.toMatch(/srcset=/i);
     expect(tag).not.toMatch(/sizes=/i);
+  });
+
+  it("renders a photo without a blur preview", () => {
+    // A static GIF or SVG import has no blurDataURL.
+    const gif = { src: "/loop.gif", width: 800, height: 600 };
+    const html = renderToStaticMarkup(
+      createElement(Image, { src: gif, alt: "Loop" })
+    );
+    expect(img(html)).toContain('src="/loop.gif"');
+  });
+
+  it("keeps every file in content/images/ at 10 MB or less", () => {
+    // Image serves files as-is, so every visitor downloads the whole file.
+    const oversize = globSync("content/images/**/*")
+      .map((file) => ({ file, bytes: statSync(file).size }))
+      .filter(({ bytes }) => bytes > 10_000_000);
+    expect(oversize).toEqual([]);
   });
 });
 

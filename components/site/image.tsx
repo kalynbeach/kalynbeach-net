@@ -8,6 +8,7 @@ import NextImage, { type StaticImageData } from "next/image";
  * Visitors get the imported file itself, never an optimizer re-encode, so the
  * photo keeps its source quality and "Open image in new tab" opens the
  * original. Every visitor downloads the whole file, so export it web-ready.
+ * tests/site.test.ts fails on any file in content/images/ over 10 MB.
  *
  * `src` is a static import, so the file's own width and height reserve the
  * box before it loads, and Next's build-time blurDataURL paints under it
