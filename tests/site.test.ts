@@ -5,6 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Draft } from "@/components/site/draft";
+import { Image } from "@/components/site/image";
 import nextConfig from "@/next.config";
 
 // Vitest has no MDX transform. The route files only pass these through.
@@ -206,6 +207,51 @@ describe("Draft", () => {
     expect(html).toContain("Draft. Hidden on production.");
     expect(html).toContain("<p>Draft copy</p>");
     expect(html).toContain('data-slot="draft-end"');
+  });
+});
+
+describe("Image", () => {
+  // Vitest has no image loader, so the photo is the object a static import gives.
+  const src = {
+    src: "/photo.jpg",
+    width: 2000,
+    height: 1326,
+    blurDataURL: "data:image/jpeg;base64,AA",
+  };
+  const render = (hero?: boolean) =>
+    renderToStaticMarkup(createElement(Image, { src, alt: "Photo", hero }));
+  const img = (html: string) => html.match(/<img [^>]*>/)?.[0] ?? "";
+
+  it("loads a hero eagerly at high priority", () => {
+    const tag = img(render(true));
+    expect(tag).toContain('loading="eager"');
+    expect(tag).toMatch(/fetchpriority="high"/i);
+  });
+
+  it("loads any other image lazily at default priority", () => {
+    const html = render();
+    expect(img(html)).toContain('loading="lazy"');
+    expect(html).not.toMatch(/fetchpriority/i);
+  });
+
+  it("reserves the photo's own box on a slotted img", () => {
+    const tag = img(render());
+    expect(tag).toContain('data-slot="image"');
+    expect(tag).toContain('width="2000"');
+    expect(tag).toContain('height="1326"');
+  });
+
+  it("sizes the image to the desktop column's breakpoint and cap", () => {
+    const css = readFileSync("app/globals.css", "utf8");
+    const breakpoint = css
+      .match(/--breakpoint-desktop:\s*([^;]+);/)?.[1]
+      .trim();
+    const cap = css.match(/--spacing-section:\s*min\(\s*([^,]+),/)?.[1].trim();
+    expect(breakpoint).toBeDefined();
+    expect(cap).toBeDefined();
+    expect(img(render())).toContain(
+      `sizes="(min-width: ${breakpoint}) ${cap}, `
+    );
   });
 });
 
