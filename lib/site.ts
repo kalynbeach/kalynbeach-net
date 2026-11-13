@@ -59,6 +59,9 @@ const software = [
   { slug: "kkb-audio", label: "kkb-audio", published: false },
 ] as const;
 
+/** A software project's slug, published or not. */
+export type ProjectSlug = (typeof software)[number]["slug"];
+
 /** The nav tree, top to bottom. Two levels at most. */
 const nav = [
   { kind: "stage", label: "Home", route: "/" },
