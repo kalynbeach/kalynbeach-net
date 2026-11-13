@@ -1,10 +1,11 @@
 // @vitest-environment node
-import { globSync, readFileSync } from "node:fs";
+import { globSync, readFileSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Draft } from "@/components/site/draft";
+import { Image } from "@/components/site/image";
 import nextConfig from "@/next.config";
 
 // Vitest has no MDX transform. The route files only pass these through.
@@ -206,6 +207,62 @@ describe("Draft", () => {
     expect(html).toContain("Draft. Hidden on production.");
     expect(html).toContain("<p>Draft copy</p>");
     expect(html).toContain('data-slot="draft-end"');
+  });
+});
+
+describe("Image", () => {
+  // Vitest has no image loader, so the photo is the object a static import gives.
+  const src = {
+    src: "/photo.jpg",
+    width: 2000,
+    height: 1326,
+    blurDataURL: "data:image/jpeg;base64,AA",
+  };
+  const render = (hero?: boolean) =>
+    renderToStaticMarkup(createElement(Image, { src, alt: "Photo", hero }));
+  const img = (html: string) => html.match(/<img [^>]*>/)?.[0] ?? "";
+
+  it("loads a hero eagerly at high priority", () => {
+    const tag = img(render(true));
+    expect(tag).toContain('loading="eager"');
+    expect(tag).toMatch(/fetchpriority="high"/i);
+  });
+
+  it("loads any other image lazily at default priority", () => {
+    const html = render();
+    expect(img(html)).toContain('loading="lazy"');
+    expect(html).not.toMatch(/fetchpriority/i);
+  });
+
+  it("reserves the photo's own box on a slotted img", () => {
+    const tag = img(render());
+    expect(tag).toContain('data-slot="image"');
+    expect(tag).toContain('width="2000"');
+    expect(tag).toContain('height="1326"');
+  });
+
+  it("serves the imported file as-is", () => {
+    const tag = img(render());
+    expect(tag).toContain('src="/photo.jpg"');
+    expect(tag).not.toMatch(/srcset=/i);
+    expect(tag).not.toMatch(/sizes=/i);
+  });
+
+  it("renders a photo without a blur preview", () => {
+    // A static GIF or SVG import has no blurDataURL.
+    const gif = { src: "/loop.gif", width: 800, height: 600 };
+    const html = renderToStaticMarkup(
+      createElement(Image, { src: gif, alt: "Loop" })
+    );
+    expect(img(html)).toContain('src="/loop.gif"');
+  });
+
+  it("keeps every file in content/images/ at 10 MB or less", () => {
+    // Image serves files as-is, so every visitor downloads the whole file.
+    const oversize = globSync("content/images/**/*")
+      .map((file) => ({ file, bytes: statSync(file).size }))
+      .filter(({ bytes }) => bytes > 10_000_000);
+    expect(oversize).toEqual([]);
   });
 });
 
