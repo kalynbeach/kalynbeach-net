@@ -11,7 +11,7 @@ import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "@/lib/utils";
 import { siteName, type NavRow } from "@/lib/site";
 import type { Layout } from "@/lib/layout";
-import { Waveform } from "@/components/waveform/waveform";
+import { LiveFigure } from "@/components/looks/live";
 
 /**
  * "Kalyn Beach" with the mark, the static waveform, right of it, at the top
@@ -44,7 +44,7 @@ export function Identity({ mark }: { mark: boolean }) {
         {siteName}
       </Link>
       <span className="desktop:size-5 -my-2 size-5.25">
-        {mark && <Waveform form="mark" className="size-full" />}
+        {mark && <LiveFigure form="mark" className="size-full" />}
       </span>
     </div>
   );

@@ -14,7 +14,8 @@
  * fill of its own.
  *
  * It owns the public site's player and waveform: one WavePlayerProvider,
- * fed tracks.list live (useLiveTracks, seeded by the root layout's read),
+ * fed tracks.list live (useLiveTracks, seeded by the root layout's read;
+ * Sound shows the player's skeleton until the first list arrives),
  * and one WaveformProvider fed by the player's audio, where the site's look
  * enters. The player draws its own waveform in its frames (PlayerScreen), so
  * the site's figure stays on Home's stage and in the mark. It reads playback
@@ -55,7 +56,11 @@ import {
   parseWaveformConfig,
   type StoredValue,
 } from "@/components/waveform/settings";
-import { useLiveLook } from "@/components/looks/live";
+import {
+  LiveFigure,
+  LiveLookArrived,
+  useLiveLook,
+} from "@/components/looks/live";
 import {
   WavePlayerBar,
   WavePlayerCard,
@@ -63,7 +68,12 @@ import {
   WavePlayerProvider,
   WavePlayerTracks,
   useWavePlayer,
+  type WavePlayerTrack,
 } from "@/components/wave-player/wave-player";
+import {
+  CardSkeleton,
+  LibrarySkeleton,
+} from "@/components/site/player-skeleton";
 import { Identity, NavSheet, NavTree } from "@/components/site/nav";
 import { PageHeader } from "@/components/site/page-header";
 import { CommandMenu } from "@/components/site/command-menu";
@@ -74,7 +84,7 @@ import {
   useWaveformControls,
 } from "@/components/site/waveform-controls";
 import { useLiveTracks } from "@/components/site/live-tracks";
-import type { PublicTrack } from "@/convex/lib/tracks";
+import { SeedContext, type ShellSeed } from "@/components/site/seed";
 
 const columns = {
   stage: "desktop:grid-cols-three",
@@ -83,27 +93,33 @@ const columns = {
 } as const satisfies Record<SiteEntry["kind"], string>;
 
 export function SiteShell({
-  tracks,
-  liveLook,
+  seed: seedSlot,
   children,
 }: {
-  /** The root layout's read of tracks.list, or [] when Convex failed or was slow. First paint draws it. */
-  tracks: readonly PublicTrack[];
-  /** The root layout's read of looks.live, or null. First paint draws it. */
-  liveLook: StoredValue;
+  /** The root layout's reads in their own <Suspense>, rendering a <Seed>. */
+  seed: ReactNode;
   children: ReactNode;
 }) {
+  const [seed, setSeed] = useState<ShellSeed | null>(null);
+  const tracks = useLiveTracks(seed?.tracks);
+
   return (
-    <WavePlayerProvider
-      tracks={useLiveTracks(tracks)}
-      screen={<PlayerScreen />}
-    >
-      <PublicWaveform liveLook={liveLook}>
-        <Sections>{children}</Sections>
-      </PublicWaveform>
-    </WavePlayerProvider>
+    <SeedContext value={setSeed}>
+      {seedSlot}
+      <WavePlayerProvider
+        tracks={tracks ?? NO_TRACKS}
+        screen={<PlayerScreen />}
+      >
+        <PublicWaveform liveLook={seed?.liveLook}>
+          <Sections tracks={tracks}>{children}</Sections>
+        </PublicWaveform>
+      </WavePlayerProvider>
+    </SeedContext>
   );
 }
+
+/** The provider's tracks until the first list arrives, one object so it never re-syncs. */
+const NO_TRACKS: readonly WavePlayerTrack[] = [];
 
 /**
  * The player's own waveform, which the block moves between the card, the
@@ -138,7 +154,8 @@ function PublicWaveform({
   liveLook,
   children,
 }: {
-  liveLook: StoredValue;
+  /** The root layout's read of looks.live, undefined until it arrives. */
+  liveLook: StoredValue | undefined;
   children: ReactNode;
 }) {
   // An audio restart replaces the feed, so read it on every render.
@@ -151,16 +168,29 @@ function PublicWaveform({
       onConfigChange={look.onConfigChange}
       audio={feed}
     >
-      {children}
+      <LiveLookArrived value={look.arrived}>{children}</LiveLookArrived>
     </WaveformProvider>
   );
 }
 
-function Sections({ children }: { children: ReactNode }) {
+function Sections({
+  tracks,
+  children,
+}: {
+  /** The provider's tracks, or null until the first list arrives. */
+  tracks: readonly WavePlayerTrack[] | null;
+  children: ReactNode;
+}) {
   const pathname = usePathname();
   const entry = resolve(pathname);
   const layout = useLayout();
-  const placement = place(entry, useWavePlayer().active, layout);
+  const player = useWavePlayer();
+  const placement = place(entry, player.active, layout);
+  // The provider takes a new list in an effect, so for one commit after the
+  // list arrives its store can still be empty. Holding the skeleton until
+  // the store has tracks keeps the empty player from flashing in between.
+  const playerReady =
+    tracks !== null && (tracks.length === 0 || player.status.kind !== "empty");
   const reducedMotion = useReducedMotion();
   const page = entry.kind === "page" ? entry : null;
   const sound = placement.frame === "card";
@@ -265,7 +295,7 @@ function Sections({ children }: { children: ReactNode }) {
               {controlsShown && <WaveformGhost controls={controls} />}
               <div data-slot="waveform-stage" className="size-full">
                 {/* keys="page" even with page keys off: the provider's one setting decides (waveform-controls.tsx). No caption at any width: on desktop the ghost "?" is the cue. */}
-                <Waveform
+                <LiveFigure
                   form="stage"
                   keys="page"
                   hint={false}
@@ -284,10 +314,10 @@ function Sections({ children }: { children: ReactNode }) {
                 data-slot="sound-card"
                 className="w-full max-w-85 self-center"
               >
-                <WavePlayerCard />
+                {playerReady ? <WavePlayerCard /> : <CardSkeleton />}
               </div>
               <div className="desktop:hidden w-full">
-                <WavePlayerTracks />
+                {playerReady ? <WavePlayerTracks /> : <LibrarySkeleton />}
               </div>
             </div>
           )}
@@ -325,7 +355,7 @@ function Sections({ children }: { children: ReactNode }) {
                 // This lifts it onto the top line.
                 className="-mt-5.75"
               >
-                <WavePlayerTracks />
+                {playerReady ? <WavePlayerTracks /> : <LibrarySkeleton />}
               </div>
             )}
           </Rail>
