@@ -22,7 +22,7 @@ This site uses my `Kevelle` design system, which I'm building in my kkb monorepo
 
 Each public page's copy lives in an MDX file in `content/`. The file's `metadata` export sets the page title and lede, and `mdx-components.tsx` sets every page in Kevelle's typeset styles.
 
-Tracks are audio files in Convex storage. A look is a saved setting for the waveform. On each request, the root layout reads the track list and the live look from Convex and waits at most 1 second. In the browser, the shell then subscribes to both, so an open page picks up every upload and look change from the dashboard.
+Tracks are audio files in Convex storage. A look is a saved setting for the waveform. On each request, the root layout reads the track list and the live look from Convex, in a `<Suspense>` boundary of their own, so no page waits on them. The page's HTML goes out first, and the two reads stream in behind it within 1 second. Until the track list arrives, Sound shows a skeleton of the player. In the browser, the shell then subscribes to both, so an open page picks up every upload and look change from the dashboard.
 
 Clerk signs people in, and Convex gives them roles. Everyone starts as a guest, and the site makes one configured account, mine, the admin. `app/(admin)/layout.tsx` and every admin Convex function check for the admin role.
 
