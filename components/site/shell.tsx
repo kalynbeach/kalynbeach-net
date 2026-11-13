@@ -191,11 +191,18 @@ function Sections({ children }: { children: ReactNode }) {
       {/*
        * React starts a browser view transition for a navigation only when
        * its commit places a ViewTransition, whatever its classes; a canvas's
-       * CSS name never starts one. Keyed by the pathname, this one is placed
-       * on every route change, so the waveform morphs even where no player
-       * frame comes or goes. It wraps nothing, so it animates nothing itself.
+       * CSS name never starts one. Keyed by whether Home's stage shows, this
+       * one is placed only when the figure moves between the stage and the
+       * mark, so a page to page navigation runs no transition unless a
+       * player frame comes or goes. It wraps nothing, so it animates nothing
+       * itself.
        */}
-      {!reducedMotion && <ViewTransition key={pathname} default="none" />}
+      {!reducedMotion && (
+        <ViewTransition
+          key={placement.stage ? "stage" : "page"}
+          default="none"
+        />
+      )}
       <div
         data-slot="site-sections"
         className={cn(
