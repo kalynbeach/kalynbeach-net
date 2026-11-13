@@ -5,7 +5,7 @@
  * resolved, so the nav never reads the pathname to decide active state.
  */
 import Link from "next/link";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "@/lib/utils";
@@ -29,8 +29,32 @@ import { Waveform } from "@/components/waveform/waveform";
  * it is 20px and sits 20 right of the name. The trimmed box ends at the
  * baseline, so the name's focus ring sits 4px out to clear the descender of
  * the y.
+ *
+ * The first mark in a visit fades in over Kevelle's large duration, since
+ * on a direct page load it arrives only once hydration knows the layout,
+ * after the name. A Web Animation, since Kevelle's reduced-motion rule cuts
+ * every CSS animation short, and an opacity fade suits reduced motion too.
+ * A view transition draws the named mark's own image, which an ancestor's
+ * opacity doesn't reach, so the fade never touches a morph.
  */
 export function Identity({ mark }: { mark: boolean }) {
+  const box = useRef<HTMLSpanElement>(null);
+
+  useLayoutEffect(() => {
+    if (!mark || markArrived) return;
+    markArrived = true;
+    const tokens = getComputedStyle(document.documentElement);
+    // The minified stylesheet writes 280ms as .28s.
+    const duration = tokens.getPropertyValue("--duration-large");
+    box.current?.animate(
+      { opacity: [0, 1] },
+      {
+        duration: parseFloat(duration) * (duration.endsWith("ms") ? 1 : 1000),
+        easing: tokens.getPropertyValue("--ease-out"),
+      }
+    );
+  }, [mark]);
+
   return (
     <div
       data-slot="site-identity"
@@ -43,12 +67,14 @@ export function Identity({ mark }: { mark: boolean }) {
       >
         {siteName}
       </Link>
-      <span className="desktop:size-5 -my-2 size-5.25">
+      <span ref={box} className="desktop:size-5 -my-2 size-5.25">
         {mark && <Waveform form="mark" className="size-full" />}
       </span>
     </div>
   );
 }
+
+let markArrived = false;
 
 /**
  * The signal's hue marks the active row against nav-idle. In light the two
