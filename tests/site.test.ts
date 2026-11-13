@@ -24,7 +24,7 @@ vi.mock("@/content/sound.mdx", () => ({
 import {
   commandItems,
   pageMetadata,
-  projects,
+  servedProjectSlugs,
   resolve,
   routes,
 } from "@/lib/site";
@@ -45,7 +45,7 @@ const pages = globSync("app/**/page.tsx").map((file) => ({
 
 const served = (route: string) => {
   if (route === "/software/[slug]") {
-    return projects.map((slug) => `/software/${slug}`);
+    return servedProjectSlugs.map((slug) => `/software/${slug}`);
   }
   return [route];
 };
@@ -93,14 +93,14 @@ describe("site map and page files", () => {
     const files = globSync("content/software/*.mdx").map((file) =>
       basename(file, ".mdx")
     );
-    expect(files.toSorted()).toEqual(projects.toSorted());
+    expect(files.toSorted()).toEqual(servedProjectSlugs.toSorted());
   });
 
   it("gives every project exactly one section on the Software index", () => {
     const index = readFileSync("content/software.mdx", "utf8");
     const sections = [...index.matchAll(/<Project\s+slug=["']([^"']+)["']/g)];
     expect(sections.map(([, slug]) => slug).toSorted()).toEqual(
-      projects.toSorted()
+      servedProjectSlugs.toSorted()
     );
   });
 
@@ -321,7 +321,7 @@ describe("production", () => {
   });
 
   it("builds no project pages and no routes for unpublished pages", () => {
-    expect(site.projects).toEqual([]);
+    expect(site.servedProjectSlugs).toEqual([]);
     expect(site.routes).toEqual([
       "/",
       "/about",
@@ -359,8 +359,15 @@ describe("production", () => {
 
   it("404s every unpublished project slug", async () => {
     const route = await import("@/app/software/[slug]/page");
-    expect(route.dynamicParams).toBe(false);
-    expect(route.generateStaticParams()).toEqual([]);
+    expect(route.generateStaticParams()).toEqual([
+      { slug: "agents" },
+      { slug: "kkb-audio" },
+    ]);
+    for (const slug of ["agents", "kkb-audio", "no-such-project"]) {
+      await expect(
+        route.default({ params: Promise.resolve({ slug }) })
+      ).rejects.toMatchObject({ digest: "NEXT_HTTP_ERROR_FALLBACK;404" });
+    }
   });
 
   it("drops draft sections", () => {
