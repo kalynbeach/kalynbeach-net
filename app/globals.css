@@ -158,6 +158,15 @@
  * skips its old image and runs no animation, so the new page shows at once,
  * as a navigation without a transition does. Only the waveform and the
  * player's frame move.
+ *
+ * They teleport, never slide. The group holds the old box while the old
+ * image shrinks out where it was, then jumps to the new box, where the new
+ * image grows in. Each image draws at its own size and place, so the 20px
+ * mark never scales up over the stage and the card never stretches into
+ * the mini player or the bar. A mini player or bar with no partner grows in
+ * at once. A mark that sits still, as when only a player frame moves, keeps
+ * its place without a pulse. The shell tags the named canvas with the move
+ * (components/site/shell.tsx).
  */
 ::view-transition-old(root) {
   display: none;
@@ -170,6 +179,63 @@
 /* kevelle/waveform's contract: the figure rides above the frames it crosses. */
 ::view-transition-group(waveform) {
   z-index: 1;
+}
+
+::view-transition-group(waveform),
+::view-transition-group(wave-player) {
+  animation-duration: var(--duration-small);
+  animation-timing-function: steps(1, jump-end);
+}
+
+::view-transition-old(waveform),
+::view-transition-old(wave-player) {
+  animation: teleport-out var(--duration-small) var(--ease-out) both;
+}
+
+::view-transition-new(waveform),
+::view-transition-new(wave-player) {
+  animation: teleport-in var(--duration-large) var(--ease-out)
+    var(--duration-small) both;
+}
+
+::view-transition-new(wave-player):only-child {
+  animation-delay: 0s;
+}
+
+::view-transition-old(waveform.waveform-still) {
+  display: none;
+}
+
+::view-transition-new(waveform.waveform-still) {
+  animation: none;
+}
+
+/*
+ * Opacity trails the scale on the way out and leads it on the way in, so
+ * the shrink and the grow show before the image fades. Kevelle's ease-out
+ * is steep enough that a fade on the same curve hides the shrink.
+ */
+@keyframes teleport-out {
+  0%,
+  40% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 0.75;
+    filter: blur(2px);
+  }
+}
+
+@keyframes teleport-in {
+  from {
+    opacity: 0;
+    scale: 0.75;
+    filter: blur(2px);
+  }
+  60% {
+    opacity: 1;
+  }
 }
 
 /* Kevelle's reduced-motion rule matches *, ::before and ::after, not these pseudo-elements. */
