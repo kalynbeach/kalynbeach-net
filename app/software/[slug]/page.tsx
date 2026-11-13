@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { projects } from "@/lib/site";
+import { notFound } from "next/navigation";
+import { projectSlugs, servedProjectSlugs } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
-/** One page per project in the site map. Any other slug is a 404. */
-export const dynamicParams = false;
-
+/** One page per project in the site map, prerendered. Any other slug, or an unserved project, is a 404. */
 export function generateStaticParams() {
-  return projects.map((slug) => ({ slug }));
+  return projectSlugs.map((slug) => ({ slug }));
 }
 
 async function content({ params }: Props): Promise<typeof import("*.mdx")> {
   const { slug } = await params;
+  if (!servedProjectSlugs.some((served) => served === slug)) notFound();
   return import(`@/content/software/${slug}.mdx`);
 }
 

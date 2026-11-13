@@ -45,11 +45,12 @@ const PUBLIC_QUERY_DEADLINE_MS = 1_000;
  * page. The deadline aborts the request, so a hanging Convex holds no
  * socket.
  *
- * Every route that calls it renders per request, never at build, on
- * purpose. The Vercel build runs `next build` before Convex pushes the
- * deploy's functions, so a build-time read would see the previous deploy's
- * functions, or none on a new preview. connection() states that intent and
- * spares the build a doomed fetch.
+ * The read runs per request, never at build, on purpose. The Vercel build
+ * runs `next build` before Convex pushes the deploy's functions, so a
+ * build-time read would see the previous deploy's functions, or none on a
+ * new preview. connection() states that intent and spares the build a
+ * doomed fetch. With Cache Components it ends the prerender at the nearest
+ * <Suspense>, so the rest of the page is still built ahead.
  */
 export async function fetchPublicQuery<
   Query extends FunctionReference<"query", "public">,

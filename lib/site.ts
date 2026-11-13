@@ -230,8 +230,14 @@ export function served(route: Route): boolean {
   return index.has(route);
 }
 
-/** Software project slugs of the served project pages: the static params of app/software/[slug]. */
-export const projects = software
+/**
+ * Every software project's slug, served or not: the static params of
+ * app/software/[slug]. Cache Components needs at least one, and an unserved
+ * project prerenders as the 404.
+ */
+export const projectSlugs = software.map(({ slug }) => slug);
+
+export const servedProjectSlugs = software
   .filter(({ slug }) => served(`/software/${slug}`))
   .map(({ slug }) => slug);
 

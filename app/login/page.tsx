@@ -5,6 +5,9 @@ import { pageMetadata } from "@/lib/site";
 
 export const metadata = pageMetadata("/login");
 
+/** Checks the session before sending anything, so a signed-in visitor gets a real redirect. */
+export const instant = false;
+
 export default async function Login() {
   const { userId } = await auth();
 
