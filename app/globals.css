@@ -489,7 +489,7 @@
  *
  *   ghost in            opacity, scale 0.9, blur 4px   280ms Kevelle ease-out
  *   ghost out           the same, after a 600ms linger 160ms Kevelle ease-out
- *   ghost press         scale 0.97 on :active          120ms ease-out
+ *   ghost press         scale 0.97 on :active          120ms Kevelle ease-out
  *   controls in / out   the row's reveal, opacity,     220 / 160ms
  *                       translateY -4px
  *   the mini above      stays put; the row opens under it
@@ -508,7 +508,7 @@
     transition-duration:
       var(--duration-small), var(--duration-small), var(--duration-small), 120ms;
     transition-timing-function:
-      var(--ease-out), var(--ease-out), var(--ease-out), ease-out;
+      var(--ease-out), var(--ease-out), var(--ease-out), var(--ease-out);
 
     &[data-shown] {
       opacity: 1;
