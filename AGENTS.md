@@ -63,7 +63,7 @@ bun run test run       # add a path, such as tests/site.test.ts, to run one file
 Run `bun run build` too when a change touches routes, config, or the build. It downloads the fonts first, as the Fonts section describes. `bun run dev` also needs the Convex and Clerk settings in Kalyn's `.env.local`. Never copy that file into another checkout.
 
 - To add, rename, or remove a public page or a software project, change `lib/site.ts`, `content/`, and `tests/site.test.ts` together. The test fails when the site map, the route files, and the content files disagree. Each page and project also has a `published` flag in `lib/site.ts`.
-- To add a software project page, add `content/software/<slug>.mdx`, add its slug and navigation label to `software` in `lib/site.ts`, add `<Project slug="<slug>" />` to `content/software.mdx`, and add the project to the navigation and Cmd+K expectations in `tests/site.test.ts`.
+- To add a software project page, add `content/software/<slug>.mdx`, add its slug and navigation label to `software` in `lib/site.ts`, add `<Project slug="<slug>" />` to `content/software.mdx` and the file's `?metadata` import to `projects` in `components/site/project.tsx`, and add the project to the navigation and Cmd+K expectations in `tests/site.test.ts`.
 - After you upgrade `oxlint`, `@oxlint/plugins`, `@convex-dev/eslint-plugin`, or a rule in `tools/oxlint/`, run `bun run test run tests/tools`.
 
 ## Tooling notes

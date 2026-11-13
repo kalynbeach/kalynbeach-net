@@ -10,3 +10,14 @@ declare module "*.mdx" {
   export default function MDXContent(props: MDXProps): Element;
   export const metadata: PageMeta;
 }
+
+/**
+ * A content file's metadata alone. tools/mdx/metadata-loader.ts strips the
+ * file to its metadata export, so the import pulls in none of the body's
+ * components.
+ */
+declare module "*.mdx?metadata" {
+  import type { PageMeta } from "@/lib/site";
+
+  export const metadata: PageMeta;
+}
