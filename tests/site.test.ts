@@ -241,6 +241,13 @@ describe("Image", () => {
     expect(tag).toContain('height="1326"');
   });
 
+  it.fails("serves the imported file as-is", () => {
+    const tag = img(render());
+    expect(tag).toContain('src="/photo.jpg"');
+    expect(tag).not.toMatch(/srcset=/i);
+    expect(tag).not.toMatch(/sizes=/i);
+  });
+
   it("sizes the image to the desktop column's breakpoint and cap", () => {
     const css = readFileSync("app/globals.css", "utf8");
     const breakpoint = css
