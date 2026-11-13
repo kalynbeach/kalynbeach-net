@@ -1,6 +1,7 @@
 import { useQueries } from "convex/react";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
+import { news } from "@/components/site/seed";
 import type { PublicTrack } from "@/convex/lib/tracks";
 import type {
   WavePlayerLook,
@@ -16,30 +17,34 @@ const TRACKS = { tracks: { query: api.tracks.list, args: {} } };
 /**
  * tracks.list for the site's one WavePlayerProvider, live:
  *
- *   // app/layout.tsx
- *   <SiteShell tracks={await fetchPublicQuery(api.tracks.list, {}, [])}>
- *
  *   // components/site/shell.tsx
- *   <WavePlayerProvider tracks={useLiveTracks(tracks)}>
+ *   const tracks = useLiveTracks(seed?.tracks);
+ *   <WavePlayerProvider tracks={tracks ?? NO_TRACKS}>
  *
- * `initial` is the root layout's read, so first paint draws the real list.
- * After hydration the subscription's answers replace it, so an open tab
- * follows the admin's uploads, replacements, and removals without a reload.
- * A query still subscribing, reconnecting, or failing is no news: useQueries
- * returns a failure as a value, and the hook keeps the last list it had, so
- * the player never falls back to an older one.
+ * null until the first list arrives, so the shell can draw the player's
+ * skeleton instead of an empty player. `seed` is the root layout's read,
+ * undefined until it streams in. The subscription's answers
+ * replace it, so an open tab follows the admin's uploads, replacements, and
+ * removals without a reload. A query still subscribing, reconnecting, or
+ * failing is no news: useQueries returns a failure as a value, and the hook
+ * keeps the last list it had, so the player never falls back to an older one.
  */
 export function useLiveTracks(
-  initial: readonly PublicTrack[]
-): readonly WavePlayerTrack[] {
+  seed: readonly PublicTrack[] | undefined
+): readonly WavePlayerTrack[] | null {
   const result: PublicTrack[] | Error | undefined = useQueries(TRACKS).tracks;
-  const [held, setHeld] = useState(() => settleTracks(null, initial));
-  const next = Array.isArray(result) ? settleTracks(held, result) : held;
+  const [held, setHeld] = useState<SettledTracks | null>(null);
+  const rows = news(
+    Array.isArray(result) ? result : undefined,
+    seed,
+    held !== null
+  );
+  const next = rows === undefined ? held : settleTracks(held, rows);
 
   // The client returns one array per answer, so this settles in one render.
   if (next !== held) setHeld(next);
 
-  return next.tracks;
+  return next?.tracks ?? null;
 }
 
 /**

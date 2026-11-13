@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PublicTrack } from "@/convex/lib/tracks";
 import { settleTracks } from "@/components/site/live-tracks";
+import { news } from "@/components/site/seed";
 import { DEFAULT_LOOK, currentLook } from "@/components/wave-player/look";
 import { parsePlaylist } from "@/components/wave-player/playlist";
 import {
@@ -136,5 +137,23 @@ describe("settleTracks keeps objects while their content holds", () => {
     cleared[0] = { ...cleared[0], look: null };
 
     expect(settleTracks(first, cleared).tracks[0].look).toBeNull();
+  });
+});
+
+describe("news", () => {
+  const seed = "seed";
+
+  it("takes the layout's read until the subscription answers", () => {
+    expect(news(undefined, undefined, false)).toBeUndefined();
+    expect(news(undefined, seed, false)).toBe("seed");
+  });
+
+  it("takes the subscription's answer over the seed", () => {
+    expect(news("answer", seed, false)).toBe("answer");
+    expect(news("answer", seed, true)).toBe("answer");
+  });
+
+  it("never lets a seed replace what the hook already holds", () => {
+    expect(news(undefined, seed, true)).toBeUndefined();
   });
 });

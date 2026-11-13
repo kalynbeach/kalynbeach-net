@@ -38,10 +38,12 @@ export async function requireConvexAdmin(): Promise<void> {
 const PUBLIC_QUERY_DEADLINE_MS = 1_000;
 
 /**
- * A public query's value for this request, for data the first paint needs.
+ * A public query's value for this request. Call it under a <Suspense>, as
+ * the root layout's LiveSeed does.
  * Returns `fallback`, and logs why, when Convex fails or hasn't answered
- * within PUBLIC_QUERY_DEADLINE_MS, so an outage never fails a page. The
- * deadline aborts the request, so a hanging Convex holds no socket.
+ * within PUBLIC_QUERY_DEADLINE_MS, so an outage never fails or stalls a
+ * page. The deadline aborts the request, so a hanging Convex holds no
+ * socket.
  *
  * Every route that calls it renders per request, never at build, on
  * purpose. The Vercel build runs `next build` before Convex pushes the
