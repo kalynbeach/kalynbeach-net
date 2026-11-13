@@ -1,21 +1,13 @@
 import NextImage, { type StaticImageData } from "next/image";
 
 /**
- * The content column's width, as `sizes`. From 1200px (75rem) section 1 is at
- * most 37.5rem wide, the cap in --spacing-section, and below it the column is
- * the viewport less 4rem (the 12px edge and 20px padding on each side). Both
- * are rems, so they follow a larger default font. Between 1200 and about
- * 1317px the column is 498 to 600px, so the cap overstates it by at most one
- * srcset step. `vw` counts a classic scrollbar and the shell measures `cqi`,
- * which doesn't, so the value errs high, never low. tests/site.test.ts checks
- * the breakpoint and the cap against app/globals.css.
- */
-const sizes = "(min-width: 75rem) 37.5rem, calc(100vw - 4rem)";
-
-/**
  * A photo in a page's content column, at the column's full width and the
  * photo's natural ratio. Use it in content files with a photo statically
  * imported from content/images/: `<Image src={photo} alt="..." />`.
+ *
+ * Visitors get the imported file itself, never an optimizer re-encode, so the
+ * photo keeps its source quality and "Open image in new tab" opens the
+ * original. Every visitor downloads the whole file, so export it web-ready.
  *
  * `src` is a static import, so the file's own width and height reserve the
  * box before it loads, and Next's build-time blurDataURL paints under it
@@ -45,7 +37,7 @@ export function Image({
       data-slot="image"
       src={src}
       alt={alt}
-      sizes={sizes}
+      unoptimized
       // A static GIF or SVG has no blurDataURL, and "blur" without one throws.
       placeholder={src.blurDataURL ? "blur" : "empty"}
       loading={hero ? "eager" : "lazy"}

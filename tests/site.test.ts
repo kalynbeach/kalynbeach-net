@@ -241,24 +241,11 @@ describe("Image", () => {
     expect(tag).toContain('height="1326"');
   });
 
-  it.fails("serves the imported file as-is", () => {
+  it("serves the imported file as-is", () => {
     const tag = img(render());
     expect(tag).toContain('src="/photo.jpg"');
     expect(tag).not.toMatch(/srcset=/i);
     expect(tag).not.toMatch(/sizes=/i);
-  });
-
-  it("sizes the image to the desktop column's breakpoint and cap", () => {
-    const css = readFileSync("app/globals.css", "utf8");
-    const breakpoint = css
-      .match(/--breakpoint-desktop:\s*([^;]+);/)?.[1]
-      .trim();
-    const cap = css.match(/--spacing-section:\s*min\(\s*([^,]+),/)?.[1].trim();
-    expect(breakpoint).toBeDefined();
-    expect(cap).toBeDefined();
-    expect(img(render())).toContain(
-      `sizes="(min-width: ${breakpoint}) ${cap}, `
-    );
   });
 });
 
