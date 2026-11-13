@@ -3,6 +3,10 @@ import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // "Open image in new tab" shows optimizer images, such as screenshot.tsx's,
+  // instead of downloading them. The attachment default guards SVGs, which
+  // can't reach the optimizer here without dangerouslyAllowSVG.
+  images: { contentDispositionType: "inline" },
   // lib/site.ts reads this to serve only published pages and drop <Draft>
   // sections. Next inlines it into the server and client bundles.
   env: {
