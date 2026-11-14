@@ -153,61 +153,89 @@
 }
 
 /*
- * kevelle/waveform names its live canvas waveform (or lends the name to the
- * mark); kevelle/wave-player names the player's frame wave-player. The root
- * skips its old image and runs no animation, so the new page shows at once,
- * as a navigation without a transition does. Only the waveform and the
- * player's frame move.
+ * kevelle/waveform names its live canvas waveform, or lends the name to the
+ * mark; kevelle/wave-player names the player's frame wave-player. The root
+ * skips its old image and runs no animation, so the sidebar and the top bar
+ * change at once, as a navigation without a transition does.
  *
- * They teleport, never slide. The group holds the old box while the old
- * image shrinks out where it was, then jumps to the new box, where the new
- * image grows in. Each image draws at its own size and place, so the 20px
- * mark never scales up over the stage and the card never stretches into
- * the mini player or the bar. A mini player or bar with no partner grows in
- * at once. A mark that sits still, as when only a player frame moves, keeps
- * its place without a pulse. The shell tags the named canvas with the move
- * (components/site/shell.tsx).
+ * What moves teleports, never slides: the old copy shrinks out where it was
+ * and the new copy grows in where it lands, each at its own size, so the
+ * 20px mark never scales up over the stage and the card never stretches
+ * into the mini player or the bar.
+ *
+ * The figure. The stage's canvas takes its own name, so it never pairs with
+ * the mark: the stage shrinks out while the mark grows in, or the reverse,
+ * at the same time. A stage or mark that stays put, as when only a player
+ * frame moves, pairs with itself and keeps still.
+ *
+ * The frame. The card, the mini player and the bar pair, so one group holds
+ * the old box while the old frame shrinks out, then jumps to the new box,
+ * where the new frame grows in. A mini player or bar with no partner grows
+ * in at once.
+ *
+ * The page. Section 1 takes its own name. Its old content goes at once, and
+ * its new content fades in once a stage or card leaving it is gone, so
+ * nothing that leaves draws over the page that arrives.
  */
-::view-transition-old(root) {
+[data-slot="waveform-stage"] canvas {
+  /* !important beats the inline name kevelle/waveform sets. */
+  view-transition-name: waveform-stage !important;
+}
+
+[data-slot="site-primary"] {
+  view-transition-name: page;
+}
+
+::view-transition-old(root),
+::view-transition-old(page) {
   display: none;
 }
 
-::view-transition-new(root) {
+::view-transition-new(root),
+::view-transition-group(page),
+::view-transition-group(waveform),
+::view-transition-group(waveform-stage),
+::view-transition-new(waveform),
+::view-transition-new(waveform-stage) {
   animation: none;
 }
 
-/* kevelle/waveform's contract: the figure rides above the frames it crosses. */
-::view-transition-group(waveform) {
-  z-index: 1;
+::view-transition-new(page) {
+  animation: page-in var(--duration-large) var(--ease-out) var(--duration-small)
+    both;
 }
 
-::view-transition-group(waveform),
+::view-transition-old(waveform),
+::view-transition-old(waveform-stage) {
+  opacity: 0;
+}
+
 ::view-transition-group(wave-player) {
   animation-duration: var(--duration-small);
   animation-timing-function: steps(1, jump-end);
 }
 
-::view-transition-old(waveform),
+::view-transition-old(waveform):only-child,
+::view-transition-old(waveform-stage):only-child,
 ::view-transition-old(wave-player) {
   animation: teleport-out var(--duration-small) var(--ease-out) both;
 }
 
-::view-transition-new(waveform),
 ::view-transition-new(wave-player) {
   animation: teleport-in var(--duration-large) var(--ease-out)
     var(--duration-small) both;
 }
 
+::view-transition-new(waveform):only-child,
+::view-transition-new(waveform-stage):only-child,
 ::view-transition-new(wave-player):only-child {
-  animation-delay: 0s;
+  animation: teleport-in var(--duration-large) var(--ease-out) both;
 }
 
-::view-transition-old(waveform.waveform-still) {
-  display: none;
-}
-
-::view-transition-new(waveform.waveform-still) {
-  animation: none;
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
 }
 
 /*

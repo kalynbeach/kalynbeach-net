@@ -173,26 +173,8 @@ function Sections({ children }: { children: ReactNode }) {
     (controlsShown && controls.state.panel.kind === "open") ||
     placement.frame === "mini" ||
     sound;
-  const previousStage = useRef(placement.stage);
 
   useScrollToTop(pathname);
-
-  // Tells app/globals.css whether the figure moved between the stage and
-  // the mark, so a mark that stays put doesn't teleport in place. The class
-  // goes on the canvas that carries the name after the commit, since the
-  // browser takes the arriving element's class for both images. The engine
-  // names that canvas in the Waveform's own layout effects, which run before
-  // this one, and the browser captures the new page after both.
-  useLayoutEffect(() => {
-    const move =
-      previousStage.current === placement.stage
-        ? "waveform-still"
-        : "waveform-moved";
-    for (const canvas of document.querySelectorAll("canvas"))
-      if (canvas.style.getPropertyValue("view-transition-name") === "waveform")
-        canvas.style.setProperty("view-transition-class", move);
-    previousStage.current = placement.stage;
-  }, [pathname, layout, placement.stage, placement.frame]);
 
   return (
     // .root (Kevelle) isolates the page, so Base UI portals stack predictably.
@@ -247,6 +229,7 @@ function Sections({ children }: { children: ReactNode }) {
             <NavTree rows={entry.nav} />
           </nav>
         </div>
+        {/* app/globals.css names this section and the stage's canvas for view transitions by their data-slots. */}
         <main
           id="site-primary"
           data-slot="site-primary"
