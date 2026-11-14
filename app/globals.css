@@ -181,6 +181,19 @@
  * bar comes or goes, the page keeps still. The shell sets both tags
  * (components/site/shell.tsx).
  */
+:root {
+  /*
+   * Kevelle's ease-out puts most of a move in its first fifth. On the 420px
+   * stage that reads as a jump, then a cut, so the teleport takes a gentler
+   * cubic ease-out over longer durations. --teleport-clear is when what
+   * leaves section 1 has faded out, so the new page can start.
+   */
+  --teleport-out: 240ms;
+  --teleport-in: 360ms;
+  --teleport-clear: 200ms;
+  --ease-teleport: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
 [data-slot="waveform-stage"] canvas {
   /* !important beats the inline name kevelle/waveform sets. */
   view-transition-name: waveform-stage !important;
@@ -206,8 +219,8 @@
 }
 
 ::view-transition-new(page.navigated) {
-  animation: page-in var(--duration-large) var(--ease-out) var(--duration-small)
-    both;
+  animation: page-in var(--duration-large) var(--ease-teleport)
+    var(--teleport-clear) both;
 }
 
 ::view-transition-old(waveform),
@@ -216,29 +229,29 @@
 }
 
 ::view-transition-group(wave-player) {
-  animation-duration: var(--duration-small);
+  animation-duration: var(--teleport-out);
   animation-timing-function: steps(1, jump-end);
 }
 
 ::view-transition-old(waveform):only-child,
 ::view-transition-old(waveform-stage):only-child,
 ::view-transition-old(wave-player) {
-  animation: teleport-out var(--duration-small) var(--ease-out) both;
+  animation: teleport-out var(--teleport-out) var(--ease-teleport) both;
 }
 
 ::view-transition-new(wave-player) {
-  animation: teleport-in var(--duration-large) var(--ease-out)
-    var(--duration-small) both;
+  animation: teleport-in var(--teleport-in) var(--ease-teleport)
+    var(--teleport-out) both;
 }
 
 ::view-transition-new(waveform):only-child,
 ::view-transition-new(waveform-stage):only-child,
 ::view-transition-new(wave-player):only-child {
-  animation: teleport-in var(--duration-large) var(--ease-out) both;
+  animation: teleport-in var(--teleport-in) var(--ease-teleport) both;
 }
 
 ::view-transition-new(waveform-stage.after-card):only-child {
-  animation-delay: var(--duration-small);
+  animation-delay: var(--teleport-out);
 }
 
 @keyframes page-in {
@@ -247,30 +260,22 @@
   }
 }
 
-/*
- * Opacity trails the scale on the way out and leads it on the way in, so
- * the shrink and the grow show before the image fades. Kevelle's ease-out
- * is steep enough that a fade on the same curve hides the shrink.
- */
+/* The way in reaches full opacity halfway, so the grow shows sharp. */
 @keyframes teleport-out {
-  0%,
-  40% {
-    opacity: 1;
-  }
   to {
     opacity: 0;
-    scale: 0.75;
-    filter: blur(2px);
+    scale: 0.5;
+    filter: blur(6px);
   }
 }
 
 @keyframes teleport-in {
   from {
     opacity: 0;
-    scale: 0.75;
-    filter: blur(2px);
+    scale: 0.5;
+    filter: blur(6px);
   }
-  60% {
+  50% {
     opacity: 1;
   }
 }
