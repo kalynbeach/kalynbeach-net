@@ -185,12 +185,13 @@
   /*
    * Kevelle's ease-out puts most of a move in its first fifth. On the 420px
    * stage that reads as a jump, then a cut, so the teleport takes a gentler
-   * cubic ease-out over longer durations. --teleport-clear is when what
-   * leaves section 1 has faded out, so the new page can start.
+   * cubic ease-out. --teleport-clear is when what leaves section 1 has
+   * faded out, so the new page can start. Frame-stepped captures put About
+   * readable about 200ms after the click, with nothing over it.
    */
-  --teleport-out: 240ms;
-  --teleport-in: 360ms;
-  --teleport-clear: 200ms;
+  --teleport-out: var(--duration-small);
+  --teleport-in: 240ms;
+  --teleport-clear: 100ms;
   --ease-teleport: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
@@ -219,7 +220,7 @@
 }
 
 :root[data-teleport~="navigated"]::view-transition-new(page) {
-  animation: page-in var(--duration-large) var(--ease-teleport)
+  animation: page-in var(--duration-small) var(--ease-teleport)
     var(--teleport-clear) both;
 }
 
