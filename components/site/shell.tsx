@@ -315,7 +315,7 @@ function Sections({ children }: { children: ReactNode }) {
             </div>
           )}
         </main>
-        {entry.kind !== "wide" && (
+        {
           // Items stack 40 apart from the top line down, and the rail stays
           // within the frame. It starts 8 above the top line, padded back
           // down, so a labelled item's header, which rises 8 to put its
@@ -324,12 +324,19 @@ function Sections({ children }: { children: ReactNode }) {
           // while it holds something, so screen readers never land in an
           // empty one; the empty column keeps its box. It stays an aside,
           // role none while empty, so nothing above the mini player's
-          // ViewTransition mounts with it and its fade in and out runs.
+          // ViewTransition mounts with it and its fade in and out runs. A
+          // wide page has no column for it and no player, so it stays
+          // mounted there too, hidden, and leaving one for a page while
+          // playback is active grows the mini player in.
           <aside
             data-slot="site-rail"
             role={railHolds ? undefined : "none"}
             aria-label={railHolds ? "Player and controls" : undefined}
-            className="max-desktop:hidden desktop:top-[calc(var(--spacing-top)-0.5rem)] desktop:max-h-[calc(var(--spacing-frame)+0.5rem)] desktop:sticky desktop:-mt-2 desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto desktop:pt-2"
+            className={
+              entry.kind === "wide"
+                ? "hidden"
+                : "max-desktop:hidden desktop:top-[calc(var(--spacing-top)-0.5rem)] desktop:max-h-[calc(var(--spacing-frame)+0.5rem)] desktop:sticky desktop:-mt-2 desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto desktop:pt-2"
+            }
             {...(controlsShown ? pointerZone(controls, "rail") : {})}
           >
             {placement.frame === "mini" && (
@@ -353,7 +360,7 @@ function Sections({ children }: { children: ReactNode }) {
               </div>
             )}
           </aside>
-        )}
+        }
         {placement.frame === "bar" && (
           // Sticky and last in the column: it rests on the window's bottom
           // edge and takes its own height at the end of the page, so nothing
