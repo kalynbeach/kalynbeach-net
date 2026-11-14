@@ -183,9 +183,14 @@ function Sections({ children }: { children: ReactNode }) {
   // this commit's value. Only a navigation fades section 1 in, so a mini
   // player or bar that comes or goes leaves the page still. When Sound's
   // card shrinks out into a mini player or bar on the way to Home, the mark
-  // and the stage wait for the card together.
+  // and the stage wait for the card together. Only a commit that moves the
+  // page or the frame starts a transition, so only such a commit rewrites
+  // the value: the selectors match live, and a re-render mid-transition, as
+  // playback brings, would otherwise drop the running animations.
   useLayoutEffect(() => {
     const before = shown.current;
+    if (before.pathname === pathname && before.frame === placement.frame)
+      return;
     shown.current = { pathname, frame: placement.frame };
     const changes = [
       before.pathname !== pathname && "navigated",
