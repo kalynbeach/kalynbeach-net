@@ -177,25 +177,26 @@ function Sections({ children }: { children: ReactNode }) {
 
   useScrollToTop(pathname);
 
-  // Tells app/globals.css what this commit changed, for a view transition
-  // that captures the page after it; the browser takes the arriving
-  // element's class for both images. Only a navigation fades section 1 in,
-  // so a mini player or bar that comes or goes leaves the page still. A
-  // stage that arrives while Sound's card shrinks out into a mini player or
-  // bar waits for the card to leave. The stage's Waveform holds its canvas
-  // in its own layout effects, which run before this one.
+  // Tells app/globals.css what this commit changed, on <html>, which the
+  // view transition's pseudo-elements hang from. The browser styles them
+  // after it captures the new page, so a transition this commit starts reads
+  // this commit's value. Only a navigation fades section 1 in, so a mini
+  // player or bar that comes or goes leaves the page still. When Sound's
+  // card shrinks out into a mini player or bar on the way to Home, the mark
+  // and the stage wait for the card together.
   useLayoutEffect(() => {
     const before = shown.current;
     shown.current = { pathname, frame: placement.frame };
-    const main = document.getElementById("site-primary");
-    const stage = main?.querySelector<HTMLCanvasElement>(
-      '[data-slot="waveform-stage"] canvas'
-    );
-    tag(main, before.pathname !== pathname && "navigated");
-    tag(
-      stage,
-      before.frame === "card" && placement.frame !== null && "after-card"
-    );
+    const changes = [
+      before.pathname !== pathname && "navigated",
+      before.frame === "card" &&
+        placement.stage &&
+        placement.frame &&
+        "after-card",
+    ];
+    document.documentElement.dataset.teleport = changes
+      .filter(Boolean)
+      .join(" ");
   });
 
   return (
@@ -434,10 +435,4 @@ function useScrollToTop(pathname: string) {
     traversedTo.current = null;
     if (!traversal) window.scrollTo(0, 0);
   }, [pathname]);
-}
-
-/** Sets the element's view-transition-class, or clears it for false. */
-function tag(element: HTMLElement | null | undefined, name: string | false) {
-  if (name) element?.style.setProperty("view-transition-class", name);
-  else element?.style.removeProperty("view-transition-class");
 }

@@ -174,12 +174,12 @@
  * in at once.
  *
  * The page. Section 1 takes its own name, and its old content goes at once.
- * On a navigation, tagged navigated, its new content fades in once a stage
- * or card leaving it is gone, so nothing that leaves draws over the page
- * that arrives. A stage that arrives as the card leaves for a mini player
- * or bar, tagged after-card, waits for the card too. While a mini player or
- * bar comes or goes, the page keeps still. The shell sets both tags
- * (components/site/shell.tsx).
+ * On a navigation its new content fades in once a stage or card leaving it
+ * is gone, so nothing that leaves draws over the page that arrives. When
+ * the card leaves Sound for a mini player or bar on the way to Home, the
+ * mark and the stage wait for the card, then trade places together. While
+ * a mini player or bar comes or goes, the page keeps still. The shell says
+ * which applies in <html data-teleport> (components/site/shell.tsx).
  */
 :root {
   /*
@@ -218,7 +218,7 @@
   animation: none;
 }
 
-::view-transition-new(page.navigated) {
+:root[data-teleport~="navigated"]::view-transition-new(page) {
   animation: page-in var(--duration-large) var(--ease-teleport)
     var(--teleport-clear) both;
 }
@@ -250,7 +250,8 @@
   animation: teleport-in var(--teleport-in) var(--ease-teleport) both;
 }
 
-::view-transition-new(waveform-stage.after-card):only-child {
+:root[data-teleport~="after-card"]::view-transition-old(waveform):only-child,
+:root[data-teleport~="after-card"]::view-transition-new(waveform-stage):only-child {
   animation-delay: var(--teleport-out);
 }
 
