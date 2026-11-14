@@ -260,8 +260,15 @@
   }
 }
 
-/* The way in reaches full opacity halfway, so the grow shows sharp. */
+/*
+ * The way out starts from full opacity, since a still figure's old image
+ * rests at 0. The way in reaches full opacity halfway, so the grow shows
+ * sharp.
+ */
 @keyframes teleport-out {
+  from {
+    opacity: 1;
+  }
   to {
     opacity: 0;
     scale: 0.5;
