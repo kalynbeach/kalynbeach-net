@@ -104,6 +104,14 @@ describe("site map and page files", () => {
     );
   });
 
+  it("imports a project's whole content file only on its own page", () => {
+    const whole = /["'`][^"'`\n]*content\/software\/[^"'`\n]*\.mdx["'`]/;
+    const importers = globSync("{app,components,content,lib}/**/*.{ts,tsx,mdx}")
+      .concat("mdx-components.tsx")
+      .filter((file) => whole.test(readFileSync(file, "utf8")));
+    expect(importers).toEqual(["app/software/[slug]/page.tsx"]);
+  });
+
   it("redirects old links to real pages", async () => {
     const redirects = (await nextConfig.redirects?.()) ?? [];
     expect(redirects.length).toBeGreaterThan(0);

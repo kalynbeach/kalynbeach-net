@@ -7,6 +7,17 @@ const nextConfig: NextConfig = {
   // instead of downloading them. The attachment default guards SVGs, which
   // can't reach the optimizer here without dangerouslyAllowSVG.
   images: { contentDispositionType: "inline" },
+  turbopack: {
+    // Strips a `?metadata` import of an MDX file to its metadata export.
+    // Turbopack runs every matching rule in order, and @next/mdx adds its
+    // own rule after this one, so it compiles the stripped source.
+    rules: {
+      "*.mdx": {
+        condition: { query: "?metadata" },
+        loaders: ["./tools/mdx/metadata-loader.ts"],
+      },
+    },
+  },
   // lib/site.ts reads this to serve only published pages and drop <Draft>
   // sections. Next inlines it into the server and client bundles.
   env: {
