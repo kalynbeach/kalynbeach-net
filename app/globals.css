@@ -173,9 +173,13 @@
  * where the new frame grows in. A mini player or bar with no partner grows
  * in at once.
  *
- * The page. Section 1 takes its own name. Its old content goes at once, and
- * its new content fades in once a stage or card leaving it is gone, so
- * nothing that leaves draws over the page that arrives.
+ * The page. Section 1 takes its own name, and its old content goes at once.
+ * On a navigation, tagged navigated, its new content fades in once a stage
+ * or card leaving it is gone, so nothing that leaves draws over the page
+ * that arrives. A stage that arrives as the card leaves for a mini player
+ * or bar, tagged after-card, waits for the card too. While a mini player or
+ * bar comes or goes, the page keeps still. The shell sets both tags
+ * (components/site/shell.tsx).
  */
 [data-slot="waveform-stage"] canvas {
   /* !important beats the inline name kevelle/waveform sets. */
@@ -193,6 +197,7 @@
 
 ::view-transition-new(root),
 ::view-transition-group(page),
+::view-transition-new(page),
 ::view-transition-group(waveform),
 ::view-transition-group(waveform-stage),
 ::view-transition-new(waveform),
@@ -200,7 +205,7 @@
   animation: none;
 }
 
-::view-transition-new(page) {
+::view-transition-new(page.navigated) {
   animation: page-in var(--duration-large) var(--ease-out) var(--duration-small)
     both;
 }
@@ -230,6 +235,10 @@
 ::view-transition-new(waveform-stage):only-child,
 ::view-transition-new(wave-player):only-child {
   animation: teleport-in var(--duration-large) var(--ease-out) both;
+}
+
+::view-transition-new(waveform-stage.after-card):only-child {
+  animation-delay: var(--duration-small);
 }
 
 @keyframes page-in {

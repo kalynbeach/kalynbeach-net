@@ -173,8 +173,30 @@ function Sections({ children }: { children: ReactNode }) {
     (controlsShown && controls.state.panel.kind === "open") ||
     placement.frame === "mini" ||
     sound;
+  const shown = useRef({ pathname, frame: placement.frame });
 
   useScrollToTop(pathname);
+
+  // Tells app/globals.css what this commit changed, for a view transition
+  // that captures the page after it; the browser takes the arriving
+  // element's class for both images. Only a navigation fades section 1 in,
+  // so a mini player or bar that comes or goes leaves the page still. A
+  // stage that arrives while Sound's card shrinks out into a mini player or
+  // bar waits for the card to leave. The stage's Waveform holds its canvas
+  // in its own layout effects, which run before this one.
+  useLayoutEffect(() => {
+    const before = shown.current;
+    shown.current = { pathname, frame: placement.frame };
+    const main = document.getElementById("site-primary");
+    const stage = main?.querySelector<HTMLCanvasElement>(
+      '[data-slot="waveform-stage"] canvas'
+    );
+    tag(main, before.pathname !== pathname && "navigated");
+    tag(
+      stage,
+      before.frame === "card" && placement.frame !== null && "after-card"
+    );
+  });
 
   return (
     // .root (Kevelle) isolates the page, so Base UI portals stack predictably.
@@ -412,4 +434,10 @@ function useScrollToTop(pathname: string) {
     traversedTo.current = null;
     if (!traversal) window.scrollTo(0, 0);
   }, [pathname]);
+}
+
+/** Sets the element's view-transition-class, or clears it for false. */
+function tag(element: HTMLElement | null | undefined, name: string | false) {
+  if (name) element?.style.setProperty("view-transition-class", name);
+  else element?.style.removeProperty("view-transition-class");
 }
