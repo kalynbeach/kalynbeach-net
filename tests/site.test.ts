@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Draft } from "@/components/site/draft";
 import { Image } from "@/components/site/image";
 import nextConfig from "@/next.config";
+import { config as proxyConfig } from "@/proxy";
 
 // Vitest has no MDX transform. The route files only pass these through.
 vi.mock("@/content/about.mdx", () => ({
@@ -23,6 +24,7 @@ vi.mock("@/content/sound.mdx", () => ({
 }));
 import {
   commandItems,
+  gate,
   pageMetadata,
   servedProjectSlugs,
   resolve,
@@ -52,6 +54,10 @@ const served = (route: string) => {
 
 const rows = (path: string) =>
   resolve(path).nav.flatMap((row) => [row, ...row.rows]);
+
+const pass = { kind: "pass" };
+const notFound = { kind: "not-found" };
+const redirect = (to: string) => ({ kind: "redirect", to });
 
 describe("site map and page files", () => {
   it("has an entry for every route a page file serves and a page file for every entry", () => {
@@ -207,6 +213,57 @@ describe("site map", () => {
   });
 });
 
+describe("gate", () => {
+  it.each([
+    ["/dashboard", false, redirect("/login")],
+    ["/lab", false, redirect("/login")],
+    ["/dashboard/", false, redirect("/login")],
+    ["/lab/anything", false, redirect("/login")],
+    ["/dashboard", true, pass],
+    ["/lab/anything", true, pass],
+    ["/dashboard-old", false, pass],
+    ["/login", false, pass],
+    ["/login", true, redirect("/dashboard")],
+    ["/auth/unauthorized", true, pass],
+    ["/software", false, pass],
+    ["/software/agents", false, pass],
+    ["/software/no-such", false, notFound],
+    ["/software/no-such", true, notFound],
+    ["/software/agents/extra", false, notFound],
+    ["/software/%61gents", false, pass],
+    ["/software/%E0%A4%A", false, pass],
+    ["/about", false, pass],
+    ["/", true, pass],
+    // No route matches these, so Next answers them itself.
+    ["/no-such-page", false, pass],
+    ["/robots.txt", false, pass],
+    ["/api/anything", false, pass],
+  ])("gates %s (signed in: %s)", (path, signedIn, decision) => {
+    expect(gate(path, signedIn)).toEqual(decision);
+  });
+
+  it("sends signed-out visitors to sign-in from every page under app/(admin) and no other", () => {
+    for (const { file, route } of pages) {
+      expect(gate(route, false).kind === "redirect", file).toBe(
+        file.startsWith("app/(admin)/")
+      );
+    }
+  });
+
+  it("404s an unlisted param of every dynamic route, even one that looks like a file", () => {
+    for (const { route } of pages.filter(({ route }) => route.includes("["))) {
+      const parent = route.slice(0, route.indexOf("/["));
+      expect(gate(`${parent}/__no_such__`, false), route).toEqual(notFound);
+      expect(proxyConfig.matcher, route).toContain(`${parent}/:path*`);
+    }
+  });
+
+  it("leaves proxy's 404 rewrite target unmatched by any page", () => {
+    // A root-level dynamic segment would match /_unserved.
+    expect(pages.filter(({ route }) => /^\/\[/.test(route))).toEqual([]);
+  });
+});
+
 describe("Draft", () => {
   it("shows a draft section between its markers on previews and dev", () => {
     const html = renderToStaticMarkup(
@@ -326,6 +383,23 @@ describe("production", () => {
       "Dashboard",
       "Lab",
     ]);
+  });
+
+  it.each([
+    "/software",
+    "/software/agents",
+    "/software/kkb-audio",
+    "/software/no-such",
+  ])("404s unpublished %s before it renders", (path) => {
+    expect(site.gate(path, false)).toEqual(notFound);
+  });
+
+  it.each([
+    ["/about", false, pass],
+    ["/dashboard", false, redirect("/login")],
+    ["/login", true, redirect("/dashboard")],
+  ])("still gates published %s (signed in: %s)", (path, signedIn, decision) => {
+    expect(site.gate(path, signedIn)).toEqual(decision);
   });
 
   it("builds no project pages and no routes for unpublished pages", () => {

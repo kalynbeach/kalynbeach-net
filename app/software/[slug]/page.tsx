@@ -4,7 +4,11 @@ import { projectSlugs, servedProjectSlugs } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
-/** One page per project in the site map, prerendered. Any other slug, or an unserved project, is a 404. */
+/**
+ * One page per project in the site map, prerendered. proxy.ts answers any
+ * other slug, or an unserved project, with a 404 per request. The check in
+ * content() keeps an unserved project's content out of the build.
+ */
 export function generateStaticParams() {
   return projectSlugs.map((slug) => ({ slug }));
 }

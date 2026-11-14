@@ -13,13 +13,16 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { api } from "@/convex/_generated/api";
 import { getConvexToken } from "@/lib/convex/clerk-token";
+import { signIn } from "@/lib/site";
 
 export async function requireConvexAdmin(): Promise<void> {
   const { userId, sessionClaims, getToken } = await auth();
   const token = await getConvexToken({ userId, sessionClaims, getToken });
 
+  // proxy.ts has already sent signed-out requests away. This holds if it is
+  // bypassed or its session check disagrees with this one.
   if (!token) {
-    redirect("/login");
+    redirect(signIn.route);
   }
 
   let access = await fetchMutation(api.users.ensureCurrent, {}, { token });
