@@ -95,15 +95,27 @@ const nav = [
 
 type Labeled = { label: string; route: `/${string}` };
 
-/** No nav row, listed in Cmd+K, laid out wide. The `(admin)` layout gates them. */
+/**
+ * No nav row, listed in Cmd+K, laid out wide. gate() sends signed-out
+ * visitors away, and the `(admin)` layout checks the admin role.
+ */
 const admin = [
   { label: "Dashboard", route: "/dashboard" },
   { label: "Lab", route: "/lab" },
 ] as const satisfies readonly Labeled[];
 
+/** The sign-in page, and the admin page that signing in lands on. */
+export const signIn = {
+  route: "/login",
+  lands: "/dashboard",
+} as const satisfies {
+  route: `/${string}`;
+  lands: (typeof admin)[number]["route"];
+};
+
 /** No nav row and no Cmd+K item. The shell draws their header. */
 const system = [
-  { label: "Sign in", route: "/login" },
+  { label: "Sign in", route: signIn.route },
   { label: "Unauthorized", route: "/auth/unauthorized" },
 ] as const satisfies readonly Labeled[];
 
@@ -218,12 +230,15 @@ for (const page of system) {
   });
 }
 
+const normalize = (pathname: string) =>
+  pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+
 /**
  * The pathname is the one external input. Unknown paths resolve to the
  * not-found entry, so callers never handle a missing entry.
  */
 export function resolve(pathname: string): SiteEntry {
-  const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  const path = normalize(pathname);
   const hit = index.get(path);
   return { ...(hit?.layout ?? notFound), nav: navFor(hit ? path : null) };
 }
@@ -233,8 +248,76 @@ export function served(route: Route): boolean {
   return index.has(route);
 }
 
-/** Software project slugs of the served project pages: the static params of app/software/[slug]. */
-export const projects = software
+/**
+ * What proxy.ts does with one request, decided before any page renders so
+ * that the status sticks.
+ *
+ * - pass: render the route. Its prerender or render sets the status.
+ * - redirect: a 307 to `to`.
+ * - not-found: the site's not-found page with status 404.
+ *
+ * No variant carries a role. Roles live in Convex, so a signed-in guest
+ * passes and the admin layout redirects them in the stream.
+ */
+export type Gate =
+  | { kind: "pass" }
+  | { kind: "redirect"; to: typeof signIn.route | typeof signIn.lands }
+  | { kind: "not-found" };
+
+/** Every route the site map lists, served or not. */
+const listed: ReadonlySet<string> = new Set([
+  ...nav.flatMap((node) => [
+    node.route,
+    ...("pages" in node ? node.pages.map((page) => page.route) : []),
+  ]),
+  ...admin.map((page) => page.route),
+  ...system.map((page) => page.route),
+]);
+
+/**
+ * Parents whose children are exactly their `pages`, such as /software. The
+ * site map owns every path under one, so an unserved path there is a 404,
+ * whatever the route files would do with an unlisted param.
+ */
+const families = nav.flatMap((node) => ("pages" in node ? [node.route] : []));
+
+/**
+ * The request gate. `signedIn` comes from the session cookie alone, so the
+ * check is optimistic, and the admin layout and Convex stay the authority.
+ * An admin route's whole subtree is gated, as the (admin) layout covers it.
+ * A path the site map doesn't own passes, so Next handles route handlers,
+ * metadata files and unknown paths itself.
+ */
+export function gate(pathname: string, signedIn: boolean): Gate {
+  let path: string;
+  try {
+    // Next decodes a param before the page sees it, so /software/%61gents
+    // is the agents page. decodeURI keeps an encoded slash encoded.
+    path = normalize(decodeURI(pathname));
+  } catch {
+    return { kind: "pass" }; // Malformed escapes: Next answers them itself.
+  }
+  if (
+    admin.some(({ route }) => path === route || path.startsWith(`${route}/`))
+  ) {
+    return signedIn ? { kind: "pass" } : { kind: "redirect", to: signIn.route };
+  }
+  if (path === signIn.route) {
+    return signedIn ? { kind: "redirect", to: signIn.lands } : { kind: "pass" };
+  }
+  const owned =
+    listed.has(path) || families.some((route) => path.startsWith(`${route}/`));
+  return owned && !index.has(path) ? { kind: "not-found" } : { kind: "pass" };
+}
+
+/**
+ * Every software project's slug, served or not: the static params of
+ * app/software/[slug]. Cache Components needs at least one, and an unserved
+ * project prerenders as the 404.
+ */
+export const projectSlugs = software.map(({ slug }) => slug);
+
+export const servedProjectSlugs = software
   .filter(({ slug }) => served(`/software/${slug}`))
   .map(({ slug }) => slug);
 

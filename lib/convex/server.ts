@@ -13,13 +13,16 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { api } from "@/convex/_generated/api";
 import { getConvexToken } from "@/lib/convex/clerk-token";
+import { signIn } from "@/lib/site";
 
 export async function requireConvexAdmin(): Promise<void> {
   const { userId, sessionClaims, getToken } = await auth();
   const token = await getConvexToken({ userId, sessionClaims, getToken });
 
+  // proxy.ts has already sent signed-out requests away. This holds if it is
+  // bypassed or its session check disagrees with this one.
   if (!token) {
-    redirect("/login");
+    redirect(signIn.route);
   }
 
   let access = await fetchMutation(api.users.ensureCurrent, {}, { token });
@@ -38,16 +41,19 @@ export async function requireConvexAdmin(): Promise<void> {
 const PUBLIC_QUERY_DEADLINE_MS = 1_000;
 
 /**
- * A public query's value for this request, for data the first paint needs.
+ * A public query's value for this request. Call it under a <Suspense>, as
+ * the root layout's LiveSeed does.
  * Returns `fallback`, and logs why, when Convex fails or hasn't answered
- * within PUBLIC_QUERY_DEADLINE_MS, so an outage never fails a page. The
- * deadline aborts the request, so a hanging Convex holds no socket.
+ * within PUBLIC_QUERY_DEADLINE_MS, so an outage never fails or stalls a
+ * page. The deadline aborts the request, so a hanging Convex holds no
+ * socket.
  *
- * Every route that calls it renders per request, never at build, on
- * purpose. The Vercel build runs `next build` before Convex pushes the
- * deploy's functions, so a build-time read would see the previous deploy's
- * functions, or none on a new preview. connection() states that intent and
- * spares the build a doomed fetch.
+ * The read runs per request, never at build, on purpose. The Vercel build
+ * runs `next build` before Convex pushes the deploy's functions, so a
+ * build-time read would see the previous deploy's functions, or none on a
+ * new preview. connection() states that intent and spares the build a
+ * doomed fetch. With Cache Components it ends the prerender at the nearest
+ * <Suspense>, so the rest of the page is still built ahead.
  */
 export async function fetchPublicQuery<
   Query extends FunctionReference<"query", "public">,
