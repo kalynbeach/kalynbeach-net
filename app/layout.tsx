@@ -3,11 +3,13 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
+import { Suspense } from "react";
 import { preload } from "react-dom";
 import { api } from "@/convex/_generated/api";
 import ConvexClerkProvider from "@/components/providers/convex-clerk-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteShell } from "@/components/site/shell";
+import { Seed } from "@/components/site/seed";
 import { fetchPublicQuery } from "@/lib/convex/server";
 import "./globals.css";
 
@@ -30,7 +32,7 @@ export const metadata: Metadata = {
 /** cover lets the mobile top bar, sheet and player bar use the safe-area insets. */
 export const viewport: Viewport = { viewportFit: "cover" };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -39,19 +41,19 @@ export default async function RootLayout({
     preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   }
 
-  // Both reads make every route render per request; see fetchPublicQuery.
-  const [tracks, liveLook] = await Promise.all([
-    fetchPublicQuery(api.tracks.list, {}, []),
-    fetchPublicQuery(api.looks.live, {}, null),
-  ]);
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClerkProvider>
             <ThemeProvider>
-              <SiteShell tracks={tracks} liveLook={liveLook}>
+              <SiteShell
+                seed={
+                  <Suspense fallback={null}>
+                    <LiveSeed />
+                  </Suspense>
+                }
+              >
                 {children}
               </SiteShell>
             </ThemeProvider>
@@ -62,4 +64,19 @@ export default async function RootLayout({
       </body>
     </html>
   );
+}
+
+/**
+ * The two Convex reads the shell's player and waveform start from. The
+ * layout renders it in its own <Suspense>, so every page's HTML goes out
+ * without waiting on Convex and the reads stream in behind it. They render
+ * per request; see fetchPublicQuery.
+ */
+async function LiveSeed() {
+  const [tracks, liveLook] = await Promise.all([
+    fetchPublicQuery(api.tracks.list, {}, []),
+    fetchPublicQuery(api.looks.live, {}, null),
+  ]);
+
+  return <Seed tracks={tracks} liveLook={liveLook} />;
 }

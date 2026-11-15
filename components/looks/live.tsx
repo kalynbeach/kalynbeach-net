@@ -3,19 +3,14 @@
 /**
  * The site's live look, for the shell's one WaveformProvider.
  *
- *   // app/layout.tsx
- *   const liveLook = await fetchPublicQuery(api.looks.live, {}, null);
- *   <SiteShell tracks={tracks} liveLook={liveLook}>...</SiteShell>
- *
  *   // components/site/shell.tsx
- *   const look = useLiveLook(liveLook);
+ *   const look = useLiveLook(seed?.liveLook);
  *   <WaveformProvider config={look.config} onConfigChange={look.onConfigChange}>
  *
- * First paint draws the server's read, because the engine takes its config
- * once, at mount. After hydration the hook subscribes to looks.live, so an
- * open page follows a new live look without a reload. The subscription's
- * first answer is the same look as a new object, and useSettled keeps the
- * figure's object, so the handoff never resets it.
+ * The hook starts with no live look and `arrived` false. The first answer,
+ * from the layout's read or the looks.live subscription, sets it, and later
+ * answers follow a new live look without a reload. useSettled keeps the
+ * config object while the content holds, so the handoff never resets it.
  *
  * Visitors play with the Home stage's keys. Their edits stay in this hook,
  * tagged with the live look they started from, and a new live look
@@ -26,12 +21,14 @@
  * error as a value, and the hook treats it as no news.
  */
 import { useQueries } from "convex/react";
-import { useState } from "react";
+import { createContext, use, useState } from "react";
+import { Waveform, type WaveformProps } from "@/components/waveform/waveform";
 import { api } from "@/convex/_generated/api";
 import type {
   StoredValue,
   WaveformConfig,
 } from "@/components/waveform/settings";
+import { news } from "@/components/site/seed";
 import { settle, toKeyedConfig, type KeyedConfig } from "./look";
 
 /**
@@ -48,25 +45,30 @@ export type VisitorPlay = {
 /** Module scope, so the request never changes and the subscription never restarts. */
 const LIVE = { live: { query: api.looks.live, args: {} } };
 
+/** The provider's config until the first live look arrives. */
+const BEFORE = toKeyedConfig(null);
+
 /**
  * Props for the shell's WaveformProvider. `config` keeps its object until
- * the shown look changes. `initial` is the root layout's read, used once, at
- * mount; null means no live look.
+ * the shown look changes. `arrived` turns true with the first answer and
+ * stays true; until then `config` is BEFORE's. `seed` is the root layout's
+ * read, undefined until it streams in, and null when no look is live or
+ * Convex failed.
  */
-export function useLiveLook(initial: StoredValue): {
+export function useLiveLook(seed: StoredValue | undefined): {
   readonly config: WaveformConfig;
   readonly onConfigChange: (config: WaveformConfig) => void;
+  readonly arrived: boolean;
 } {
   const result = useQueries(LIVE).live;
-  const live = useSettled(
-    result instanceof Error ? undefined : result,
-    initial
-  );
+  const live = useSettled(result instanceof Error ? undefined : result, seed);
+  const shown = live ?? BEFORE;
   const [play, setPlay] = useState<VisitorPlay | null>(null);
 
   return {
-    config: shownConfig(live, play),
-    onConfigChange: (config) => setPlay({ live, config }),
+    config: shownConfig(shown, play),
+    onConfigChange: (config) => setPlay({ live: shown, config }),
+    arrived: live !== null,
   };
 }
 
@@ -84,23 +86,41 @@ export function shownConfig(
 
 /**
  * A stored value whose config object changes only when its content does.
+ * null until the first news.
  *
  * `stored` undefined means no news: a query still subscribing,
  * resubscribing after a reconnect, or failing. The hook keeps what it
- * holds, so it never falls back to an older value. `seed` is read once, at
- * mount, and stands until the first news.
+ * holds, so it never falls back to an older value. `seed` counts only
+ * until the hook holds a look, per news().
  *
  * Adjusts state during render, React's pattern for state derived from a
  * changing input, so the first render with news already returns it.
  */
 function useSettled(
   stored: StoredValue | undefined,
-  seed: StoredValue
-): KeyedConfig {
-  const [held, setHeld] = useState(() => toKeyedConfig(seed));
-  const next = stored === undefined ? held : settle(held, stored);
+  seed: StoredValue | undefined
+): KeyedConfig | null {
+  const [held, setHeld] = useState<KeyedConfig | null>(null);
+  const value = news(stored, seed, held !== null);
+  // Settled against BEFORE, so a first look with BEFORE's content keeps
+  // the provider's config object.
+  const next = value === undefined ? held : settle(held ?? BEFORE, value);
 
   if (next !== held) setHeld(next);
 
   return next;
+}
+
+/** Whether the live look has arrived. The shell provides it around the site's figures. */
+export const LiveLookArrived = createContext(true);
+
+/**
+ * The site's figure, Home's stage or the mark, under the shell's
+ * WaveformProvider. It stays absent until the live look arrives, so a slow
+ * Convex leaves the stage empty instead of drawing another look first.
+ */
+export function LiveFigure(props: WaveformProps) {
+  const arrived = use(LiveLookArrived);
+
+  return <Waveform {...props} present={(props.present ?? true) && arrived} />;
 }

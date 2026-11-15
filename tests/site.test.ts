@@ -1,11 +1,13 @@
 // @vitest-environment node
-import { globSync, readFileSync } from "node:fs";
+import { globSync, readFileSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Draft } from "@/components/site/draft";
+import { Image } from "@/components/site/image";
 import nextConfig from "@/next.config";
+import { config as proxyConfig } from "@/proxy";
 
 // Vitest has no MDX transform. The route files only pass these through.
 vi.mock("@/content/about.mdx", () => ({
@@ -22,8 +24,9 @@ vi.mock("@/content/sound.mdx", () => ({
 }));
 import {
   commandItems,
+  gate,
   pageMetadata,
-  projects,
+  servedProjectSlugs,
   resolve,
   routes,
 } from "@/lib/site";
@@ -44,13 +47,17 @@ const pages = globSync("app/**/page.tsx").map((file) => ({
 
 const served = (route: string) => {
   if (route === "/software/[slug]") {
-    return projects.map((slug) => `/software/${slug}`);
+    return servedProjectSlugs.map((slug) => `/software/${slug}`);
   }
   return [route];
 };
 
 const rows = (path: string) =>
   resolve(path).nav.flatMap((row) => [row, ...row.rows]);
+
+const pass = { kind: "pass" };
+const notFound = { kind: "not-found" };
+const redirect = (to: string) => ({ kind: "redirect", to });
 
 describe("site map and page files", () => {
   it("has an entry for every route a page file serves and a page file for every entry", () => {
@@ -92,15 +99,23 @@ describe("site map and page files", () => {
     const files = globSync("content/software/*.mdx").map((file) =>
       basename(file, ".mdx")
     );
-    expect(files.toSorted()).toEqual(projects.toSorted());
+    expect(files.toSorted()).toEqual(servedProjectSlugs.toSorted());
   });
 
   it("gives every project exactly one section on the Software index", () => {
     const index = readFileSync("content/software.mdx", "utf8");
     const sections = [...index.matchAll(/<Project\s+slug=["']([^"']+)["']/g)];
     expect(sections.map(([, slug]) => slug).toSorted()).toEqual(
-      projects.toSorted()
+      servedProjectSlugs.toSorted()
     );
+  });
+
+  it("imports a project's whole content file only on its own page", () => {
+    const whole = /["'`][^"'`\n]*content\/software\/[^"'`\n]*\.mdx["'`]/;
+    const importers = globSync("{app,components,content,lib}/**/*.{ts,tsx,mdx}")
+      .concat("mdx-components.tsx")
+      .filter((file) => whole.test(readFileSync(file, "utf8")));
+    expect(importers).toEqual(["app/software/[slug]/page.tsx"]);
   });
 
   it("redirects old links to real pages", async () => {
@@ -198,6 +213,57 @@ describe("site map", () => {
   });
 });
 
+describe("gate", () => {
+  it.each([
+    ["/dashboard", false, redirect("/login")],
+    ["/lab", false, redirect("/login")],
+    ["/dashboard/", false, redirect("/login")],
+    ["/lab/anything", false, redirect("/login")],
+    ["/dashboard", true, pass],
+    ["/lab/anything", true, pass],
+    ["/dashboard-old", false, pass],
+    ["/login", false, pass],
+    ["/login", true, redirect("/dashboard")],
+    ["/auth/unauthorized", true, pass],
+    ["/software", false, pass],
+    ["/software/agents", false, pass],
+    ["/software/no-such", false, notFound],
+    ["/software/no-such", true, notFound],
+    ["/software/agents/extra", false, notFound],
+    ["/software/%61gents", false, pass],
+    ["/software/%E0%A4%A", false, pass],
+    ["/about", false, pass],
+    ["/", true, pass],
+    // No route matches these, so Next answers them itself.
+    ["/no-such-page", false, pass],
+    ["/robots.txt", false, pass],
+    ["/api/anything", false, pass],
+  ])("gates %s (signed in: %s)", (path, signedIn, decision) => {
+    expect(gate(path, signedIn)).toEqual(decision);
+  });
+
+  it("sends signed-out visitors to sign-in from every page under app/(admin) and no other", () => {
+    for (const { file, route } of pages) {
+      expect(gate(route, false).kind === "redirect", file).toBe(
+        file.startsWith("app/(admin)/")
+      );
+    }
+  });
+
+  it("404s an unlisted param of every dynamic route, even one that looks like a file", () => {
+    for (const { route } of pages.filter(({ route }) => route.includes("["))) {
+      const parent = route.slice(0, route.indexOf("/["));
+      expect(gate(`${parent}/__no_such__`, false), route).toEqual(notFound);
+      expect(proxyConfig.matcher, route).toContain(`${parent}/:path*`);
+    }
+  });
+
+  it("leaves proxy's 404 rewrite target unmatched by any page", () => {
+    // A root-level dynamic segment would match /_unserved.
+    expect(pages.filter(({ route }) => /^\/\[/.test(route))).toEqual([]);
+  });
+});
+
 describe("Draft", () => {
   it("shows a draft section between its markers on previews and dev", () => {
     const html = renderToStaticMarkup(
@@ -206,6 +272,62 @@ describe("Draft", () => {
     expect(html).toContain("Draft. Hidden on production.");
     expect(html).toContain("<p>Draft copy</p>");
     expect(html).toContain('data-slot="draft-end"');
+  });
+});
+
+describe("Image", () => {
+  // Vitest has no image loader, so the photo is the object a static import gives.
+  const src = {
+    src: "/photo.jpg",
+    width: 2000,
+    height: 1326,
+    blurDataURL: "data:image/jpeg;base64,AA",
+  };
+  const render = (hero?: boolean) =>
+    renderToStaticMarkup(createElement(Image, { src, alt: "Photo", hero }));
+  const img = (html: string) => html.match(/<img [^>]*>/)?.[0] ?? "";
+
+  it("loads a hero eagerly at high priority", () => {
+    const tag = img(render(true));
+    expect(tag).toContain('loading="eager"');
+    expect(tag).toMatch(/fetchpriority="high"/i);
+  });
+
+  it("loads any other image lazily at default priority", () => {
+    const html = render();
+    expect(img(html)).toContain('loading="lazy"');
+    expect(html).not.toMatch(/fetchpriority/i);
+  });
+
+  it("reserves the photo's own box on a slotted img", () => {
+    const tag = img(render());
+    expect(tag).toContain('data-slot="image"');
+    expect(tag).toContain('width="2000"');
+    expect(tag).toContain('height="1326"');
+  });
+
+  it("serves the imported file as-is", () => {
+    const tag = img(render());
+    expect(tag).toContain('src="/photo.jpg"');
+    expect(tag).not.toMatch(/srcset=/i);
+    expect(tag).not.toMatch(/sizes=/i);
+  });
+
+  it("renders a photo without a blur preview", () => {
+    // A static GIF or SVG import has no blurDataURL.
+    const gif = { src: "/loop.gif", width: 800, height: 600 };
+    const html = renderToStaticMarkup(
+      createElement(Image, { src: gif, alt: "Loop" })
+    );
+    expect(img(html)).toContain('src="/loop.gif"');
+  });
+
+  it("keeps every file in content/images/ at 10 MB or less", () => {
+    // Image serves files as-is, so every visitor downloads the whole file.
+    const oversize = globSync("content/images/**/*")
+      .map((file) => ({ file, bytes: statSync(file).size }))
+      .filter(({ bytes }) => bytes > 10_000_000);
+    expect(oversize).toEqual([]);
   });
 });
 
@@ -263,8 +385,25 @@ describe("production", () => {
     ]);
   });
 
+  it.each([
+    "/software",
+    "/software/agents",
+    "/software/kkb-audio",
+    "/software/no-such",
+  ])("404s unpublished %s before it renders", (path) => {
+    expect(site.gate(path, false)).toEqual(notFound);
+  });
+
+  it.each([
+    ["/about", false, pass],
+    ["/dashboard", false, redirect("/login")],
+    ["/login", true, redirect("/dashboard")],
+  ])("still gates published %s (signed in: %s)", (path, signedIn, decision) => {
+    expect(site.gate(path, signedIn)).toEqual(decision);
+  });
+
   it("builds no project pages and no routes for unpublished pages", () => {
-    expect(site.projects).toEqual([]);
+    expect(site.servedProjectSlugs).toEqual([]);
     expect(site.routes).toEqual([
       "/",
       "/about",
@@ -302,8 +441,15 @@ describe("production", () => {
 
   it("404s every unpublished project slug", async () => {
     const route = await import("@/app/software/[slug]/page");
-    expect(route.dynamicParams).toBe(false);
-    expect(route.generateStaticParams()).toEqual([]);
+    expect(route.generateStaticParams()).toEqual([
+      { slug: "agents" },
+      { slug: "kkb-audio" },
+    ]);
+    for (const slug of ["agents", "kkb-audio", "no-such-project"]) {
+      await expect(
+        route.default({ params: Promise.resolve({ slug }) })
+      ).rejects.toMatchObject({ digest: "NEXT_HTTP_ERROR_FALLBACK;404" });
+    }
   });
 
   it("drops draft sections", () => {
