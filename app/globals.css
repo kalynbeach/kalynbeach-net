@@ -153,23 +153,165 @@
 }
 
 /*
- * kevelle/waveform names its live canvas waveform (or lends the name to the
- * mark); kevelle/wave-player names the player's frame wave-player. The root
- * skips its old image and runs no animation, so the new page shows at once,
- * as a navigation without a transition does. Only the waveform and the
- * player's frame move.
+ * kevelle/waveform names its live canvas waveform, or lends the name to the
+ * mark; kevelle/wave-player names the player's frame wave-player. The root
+ * skips its old image and runs no animation, so the sidebar and the top bar
+ * change at once, as a navigation without a transition does.
+ *
+ * What moves teleports, never slides: the old copy shrinks out where it was
+ * and the new copy grows in where it lands, each at its own size, so the
+ * 20px mark never scales up over the stage and the card never stretches
+ * into the mini player or the bar.
+ *
+ * The figure. The stage's canvas takes its own name, so it never pairs with
+ * the mark: the stage shrinks out while the mark grows in, or the reverse,
+ * at the same time. A stage or mark that stays put, as when only a player
+ * frame moves, pairs with itself and keeps still.
+ *
+ * The frame. The card, the mini player and the bar pair, so one group holds
+ * the old box while the old frame shrinks out, then jumps to the new box,
+ * where the new frame grows in. A mini player or bar with no partner grows
+ * in at once.
+ *
+ * The page. Section 1 and Sound's Library in the rail take their own
+ * names, and their old content goes at once. On a navigation their new
+ * content fades in once a stage, card or mini player leaving it is gone, so
+ * nothing that leaves draws over the page that arrives. When
+ * the card leaves Sound for a mini player or bar on the way to Home, the
+ * mark and the stage wait for the card, then trade places together. While
+ * a mini player or bar comes or goes, the page keeps still. The shell says
+ * which applies in <html data-teleport> (components/site/shell.tsx).
  */
-::view-transition-old(root) {
+/*
+ * The teleport's timing. The way out is two animations: the shrink, on a
+ * cubic ease-out, and the fade, which holds full opacity while most of the
+ * shrink plays and then runs out ahead of its tail. On one shared curve the
+ * fade won: the stage went dark at about 0.6 scale and read as a cut.
+ * Kevelle's own ease-out is steeper still. The old copy is gone at
+ * --teleport-gone, so a frame's group jumps then and the new frame grows in
+ * from there. Section 1's new content starts at --teleport-clear, as the
+ * leaving stage or card fades out. Frame-stepped captures put About
+ * readable about 250ms after the click.
+ */
+:root {
+  --teleport-shrink: 200ms;
+  --teleport-hold: 70ms;
+  --teleport-fade: 80ms;
+  --teleport-gone: calc(var(--teleport-hold) + var(--teleport-fade));
+  --teleport-in: 260ms;
+  --teleport-clear: 140ms;
+  --teleport-page: 200ms;
+  --ease-teleport: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+[data-slot="waveform-stage"] canvas {
+  /* !important beats the inline name kevelle/waveform sets. */
+  view-transition-name: waveform-stage !important;
+}
+
+[data-slot="site-primary"] {
+  view-transition-name: page;
+}
+
+[data-slot="rail-library"] {
+  view-transition-name: rail-library;
+}
+
+::view-transition-old(root),
+::view-transition-old(page),
+::view-transition-old(rail-library) {
   display: none;
 }
 
-::view-transition-new(root) {
+::view-transition-new(root),
+::view-transition-group(page),
+::view-transition-new(page),
+::view-transition-group(rail-library),
+::view-transition-new(rail-library),
+::view-transition-group(waveform),
+::view-transition-group(waveform-stage),
+::view-transition-new(waveform),
+::view-transition-new(waveform-stage) {
   animation: none;
 }
 
-/* kevelle/waveform's contract: the figure rides above the frames it crosses. */
-::view-transition-group(waveform) {
-  z-index: 1;
+:root[data-teleport~="navigated"]::view-transition-new(page),
+:root[data-teleport~="navigated"]::view-transition-new(rail-library) {
+  animation: page-in var(--teleport-page) var(--ease-teleport)
+    var(--teleport-clear) both;
+}
+
+::view-transition-old(waveform),
+::view-transition-old(waveform-stage) {
+  opacity: 0;
+}
+
+::view-transition-group(wave-player) {
+  animation-duration: var(--teleport-gone);
+  animation-timing-function: steps(1, jump-end);
+}
+
+::view-transition-old(waveform):only-child,
+::view-transition-old(waveform-stage):only-child,
+::view-transition-old(wave-player) {
+  animation:
+    teleport-shrink var(--teleport-shrink) var(--ease-teleport) both,
+    teleport-fade var(--teleport-fade) linear var(--teleport-hold) both;
+}
+
+::view-transition-new(wave-player) {
+  animation: teleport-in var(--teleport-in) var(--ease-teleport)
+    var(--teleport-gone) both;
+}
+
+::view-transition-new(waveform):only-child,
+::view-transition-new(waveform-stage):only-child,
+::view-transition-new(wave-player):only-child {
+  animation: teleport-in var(--teleport-in) var(--ease-teleport) both;
+}
+
+:root[data-teleport~="after-card"]::view-transition-old(waveform):only-child {
+  animation-delay:
+    var(--teleport-gone), calc(var(--teleport-gone) + var(--teleport-hold));
+}
+
+:root[data-teleport~="after-card"]::view-transition-new(waveform-stage):only-child {
+  animation-delay: var(--teleport-gone);
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes teleport-shrink {
+  to {
+    scale: 0.2;
+    filter: blur(4px);
+  }
+}
+
+/* From full opacity, since a still figure's old image rests at 0. */
+@keyframes teleport-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Full opacity at 40%, so the grow shows sharp. */
+@keyframes teleport-in {
+  from {
+    opacity: 0;
+    scale: 0.2;
+    filter: blur(4px);
+  }
+  40% {
+    opacity: 1;
+  }
 }
 
 /* Kevelle's reduced-motion rule matches *, ::before and ::after, not these pseudo-elements. */
@@ -423,7 +565,7 @@
  *
  *   ghost in            opacity, scale 0.9, blur 4px   280ms Kevelle ease-out
  *   ghost out           the same, after a 600ms linger 160ms Kevelle ease-out
- *   ghost press         scale 0.97 on :active          120ms ease-out
+ *   ghost press         scale 0.97 on :active          120ms Kevelle ease-out
  *   controls in / out   the row's reveal, opacity,     220 / 160ms
  *                       translateY -4px
  *   the mini above      stays put; the row opens under it
@@ -442,7 +584,7 @@
     transition-duration:
       var(--duration-small), var(--duration-small), var(--duration-small), 120ms;
     transition-timing-function:
-      var(--ease-out), var(--ease-out), var(--ease-out), ease-out;
+      var(--ease-out), var(--ease-out), var(--ease-out), var(--ease-out);
 
     &[data-shown] {
       opacity: 1;

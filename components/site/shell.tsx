@@ -39,7 +39,6 @@ import {
   ViewTransition,
   useDeferredValue,
   useEffect,
-  useEffectEvent,
   useLayoutEffect,
   useRef,
   useMemo,
@@ -205,14 +204,36 @@ function Sections({
     (controlsShown && controls.state.panel.kind === "open") ||
     placement.frame === "mini" ||
     sound;
-  // A landmark only while it holds something, so screen readers never land
-  // in an empty one. The empty column keeps its box. On Home's desktop the
-  // element stays an aside, role none while empty, so opening the controls
-  // doesn't remount the rail and cut their entrance.
-  const Rail = railHolds || controlsShown ? "aside" : "div";
-  const [miniShown, setMiniShown] = useState(false);
+  const shown = useRef({ pathname, frame: placement.frame });
 
   useScrollToTop(pathname);
+
+  // Tells app/globals.css what this commit changed, on <html>, which the
+  // view transition's pseudo-elements hang from. The browser styles them
+  // after it captures the new page, so a transition this commit starts reads
+  // this commit's value. Only a navigation fades section 1 in, so a mini
+  // player or bar that comes or goes leaves the page still. When Sound's
+  // card shrinks out into a mini player or bar on the way to Home, the mark
+  // and the stage wait for the card together. Only a commit that moves the
+  // page or the frame starts a transition, so only such a commit rewrites
+  // the value: the selectors match live, and a re-render mid-transition, as
+  // playback brings, would otherwise drop the running animations.
+  useLayoutEffect(() => {
+    const before = shown.current;
+    if (before.pathname === pathname && before.frame === placement.frame)
+      return;
+    shown.current = { pathname, frame: placement.frame };
+    const changes = [
+      before.pathname !== pathname && "navigated",
+      before.frame === "card" &&
+        placement.stage &&
+        placement.frame &&
+        "after-card",
+    ];
+    document.documentElement.dataset.teleport = changes
+      .filter(Boolean)
+      .join(" ");
+  });
 
   return (
     // .root (Kevelle) isolates the page, so Base UI portals stack predictably.
@@ -229,11 +250,18 @@ function Sections({
       {/*
        * React starts a browser view transition for a navigation only when
        * its commit places a ViewTransition, whatever its classes; a canvas's
-       * CSS name never starts one. Keyed by the pathname, this one is placed
-       * on every route change, so the waveform morphs even where no player
-       * frame comes or goes. It wraps nothing, so it animates nothing itself.
+       * CSS name never starts one. Keyed by whether Home's stage shows, this
+       * one is placed only when the figure moves between the stage and the
+       * mark, so a page to page navigation runs no transition unless a
+       * player frame comes or goes. It wraps nothing, so it animates nothing
+       * itself.
        */}
-      {!reducedMotion && <ViewTransition key={pathname} default="none" />}
+      {!reducedMotion && (
+        <ViewTransition
+          key={placement.stage ? "stage" : "page"}
+          default="none"
+        />
+      )}
       <div
         data-slot="site-sections"
         className={cn(
@@ -260,6 +288,7 @@ function Sections({
             <NavTree rows={entry.nav} />
           </nav>
         </div>
+        {/* app/globals.css names this section and the stage's canvas for view transitions by their data-slots. */}
         <main
           id="site-primary"
           data-slot="site-primary"
@@ -322,24 +351,32 @@ function Sections({
             </div>
           )}
         </main>
-        {entry.kind !== "wide" && (
+        {
           // Items stack 40 apart from the top line down, and the rail stays
           // within the frame. It starts 8 above the top line, padded back
           // down, so a labelled item's header, which rises 8 to put its
           // label's caps on the line, isn't clipped. The mini player goes
-          // first, and the waveform controls open under it.
-          <Rail
+          // first, and the waveform controls open under it. A landmark only
+          // while it holds something, so screen readers never land in an
+          // empty one; the empty column keeps its box. It stays an aside,
+          // role none while empty, so nothing above the mini player's
+          // ViewTransition mounts with it and its fade in and out runs. A
+          // wide page has no column for it and no player, so it stays
+          // mounted there too, hidden, and leaving one for a page while
+          // playback is active grows the mini player in.
+          <aside
             data-slot="site-rail"
-            role={Rail === "aside" && !railHolds ? "none" : undefined}
+            role={railHolds ? undefined : "none"}
             aria-label={railHolds ? "Player and controls" : undefined}
-            className="max-desktop:hidden desktop:top-[calc(var(--spacing-top)-0.5rem)] desktop:max-h-[calc(var(--spacing-frame)+0.5rem)] desktop:sticky desktop:-mt-2 desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto desktop:pt-2"
+            className={
+              entry.kind === "wide"
+                ? "hidden"
+                : "max-desktop:hidden desktop:top-[calc(var(--spacing-top)-0.5rem)] desktop:max-h-[calc(var(--spacing-frame)+0.5rem)] desktop:sticky desktop:-mt-2 desktop:flex desktop:flex-col desktop:gap-10 desktop:overflow-y-auto desktop:pt-2"
+            }
             {...(controlsShown ? pointerZone(controls, "rail") : {})}
           >
             {placement.frame === "mini" && (
-              <RailPlayer
-                first={!miniShown}
-                onShown={() => setMiniShown(true)}
-              />
+              <WavePlayerMini expand={<Link href="/sound" />} />
             )}
             {controlsShown && (
               <WaveformControls
@@ -358,8 +395,8 @@ function Sections({
                 {playerReady ? <WavePlayerTracks /> : <LibrarySkeleton />}
               </div>
             )}
-          </Rail>
-        )}
+          </aside>
+        }
         {placement.frame === "bar" && (
           // Sticky and last in the column: it rests on the window's bottom
           // edge and takes its own height at the end of the page, so nothing
@@ -368,44 +405,6 @@ function Sections({
         )}
       </div>
       <CommandMenu />
-    </div>
-  );
-}
-
-/**
- * The mini player in the rail. Its first appearance in a visit fades it in,
- * rising 4px; later ones arrive with the block's own fade or morph alone. A
- * Web Animation, since Kevelle's reduced-motion rule cuts every CSS animation
- * short, and under reduced motion the fade keeps only the opacity. During a
- * view transition the browser draws the frame's own morph over the page, so
- * this fade shows only where no transition runs, as under reduced motion.
- */
-function RailPlayer({
-  first,
-  onShown,
-}: {
-  /** No mini player has appeared yet this visit. Read when it mounts. */
-  first: boolean;
-  onShown: () => void;
-}) {
-  const box = useRef<HTMLDivElement>(null);
-  const enter = useEffectEvent(() => {
-    if (!first) return;
-    onShown();
-    const reduced = window.matchMedia(reducedMotionMedia).matches;
-    box.current?.animate(
-      reduced
-        ? { opacity: [0, 1] }
-        : { opacity: [0, 1], translate: ["0 4px", "0 0"] },
-      { duration: 200, easing: "cubic-bezier(0.23, 1, 0.32, 1)" }
-    );
-  });
-
-  useLayoutEffect(() => enter(), []);
-
-  return (
-    <div ref={box} data-slot="rail-player">
-      <WavePlayerMini expand={<Link href="/sound" />} />
     </div>
   );
 }
