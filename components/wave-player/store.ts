@@ -39,7 +39,7 @@ import {
 } from "./playlist";
 
 /** The strip's gain at level 1. Mastered music peaks near 1, and 0.5 keeps it in the master soft clip's linear range. */
-export const PLAYER_CEILING = 0.5;
+const PLAYER_CEILING = 0.5;
 
 /** A metadata probe that hears nothing for this long counts as failed, so it can't hold up the probes behind it. */
 export const PROBE_TIMEOUT_MS = 10_000;

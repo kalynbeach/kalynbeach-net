@@ -15,14 +15,17 @@ export type MountMotion = "full" | "reduced" | "unknown";
 type Motion = Required<Pick<ViewTransitionProps, "share" | "enter" | "exit">>;
 
 /**
- * share: the browser's morph from the frame that leaves to the frame that
- * arrives, in one transition.
+ * share: the frame that leaves and the frame that arrives pair under
+ * FRAME_NAME in one view transition. The site's CSS picks the animation,
+ * and without it the browser runs its default morph.
  *
  * The card has no enter or exit of its own. Without a partner it arrives and
  * leaves with its page, as the page's other content does.
  *
- * The mini player and the bar fade in and out. A host mounts them by
- * useWavePlayer().active, so they come and go while the page stays.
+ * The mini player and the bar enter and exit on their own, under the same
+ * name, with the browser's fade unless the site's CSS picks another. A host
+ * mounts them by useWavePlayer().active, so they come and go while the page
+ * stays.
  */
 const MOTION = {
   card: { share: "auto", enter: "none", exit: "none" },
@@ -63,8 +66,8 @@ export function frameWraps(morph: boolean, motion: MountMotion): boolean {
  *
  * `default: "none"` turns off "update", so the frame never crossfades for its
  * own content changes or an unrelated transition, and every trigger it uses
- * is named explicitly. A "none" default with no `share` would silently stop
- * the morph.
+ * is named explicitly. A "none" default with no `share` would silently
+ * drop the pair.
  */
 export function frameTransition(
   kind: FrameKind,

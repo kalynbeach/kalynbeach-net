@@ -130,7 +130,7 @@ function clip(value: number): number {
  * The sweep's state between animation frames. Each variant holds only what
  * its phase needs, so a sweep without a start frame can't exist.
  */
-export type SweepState =
+type SweepState =
   | {
       readonly phase: "armed";
       /** Next frame to scan. Never earlier than the previous sweep's end plus the pretrigger, so windows stay disjoint. */
@@ -152,7 +152,7 @@ export type SweepState =
   | { readonly phase: "done" };
 
 /** Above this many frames per column, YT emits min and max per column. */
-export const DECIMATE_ABOVE = 2;
+const DECIMATE_ABOVE = 2;
 
 /**
  * sweepFrames = round(timebase × SWEEP_DIVISIONS × sampleRate);

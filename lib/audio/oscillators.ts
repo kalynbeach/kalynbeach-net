@@ -450,18 +450,10 @@ function layEnvelope(
 }
 
 /** Lays `points` on `param`: "step" jumps at `at`, "linear" ramps to arrive at `at`. */
-function lay(
-  param: AudioParam,
-  points: readonly ParamPoint[],
-  range?: { readonly min: number; readonly max: number }
-): void {
+function lay(param: AudioParam, points: readonly ParamPoint[]): void {
   for (const point of points) {
-    const value = range
-      ? clampNumber(point.value, range, range.min)
-      : point.value;
-
-    if (point.curve === "step") param.setValueAtTime(value, point.at);
-    else param.linearRampToValueAtTime(value, point.at);
+    if (point.curve === "step") param.setValueAtTime(point.value, point.at);
+    else param.linearRampToValueAtTime(point.value, point.at);
   }
 }
 

@@ -1,7 +1,7 @@
-export const RECOVERY_BACKOFF_MS = [250, 1000, 4000] as const;
+const RECOVERY_BACKOFF_MS = [250, 1000, 4000] as const;
 
 /** A fourth loss inside this window gives up. */
-export const LOSS_WINDOW_MS = 60_000;
+const LOSS_WINDOW_MS = 60_000;
 
 export type RecoveryPlan =
   | {

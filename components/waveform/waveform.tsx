@@ -50,10 +50,14 @@
  *
  * View transitions. The live canvas carries view-transition-name "waveform",
  * the provider's viewTransitionName, while a slot holds it, so a view
- * transition pairs the canvas with itself and morphs it from its old slot to
- * its new one. While no slot holds it, the newest mark borrows the name, so
- * leaving home for a page without a player morphs the live stage into the
- * mark. The glow carries "waveform-glow". It sits behind every page,
+ * transition pairs the canvas with itself across its old slot and its new
+ * one. While no slot holds it, the newest mark borrows the name, so leaving
+ * home for a page without a player pairs the live stage with the mark. The
+ * site's CSS picks the animation by name. Without it, the browser's default
+ * morph moves the canvas from the old box to the new one. The doc comment
+ * in kevelle/wave-player gives a teleport for this name and the player's
+ * frame. The old image shrinks out at its box, then the new one grows in at
+ * its box. The glow carries "waveform-glow". It sits behind every page,
  * so a site can hold it still while the page changes around it, as in
  * ::view-transition-group(waveform-glow) { animation: none }. Under
  * prefers-reduced-motion none of them carries a name, so nothing of the
@@ -67,10 +71,12 @@
  *     for none, since a repeated name stops every view transition on the
  *     page.
  *   - WavePlayer's frame carries "wave-player".
- *   - The figure rides above the frames it crosses. Add
- *     ::view-transition-group(waveform) { z-index: 1 } to the site's CSS. A
- *     frame that enters with the move, such as a player that appears,
- *     otherwise stacks above the figure and covers it.
+ *   - The figure rides above the frames around it. Add
+ *     ::view-transition-group(waveform) { z-index: 1 } to the site's CSS.
+ *     A frame that enters in the same transition, such as a player that
+ *     appears, otherwise stacks above the figure and covers it: in flight
+ *     under the browser's default morph, and as it grows in at a box
+ *     inside that frame under a teleport.
  *
  * React 19.3's <ViewTransition> starts the browser's view transition for a
  * Transition, such as a Next.js navigation or a startTransition update,
@@ -173,9 +179,12 @@
  * Presence. The live figure arrives when the first slot claims the canvas,
  * and the glow when it mounts. Arriving turns the beam on, so the phosphor
  * builds the figure over its trail, while the canvas fades in over 1.6 s.
- * A slot's `present` applies while it holds the canvas. false departs: the
- * beam turns off, so the afterglow fades, and the canvas fades out over
- * 2.6 s.
+ * A stage that first claims the canvas after a mark under the provider has
+ * drawn starts at full strength instead, so a view transition from the mark
+ * lands on the figure. A first load that lands on the stage still fades in,
+ * even beside a mark that mounts with it. A slot's `present` applies while
+ * it holds the canvas. false departs: the beam turns off, so the afterglow
+ * fades, and the canvas fades out over 2.6 s.
  * Then the form clears its screen and does no GPU work. A change of form,
  * by a hand-off or a slot's `form` prop, moves the figure at once and eases
  * strength, depth, and size over 280 ms, about as long as a view

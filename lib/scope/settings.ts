@@ -60,7 +60,7 @@ export type DisplaySettings = {
   readonly scale: ScaleSettings;
 };
 
-/** XY on L/R with a 1 ms delay, and a 1 ms auto sweep of both channels ready for YT. */
+/** XY on L/R with a 1 ms delay, and a 1 ms/div auto sweep of both channels ready for YT. */
 export const DEFAULT_DISPLAY: DisplaySettings = {
   mode: "xy",
   xy: { axes: "lr", delay: toSeconds(1e-3) },
