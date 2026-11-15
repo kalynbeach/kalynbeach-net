@@ -181,17 +181,25 @@
  * a mini player or bar comes or goes, the page keeps still. The shell says
  * which applies in <html data-teleport> (components/site/shell.tsx).
  */
+/*
+ * The teleport's timing. The way out is two animations: the shrink, on a
+ * cubic ease-out, and the fade, which holds full opacity while most of the
+ * shrink plays and then runs out ahead of its tail. On one shared curve the
+ * fade won: the stage went dark at about 0.6 scale and read as a cut.
+ * Kevelle's own ease-out is steeper still. The old copy is gone at
+ * --teleport-gone, so a frame's group jumps then and the new frame grows in
+ * from there. Section 1's new content starts at --teleport-clear, as the
+ * leaving stage or card fades out. Frame-stepped captures put About
+ * readable about 250ms after the click.
+ */
 :root {
-  /*
-   * Kevelle's ease-out puts most of a move in its first fifth. On the 420px
-   * stage that reads as a jump, then a cut, so the teleport takes a gentler
-   * cubic ease-out. --teleport-clear is when what leaves section 1 has
-   * faded out, so the new page can start. Frame-stepped captures put About
-   * readable about 200ms after the click, with nothing over it.
-   */
-  --teleport-out: var(--duration-small);
-  --teleport-in: 240ms;
-  --teleport-clear: 100ms;
+  --teleport-shrink: 200ms;
+  --teleport-hold: 70ms;
+  --teleport-fade: 80ms;
+  --teleport-gone: calc(var(--teleport-hold) + var(--teleport-fade));
+  --teleport-in: 260ms;
+  --teleport-clear: 140ms;
+  --teleport-page: 200ms;
   --ease-teleport: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
@@ -220,7 +228,7 @@
 }
 
 :root[data-teleport~="navigated"]::view-transition-new(page) {
-  animation: page-in var(--duration-small) var(--ease-teleport)
+  animation: page-in var(--teleport-page) var(--ease-teleport)
     var(--teleport-clear) both;
 }
 
@@ -230,19 +238,21 @@
 }
 
 ::view-transition-group(wave-player) {
-  animation-duration: var(--teleport-out);
+  animation-duration: var(--teleport-gone);
   animation-timing-function: steps(1, jump-end);
 }
 
 ::view-transition-old(waveform):only-child,
 ::view-transition-old(waveform-stage):only-child,
 ::view-transition-old(wave-player) {
-  animation: teleport-out var(--teleport-out) var(--ease-teleport) both;
+  animation:
+    teleport-shrink var(--teleport-shrink) var(--ease-teleport) both,
+    teleport-fade var(--teleport-fade) linear var(--teleport-hold) both;
 }
 
 ::view-transition-new(wave-player) {
   animation: teleport-in var(--teleport-in) var(--ease-teleport)
-    var(--teleport-out) both;
+    var(--teleport-gone) both;
 }
 
 ::view-transition-new(waveform):only-child,
@@ -251,9 +261,13 @@
   animation: teleport-in var(--teleport-in) var(--ease-teleport) both;
 }
 
-:root[data-teleport~="after-card"]::view-transition-old(waveform):only-child,
+:root[data-teleport~="after-card"]::view-transition-old(waveform):only-child {
+  animation-delay:
+    var(--teleport-gone), calc(var(--teleport-gone) + var(--teleport-hold));
+}
+
 :root[data-teleport~="after-card"]::view-transition-new(waveform-stage):only-child {
-  animation-delay: var(--teleport-out);
+  animation-delay: var(--teleport-gone);
 }
 
 @keyframes page-in {
@@ -262,29 +276,31 @@
   }
 }
 
-/*
- * The way out starts from full opacity, since a still figure's old image
- * rests at 0. The way in reaches full opacity halfway, so the grow shows
- * sharp.
- */
-@keyframes teleport-out {
+@keyframes teleport-shrink {
+  to {
+    scale: 0.2;
+    filter: blur(4px);
+  }
+}
+
+/* From full opacity, since a still figure's old image rests at 0. */
+@keyframes teleport-fade {
   from {
     opacity: 1;
   }
   to {
     opacity: 0;
-    scale: 0.5;
-    filter: blur(6px);
   }
 }
 
+/* Full opacity at 40%, so the grow shows sharp. */
 @keyframes teleport-in {
   from {
     opacity: 0;
-    scale: 0.5;
-    filter: blur(6px);
+    scale: 0.2;
+    filter: blur(4px);
   }
-  50% {
+  40% {
     opacity: 1;
   }
 }
