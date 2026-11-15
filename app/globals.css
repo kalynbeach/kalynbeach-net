@@ -173,9 +173,10 @@
  * where the new frame grows in. A mini player or bar with no partner grows
  * in at once.
  *
- * The page. Section 1 takes its own name, and its old content goes at once.
- * On a navigation its new content fades in once a stage or card leaving it
- * is gone, so nothing that leaves draws over the page that arrives. When
+ * The page. Section 1 and Sound's Library in the rail take their own
+ * names, and their old content goes at once. On a navigation their new
+ * content fades in once a stage, card or mini player leaving it is gone, so
+ * nothing that leaves draws over the page that arrives. When
  * the card leaves Sound for a mini player or bar on the way to Home, the
  * mark and the stage wait for the card, then trade places together. While
  * a mini player or bar comes or goes, the page keeps still. The shell says
@@ -212,14 +213,21 @@
   view-transition-name: page;
 }
 
+[data-slot="rail-library"] {
+  view-transition-name: rail-library;
+}
+
 ::view-transition-old(root),
-::view-transition-old(page) {
+::view-transition-old(page),
+::view-transition-old(rail-library) {
   display: none;
 }
 
 ::view-transition-new(root),
 ::view-transition-group(page),
 ::view-transition-new(page),
+::view-transition-group(rail-library),
+::view-transition-new(rail-library),
 ::view-transition-group(waveform),
 ::view-transition-group(waveform-stage),
 ::view-transition-new(waveform),
@@ -227,7 +235,8 @@
   animation: none;
 }
 
-:root[data-teleport~="navigated"]::view-transition-new(page) {
+:root[data-teleport~="navigated"]::view-transition-new(page),
+:root[data-teleport~="navigated"]::view-transition-new(rail-library) {
   animation: page-in var(--teleport-page) var(--ease-teleport)
     var(--teleport-clear) both;
 }
