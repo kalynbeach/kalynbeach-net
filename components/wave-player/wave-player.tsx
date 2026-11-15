@@ -111,34 +111,59 @@
  * it on every render.
  *
  * Specimens. A page that shows several frames, such as a style guide,
- * passes `specimen` to all but one. A specimen never morphs and never takes
- * the provider's screen. Its box renders a copy of `screen` of its own,
- * where useWavePlayer().hold is "still" and feed is null, so it draws the
- * current look at rest. Each copy is another waveform with its own canvas
- * and GPU device, so only pages that show specimens pay for them.
+ * passes `specimen` to all but one. A specimen never joins a view
+ * transition and never takes the provider's screen. Its box renders a copy
+ * of `screen` of its own, where useWavePlayer().hold is "still" and feed is
+ * null, so it draws the current look at rest. Each copy is another
+ * waveform with its own canvas and GPU device, so only pages that show
+ * specimens pay for them.
  *
  * Active. useWavePlayer().active is true once the first play opens the
  * audio, while a track is current, until the last track ends. A pause, a
  * stopped load, and a failed track keep it true. It is false on the server.
  * It changes a render after `status`, in a transition, so a frame a host
- * mounts by it fades in when playback starts and out when it ends, with no
- * transition code in the host. Mount the mini player or the bar by `active`,
- * not by `status`: a status change commits at once and never animates.
+ * mounts by it enters in a view transition when playback starts and exits
+ * in one when it ends, with no transition code in the host. Mount the mini
+ * player or the bar by `active`, not by `status`: a status change commits
+ * at once and never animates.
  *
  *   const { active } = useWavePlayer()
  *   <aside>{active ? <WavePlayerMini expand={<Link href="/music" />} /> : null}</aside>
  *
- * Morph. The card, the mini player, and the bar draw one frame. Each wraps
- * it in React's <ViewTransition> named wave-player, so when a navigation or
- * any other transition unmounts one and mounts another, the frame morphs
- * from the old box to the new one with the browser's default animation.
- * The card arrives and leaves with its page; the mini player and the bar
- * fade in and out. The screen moves into the new box in the same commit,
- * so the morph carries the figure and the figure never restarts. Leave the
- * player's canvas unnamed, as viewTransitionName={null} does above, so it
- * rides inside the frame's morph: the site's own waveform already names its
- * canvas waveform, and two elements with one name stop every view
- * transition on the page.
+ * Pairing. The card, the mini player, and the bar draw one frame. Each
+ * wraps it in React's <ViewTransition> named wave-player, so when a
+ * navigation or any other transition unmounts one and mounts another, the
+ * old frame and the new one pair under that name in one view transition.
+ * The screen moves into the new box in the same commit, so the figure never
+ * restarts. Leave the player's canvas unnamed, as viewTransitionName={null}
+ * does above, so the browser captures it in the frame's old and new
+ * images. The site's own waveform already names its canvas waveform, and
+ * two elements with one name stop every view transition on the page.
+ *
+ * The site's CSS picks the animation by name. Without it, the pair runs
+ * the browser's default morph from the old box to the new one, and a lone
+ * frame fades. This teleport shrinks the old frame out where it was, then
+ * grows the new one in where it lands. The group holds the old box while
+ * the old image leaves, then jumps to the new box. The rules also name
+ * kevelle/waveform's canvas, so the site's figure teleports the same way.
+ *
+ *   ::view-transition-group(waveform), ::view-transition-group(wave-player) {
+ *     animation-duration: var(--duration-small);
+ *     animation-timing-function: steps(1, jump-end);
+ *   }
+ *   ::view-transition-old(waveform), ::view-transition-old(wave-player) {
+ *     animation: teleport-out var(--duration-small) var(--ease-out) both;
+ *   }
+ *   ::view-transition-new(waveform), ::view-transition-new(wave-player) {
+ *     animation: teleport-in var(--duration-large) var(--ease-out) var(--duration-small) both;
+ *   }
+ *   @keyframes teleport-out { to { opacity: 0; scale: 0.85; filter: blur(2px); } }
+ *   @keyframes teleport-in { from { opacity: 0; scale: 0.85; filter: blur(2px); } }
+ *
+ * The card arrives and leaves with its page. A mini player or bar that
+ * appears or leaves with no frame to pair has one image, which the recipe
+ * grows or shrinks in place. A site gives that lone image another animation
+ * through :only-child, as in ::view-transition-old(wave-player):only-child.
  *
  * One frame per page. React allows one mounted <ViewTransition> per name,
  * and the browser skips a whole view transition when two rendered elements
@@ -147,20 +172,22 @@
  * script with a media query, not a class that hides one, since a frame
  * hidden with CSS is still mounted and still named. Defer the query with
  * useDeferredValue so a breakpoint change runs as a transition and the
- * frame morphs.
- * A page that shows several frames, such as a style guide, passes
- * `specimen` to all but one. The props-only views carry no transition.
+ * frames pair. The props-only views carry no transition.
  *
  * Reduced motion. A frame that mounts under prefers-reduced-motion renders
  * no <ViewTransition>, so mounting it starts no view transition. A frame
  * the server rendered keeps its name and turns every trigger off. Either
  * way frames swap, appear, and leave at once, and the screen still moves.
  * A site's own transitions, and kevelle/waveform's, need the same switch,
- * and one already running when the preference changes needs CSS:
+ * and one already running when the preference changes needs CSS. The delay
+ * reset covers a delayed animation such as the teleport's:
  *
  *   @media (prefers-reduced-motion: reduce) {
  *     ::view-transition-group(*), ::view-transition-old(*),
- *     ::view-transition-new(*) { animation-duration: 0s !important; }
+ *     ::view-transition-new(*) {
+ *       animation-duration: 0s !important;
+ *       animation-delay: 0s !important;
+ *     }
  *   }
  *
  * Expand. The mini player's `expand` is the link its expand control renders
@@ -378,9 +405,10 @@ function useActive(store: PlayerStore): boolean {
 
 type FrameProps = {
   /**
-   * An extra frame, such as a style guide's. It never morphs, never takes
-   * the provider's screen, and draws its own copy of `screen`, held still
-   * on the current look. Read when the frame mounts. Default false.
+   * An extra frame, such as a style guide's. It never joins a view
+   * transition, never takes the provider's screen, and draws its own copy
+   * of `screen`, held still on the current look. Read when the frame
+   * mounts. Default false.
    */
   readonly specimen?: boolean;
 };

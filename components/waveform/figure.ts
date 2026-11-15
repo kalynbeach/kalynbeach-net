@@ -501,8 +501,8 @@ export const STILL_QUIET_MS = 150;
 
 /**
  * Form changes ease strength, depth, and size over this long: Kevelle's
- * large duration, about as long as the view transition that moves the
- * roaming canvas between slots, so the figure settles as the morph lands.
+ * large duration, about as long as a view transition that pairs the
+ * roaming canvas across slots, so the figure settles while it runs.
  */
 export const MOVE_MS = 280;
 
@@ -622,7 +622,7 @@ export const LIVE: Stillness = { kind: "live" };
 export const SETTLE: Stillness = { kind: "settling", start: null };
 
 /** A frozen history resampled into a larger box stays sharp up to this upscale of the smallest side it passed through. */
-export const SHARP_UPSCALE = 1.25;
+const SHARP_UPSCALE = 1.25;
 
 /**
  * The stillness a frame starts in, under `mode`. `inked` says live drawing

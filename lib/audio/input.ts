@@ -62,7 +62,7 @@ export interface DeviceList {
  * arrives. Plain false, not { exact: false }, which can raise
  * OverconstrainedError. Chrome captures mono unless channelCount asks for 2.
  */
-export const RAW_AUDIO_CONSTRAINTS = {
+const RAW_AUDIO_CONSTRAINTS = {
   echoCancellation: false,
   noiseSuppression: false,
   autoGainControl: false,

@@ -319,6 +319,16 @@ export function createWaveform(init: {
 
   const glows: HTMLCanvasElement[] = [];
 
+  /**
+   * Set once a mark has drawn its figure, for the engine's life. A stage
+   * that mounts after that starts present, since the page has already shown
+   * the figure and a view transition from the mark lands on it. It records a
+   * draw, not a mount: a navigation destroys the mark before the stage
+   * claims, and a first load that mounts a mark beside the stage, before
+   * either draws, still fades the stage in.
+   */
+  let markShown = false;
+
   /** The audio's level at `now`, 0 to 1: its RMS, scaled so a full-scale sine reads 1. */
   function audioLevel(now: number): number {
     if (!audio) {
@@ -405,7 +415,12 @@ export function createWaveform(init: {
 
   function mount(surface: FormSurface, initial: FormState): MountedForm {
     let state = initial;
-    let presence: Presence = { kind: "absent" };
+
+    let presence: Presence =
+      initial.form === "stage" && initial.present && markShown
+        ? { kind: "present" }
+        : { kind: "absent" };
+
     let stillness: Stillness = LIVE;
     /** Set once live drawing leaves a figure on the screen, until the screen clears. A form frozen without one settles instead. */
     let inked = false;
@@ -768,6 +783,15 @@ export function createWaveform(init: {
 
       if (stillness.kind === "live" && recorder.drew()) inked = true;
 
+      // A fresh producer's first frame only finds its place in the feed and
+      // draws nothing, so the mark counts as shown from its first point.
+      if (
+        state.form === "mark" &&
+        presence.kind === "present" &&
+        recorder.drew()
+      )
+        markShown = true;
+
       if (
         stillness.kind === "settling" &&
         settledMs(stillness, now) >= STILL_MS
@@ -928,10 +952,10 @@ export function createWaveform(init: {
   /**
    * The one place view-transition-names change. The live roaming canvas
    * carries the engine's name while a slot holds it. Otherwise the newest
-   * mark borrows it, so leaving the live figure for the mark morphs
-   * one into the other. Each glow carries the name with "-glow". Under
-   * reduced motion nothing carries a name, so nothing of the waveform pairs
-   * or animates. Names come off before any goes on. A name another canvas
+   * mark borrows it, so a view transition from the live figure to the
+   * mark pairs one with the other. Each glow carries the name with
+   * "-glow". Under reduced motion nothing carries a name, so nothing of the
+   * waveform pairs or animates. Names come off before any goes on. A name another canvas
    * on the page already carries, such as a second provider's, is skipped
    * with a warning, since two elements with one name stop every view
    * transition on the page.

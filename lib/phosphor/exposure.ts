@@ -10,7 +10,7 @@ import type { PhosphorLook, Rgb } from "./types";
 export const REFERENCE_HZ = 60;
 
 /** Highlights reach twice SDR white on an HDR canvas. */
-export const HDR_HEADROOM = 2;
+const HDR_HEADROOM = 2;
 
 /**
  * Gaussian beam energy per unit of line exposure. At 1, a segment deposits
@@ -21,7 +21,7 @@ export const HDR_HEADROOM = 2;
  * of 255. Tuned on the Circle preset at a device pixel ratio of 2, where 1
  * gives a mean green of 5.26, matching the line figure's composite.
  */
-export const BEAM_ENERGY = 1;
+const BEAM_ENERGY = 1;
 
 /** The narrowest sigma a look's referenceSize fits to, in backing pixels. The gaussian quad needs some width to rasterize. */
 const MIN_FIT_SIGMA = 0.5;

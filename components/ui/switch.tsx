@@ -10,7 +10,7 @@ function Switch({
 }: SwitchPrimitive.Root.Props & {
   size?: "sm" | "default";
 }) {
-  // The ::after is the hit area: 56 by 34px at the default size, and at
+  // The ::after is the hit area: 54 by 32px at the default size, and at
   // least 44px tall under a coarse pointer.
   return (
     <SwitchPrimitive.Root

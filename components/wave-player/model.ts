@@ -347,7 +347,7 @@ export function deriveStatus({
 }
 
 /** "station-not-running" is the context's failure; every other error means the track didn't load. */
-export function failReason(error: SourceError): FailReason {
+function failReason(error: SourceError): FailReason {
   return error.kind === "station-not-running" ? "audio" : "load";
 }
 
@@ -376,7 +376,7 @@ export type PlayerCommand =
   | { readonly type: "seek"; readonly to: number };
 
 /** Previous restarts the track when the position is past this, strictly; at 3.0 s it goes back a track. */
-export const RESTART_AFTER = 3;
+const RESTART_AFTER = 3;
 
 /** What the store knows when a command arrives. */
 export type Situation = {

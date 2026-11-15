@@ -104,7 +104,7 @@ export interface ToneHandle {
  * 220 Hz square, measured in the audio lab). Below a quarter of the sample
  * rate the browser keeps every partial, so both evaluate the same sum.
  */
-export const BAND_EDGE = 0.25;
+const BAND_EDGE = 0.25;
 
 /**
  * The most harmonics any wave table carries. Chromium reads a PeriodicWave

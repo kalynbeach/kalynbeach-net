@@ -913,7 +913,7 @@ const Y_HZ = (() => {
  * control reads as it does there, so a frame that shows nothing new
  * commits nothing.
  */
-export function shownAt(
+function shownAt(
   play: Play,
   now: number,
   last: WaveformConfig

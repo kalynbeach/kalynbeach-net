@@ -292,7 +292,6 @@ type Captured = {
   readonly asked: string | null;
 };
 
-/** Whether a capture that asked for `asked` serves the choice: the default for the default, the chosen id for a device. */
 /** The device id a choice asks for: null for the default. */
 function chosenId(chosen: InputChoice): string | null {
   if (chosen === null) return null;
@@ -300,6 +299,7 @@ function chosenId(chosen: InputChoice): string | null {
   return chosen.kind === "resolved" ? chosen.device.id : chosen.remembered.id;
 }
 
+/** Whether a capture that asked for `asked` serves the choice: the default for the default, the chosen id for a device. */
 function serves(asked: string | null, chosen: InputChoice): boolean {
   return asked === chosenId(chosen);
 }

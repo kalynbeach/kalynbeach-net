@@ -15,7 +15,7 @@ import { autoGain, createMeter } from "./measure";
 import type { DisplaySettings } from "./settings";
 
 /** Longest lookback a display asks for: a 50 ms/div sweep's half pretrigger, with room for the XY delay. */
-export const MAX_LOOKBACK_SECONDS = 0.26;
+const MAX_LOOKBACK_SECONDS = 0.26;
 
 /** What the readout strip shows, polled by the caller four times a second. */
 export type ScopeReadout = {

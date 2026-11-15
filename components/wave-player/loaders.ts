@@ -8,7 +8,7 @@ import { PEAK_RESOLUTION, reducePeaks, type Peaks } from "./peaks";
  * instead of 106 MB at 44.1 kHz. A browser that refuses a rate gets the
  * next one.
  */
-export const DECODE_RATES = [8000, 22050, 44100] as const;
+const DECODE_RATES = [8000, 22050, 44100] as const;
 
 /**
  * A track's duration from its metadata, through a detached element that
