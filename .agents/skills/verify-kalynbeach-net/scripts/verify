@@ -188,9 +188,11 @@ cmd_launch() {
   local run_id
   run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
   RUN_DIR="$STATE/runs/$run_id"
+  mkdir -p "$STATE/runs"
+  # ln -sn fails if the link exists. Without -n it would follow a link to a
+  # directory and succeed, so two launches could both claim the checkout.
+  ln -sn "runs/$run_id" "$ACTIVE" 2>/dev/null || die "$ACTIVE exists. Another launch holds this checkout. If none is running, a crashed run left it: run \`verify stop\`, or remove the link when that reports no instance."
   mkdir -p "$RUN_DIR/logs" "$RUN_DIR/evidence"
-  # ln -s without -f fails if the link exists, so two launches cannot both claim the checkout.
-  ln -s "runs/$run_id" "$ACTIVE" 2>/dev/null || die "$ACTIVE exists. Another launch holds this checkout. If none is running, a crashed run left it: run \`verify stop\`, or remove the link when that reports no instance."
 
   WEB_PORT=$(pick_port 3100 1)
   CONVEX_PORT=$(pick_port 3210 2)
