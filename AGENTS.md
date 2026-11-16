@@ -27,7 +27,7 @@ Comments in these files cite kkb paths such as `tools/aura.ts`. Those paths exis
 
 ## Convex
 
-`bunx convex dev`, `bunx convex deploy`, and `bunx convex run` change a live Convex deployment. Run them only when Kalyn asks. To typecheck Convex code without a push, run `bun run typecheck --project convex/tsconfig.json`.
+`bunx convex dev`, `bunx convex deploy`, and `bunx convex run` change a live Convex deployment. Run them only when Kalyn asks. The exception is the `verify-kalynbeach-net` skill, whose `scripts/verify` runs them against an anonymous local backend in the checkout and refuses when `.env.local` or `.env` already exists. To typecheck Convex code without a push, run `bun run typecheck --project convex/tsconfig.json`.
 
 `migrations:seedPreview` adds sample tracks and looks. Run it only on preview and dev deployments, never on production.
 
@@ -60,7 +60,7 @@ bun run typecheck --project convex/tsconfig.json
 bun run test run       # add a path, such as tests/site.test.ts, to run one file
 ```
 
-Run `bun run build` too when a change touches routes, config, or the build. It downloads the fonts first, as the Fonts section describes. `bun run dev` also needs the Convex and Clerk settings in Kalyn's `.env.local`. Never copy that file into another checkout.
+Run `bun run build` too when a change touches routes, config, or the build. It downloads the fonts first, as the Fonts section describes. `bun run dev` also needs the Convex and Clerk settings in Kalyn's `.env.local`. Never copy that file into another checkout. To see a change working in the browser, use the `verify-kalynbeach-net` skill in `.agents/skills/`. It runs the site against a seeded local Convex backend.
 
 - To add, rename, or remove a public page or a software project, change `lib/site.ts`, `content/`, and `tests/site.test.ts` together. The test fails when the site map, the route files, and the content files disagree. Each page and project also has a `published` flag in `lib/site.ts`.
 - To add a software project page, add `content/software/<slug>.mdx`, add its slug and navigation label to `software` in `lib/site.ts`, add `<Project slug="<slug>" />` to `content/software.mdx` and the file's `?metadata` import to `projects` in `components/site/project.tsx`, and add the project to the navigation and Cmd+K expectations in `tests/site.test.ts`.

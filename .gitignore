@@ -34,3 +34,6 @@ next-env.d.ts
 /public/fonts/abc-areal/
 /public/fonts/timeless-serif/
 /public/fonts/tx-02/
+
+# verification runs (.agents/skills/verify-kalynbeach-net)
+/.verify/

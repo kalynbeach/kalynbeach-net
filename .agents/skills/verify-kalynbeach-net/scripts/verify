@@ -1,0 +1,344 @@
+#!/usr/bin/env bash
+# One instance per checkout: the local Convex backend keeps its data in
+# .convex/local/default and its URL in .env.local, both inside the checkout.
+# Other checkouts can run their own instance on other ports.
+#
+# Written for macOS /bin/bash 3.2.
+set -euo pipefail
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT"
+
+SCRIPTS="$ROOT/.agents/skills/verify-kalynbeach-net/scripts"
+STATE="$ROOT/.verify"
+ACTIVE="$STATE/active"
+ENV_LOCAL="$ROOT/.env.local"
+CONVEX_STATE="$ROOT/.convex/local/default"
+# The Convex CLI uses this home-directory state, if it exists, before the
+# project-local one, so a run there would not be isolated to the checkout.
+LEGACY_STATE="$HOME/.convex/anonymous-convex-backend-state/anonymous-agent"
+
+# Convex and Next read these from the environment before .env.local, so an
+# inherited value would point the run at another deployment.
+unset CONVEX_DEPLOYMENT CONVEX_DEPLOY_KEY CONVEX_SELF_HOSTED_URL CONVEX_SELF_HOSTED_ADMIN_KEY \
+  NEXT_PUBLIC_CONVEX_URL NEXT_PUBLIC_CONVEX_SITE_URL
+export CONVEX_AGENT_MODE=anonymous
+
+die() {
+  echo "verify: $*" >&2
+  exit 1
+}
+
+usage() {
+  cat <<'EOF'
+Usage: verify <command>
+
+  launch [--published-only]  Start local Convex, seed it, start next dev. Prints the run's paths.
+  doctor                     Read-only health check of the active instance. Exit 1 on any failure.
+  env                        Print the active run's variables (VERIFY_URL, VERIFY_EVIDENCE, ...).
+  browser <args...>          Run agent-browser headless in the run's own session.
+  stop                       Tear down the active instance. Keeps the run's logs and evidence.
+EOF
+}
+
+port_free() { ! lsof -nP -iTCP:"$1" -sTCP:LISTEN -t >/dev/null 2>&1; }
+port_listening() { ! port_free "$1"; }
+
+# The first free port at or above $1, stepping by $2, whose next port is free too when $2 is 2.
+pick_port() {
+  local port=$1 step=$2
+  while :; do
+    if port_free "$port" && { [ "$step" -eq 1 ] || port_free $((port + 1)); }; then
+      echo "$port"
+      return
+    fi
+    port=$((port + step))
+  done
+}
+
+pgid_alive() { [ -n "${1:-}" ] && ps -o pid= -g "$1" >/dev/null 2>&1; }
+
+# The group leader's start time. A group whose leader started at another
+# time is not this run's, even if the number matches after a reboot.
+leader_started() { ps -o lstart= -p "$1" 2>/dev/null || true; }
+group_ours() { pgid_alive "$1" && [ "$(leader_started "$1")" = "$2" ]; }
+
+load_run() {
+  [ -L "$ACTIVE" ] && [ -f "$ACTIVE/run.env" ] || return 1
+  # shellcheck disable=SC1091
+  . "$ACTIVE/run.env"
+}
+
+# The two Clerk keys from the environment, or else from the main checkout's
+# .env.local. Only these two lines are read. They reach next dev's
+# environment and are written nowhere.
+load_clerk_keys() {
+  if [ -n "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}" ] && [ -n "${CLERK_SECRET_KEY:-}" ]; then
+    return
+  fi
+  local main
+  main=$(git worktree list --porcelain | awk 'NR == 1 { print $2 }')
+  local file="${VERIFY_CLERK_ENV_FILE:-$main/.env.local}"
+  [ -f "$file" ] || die "no Clerk keys. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY, or VERIFY_CLERK_ENV_FILE."
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(sed -n 's/^NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=//p' "$file" | tr -d '"')
+  CLERK_SECRET_KEY=$(sed -n 's/^CLERK_SECRET_KEY=//p' "$file" | tr -d '"')
+  [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] && [ -n "$CLERK_SECRET_KEY" ] || die "Clerk keys missing from $file"
+}
+
+# A pk_test_ key is base64 of the instance's Frontend API host plus "$".
+clerk_issuer() {
+  local encoded=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY#pk_test_}
+  while [ $((${#encoded} % 4)) -ne 0 ]; do encoded="$encoded="; done
+  echo "https://$(printf '%s' "$encoded" | base64 -d | tr -d '$')"
+}
+
+wait_for() {
+  local what=$1 seconds=$2
+  shift 2
+  local i=0
+  until "$@" >/dev/null 2>&1; do
+    i=$((i + 1))
+    [ "$i" -le "$seconds" ] || return 1
+    sleep 1
+  done
+  echo "  ready: $what"
+}
+
+http_status() { curl -s -o /dev/null -w '%{http_code}' --max-time "${2:-120}" "$1" || true; }
+
+browser() {
+  # Only the shipped config and flags decide where the session runs, so an
+  # inherited CDP or auto-connect setting cannot attach it to another browser.
+  local var
+  for var in $(env | sed -n 's/^\(AGENT_BROWSER_[A-Z_]*\)=.*/\1/p'); do unset "$var"; done
+  agent-browser --config "$SCRIPTS/browser.json" --no-auto-connect --session "$BROWSER_SESSION" "$@"
+}
+
+# Stops this run's process groups. Deletes the run's scratch state only once
+# every group has exited and every port has closed. Returns 1 otherwise.
+teardown() {
+  load_run || return 0
+  browser close >/dev/null 2>&1 || true
+
+  local group start
+  for pair in "${NEXT_PGID:-}|${NEXT_START:-}" "${CONVEX_PGID:-}|${CONVEX_START:-}"; do
+    group=${pair%%|*} start=${pair#*|}
+    [ -n "$group" ] || continue
+    if pgid_alive "$group" && ! group_ours "$group" "$start"; then
+      echo "verify: process group $group is not this run's (leader start changed). Left it running." >&2
+      continue
+    fi
+    kill -TERM -"$group" 2>/dev/null || true
+  done
+  local i=0
+  while group_ours "${NEXT_PGID:-}" "${NEXT_START:-}" || group_ours "${CONVEX_PGID:-}" "${CONVEX_START:-}"; do
+    i=$((i + 1))
+    [ "$i" -eq 15 ] && for pair in "${NEXT_PGID:-}|${NEXT_START:-}" "${CONVEX_PGID:-}|${CONVEX_START:-}"; do
+      group=${pair%%|*} start=${pair#*|}
+      group_ours "$group" "$start" && kill -KILL -"$group" 2>/dev/null || true
+    done
+    [ "$i" -le 20 ] || break
+    sleep 1
+  done
+
+  local busy=""
+  group_ours "${NEXT_PGID:-}" "${NEXT_START:-}" && busy="$busy next-dev-group"
+  group_ours "${CONVEX_PGID:-}" "${CONVEX_START:-}" && busy="$busy convex-group"
+  for port in "$WEB_PORT" "$CONVEX_PORT" "$CONVEX_SITE_PORT"; do
+    port_free "$port" || busy="$busy port-$port"
+  done
+  if [ -n "$busy" ]; then
+    echo "verify: stop is incomplete:$busy. Kept the run's state. Inspect $RUN_DIR/run.env and rerun \`verify stop\`." >&2
+    return 1
+  fi
+
+  # Scratch state this run created: the local deployment's data and the
+  # .env.local that names it. launch refuses to start over either.
+  rm -rf "$CONVEX_STATE"
+  rmdir "$ROOT/.convex/local" 2>/dev/null || true
+  # convex dev writes .convex/.gitignore. Drop it once nothing else is left.
+  if [ "$(ls -A "$ROOT/.convex" 2>/dev/null)" = .gitignore ]; then
+    rm -f "$ROOT/.convex/.gitignore"
+    rmdir "$ROOT/.convex"
+  fi
+  rm -f "$ENV_LOCAL"
+  rm -f "$ACTIVE"
+  echo "stopped. Evidence kept at $RUN_DIR/evidence ($(find "$RUN_DIR/evidence" -type f | wc -l | tr -d ' ') files)"
+}
+
+cmd_launch() {
+  local mode=all
+  case "${1:-}" in
+    --published-only) mode=published-only ;;
+    "") ;;
+    *) die "unknown launch flag: $1" ;;
+  esac
+
+  if load_run; then
+    die "an instance is already active ($RUN_DIR). Run \`verify doctor\` to use it or \`verify stop\` first."
+  fi
+  [ ! -e "$ENV_LOCAL" ] || die ".env.local exists. Verify from a checkout without one. The main checkout holds Kalyn's real settings."
+  [ ! -e "$ROOT/.env" ] || die ".env exists, and Convex would read a deployment from it. Verify from a checkout without one."
+  [ ! -d "$CONVEX_STATE" ] || die "$CONVEX_STATE exists from an earlier run. Remove it only if no instance of this checkout is running."
+  [ ! -d "$LEGACY_STATE" ] || die "$LEGACY_STATE exists. Convex would use it instead of the checkout's own state."
+  command -v agent-browser >/dev/null || die "agent-browser is not on PATH"
+  load_clerk_keys
+  [ -d node_modules ] || bun install --frozen-lockfile
+
+  local run_id
+  run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  RUN_DIR="$STATE/runs/$run_id"
+  mkdir -p "$STATE/runs"
+  # ln -sn fails if the link exists. Without -n it would follow a link to a
+  # directory and succeed, so two launches could both claim the checkout.
+  ln -sn "runs/$run_id" "$ACTIVE" 2>/dev/null || die "$ACTIVE exists. Another launch holds this checkout. If none is running, a crashed run left it: run \`verify stop\`, or remove the link when that reports no instance."
+  mkdir -p "$RUN_DIR/logs" "$RUN_DIR/evidence"
+
+  WEB_PORT=$(pick_port 3100 1)
+  CONVEX_PORT=$(pick_port 3210 2)
+  CONVEX_SITE_PORT=$((CONVEX_PORT + 1))
+  BROWSER_SESSION="verify-$(printf '%s' "$ROOT" | shasum | cut -c1-8)"
+  CONVEX_PGID="" CONVEX_START="" NEXT_PGID="" NEXT_START=""
+  write_run_env "$run_id" "$mode"
+  # Any exit before launch succeeds, Ctrl-C included, tears the partial instance down.
+  trap 'status=$?; [ "$status" -eq 0 ] || { teardown || true; }' EXIT
+  trap 'exit 130' INT TERM
+
+  echo "launch $run_id: web $WEB_PORT, convex $CONVEX_PORT, mode $mode"
+
+  # set -m puts each background job in its own process group, which
+  # teardown kills whole. The groups outlive this script.
+  set -m
+  nohup bunx convex dev --local-cloud-port "$CONVEX_PORT" --local-site-port "$CONVEX_SITE_PORT" \
+    --tail-logs disable --typecheck disable >"$RUN_DIR/logs/convex.log" 2>&1 &
+  CONVEX_PGID=$!
+  disown
+  CONVEX_START=$(leader_started "$CONVEX_PGID")
+  write_run_env "$run_id" "$mode"
+
+  wait_for "convex backend on $CONVEX_PORT" 120 port_listening "$CONVEX_PORT" || fail convex.log
+  # auth.config.ts reads this. The first push fails without it, and convex dev retries.
+  bunx convex env set CLERK_JWT_ISSUER_DOMAIN "$(clerk_issuer)" >>"$RUN_DIR/logs/convex.log" 2>&1 || fail convex.log
+  wait_for "convex functions pushed" 120 grep -q "Convex functions ready" "$RUN_DIR/logs/convex.log" || fail convex.log
+  bunx convex run migrations:seedPreview >"$RUN_DIR/logs/seed.json" 2>>"$RUN_DIR/logs/convex.log" || fail convex.log
+  echo "  seeded: $(tr -d '\n ' <"$RUN_DIR/logs/seed.json")"
+
+  local vercel_env=""
+  [ "$mode" = published-only ] && vercel_env=production
+  VERCEL_ENV="$vercel_env" \
+    NEXT_PUBLIC_CONVEX_URL="http://127.0.0.1:$CONVEX_PORT" \
+    NEXT_PUBLIC_CONVEX_SITE_URL="http://127.0.0.1:$CONVEX_SITE_PORT" \
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" \
+    CLERK_SECRET_KEY="$CLERK_SECRET_KEY" \
+    nohup bun run dev --port "$WEB_PORT" >"$RUN_DIR/logs/next.log" 2>&1 &
+  NEXT_PGID=$!
+  disown
+  NEXT_START=$(leader_started "$NEXT_PGID")
+  write_run_env "$run_id" "$mode"
+
+  wait_for "next dev on $WEB_PORT" 180 grep -q "Ready in" "$RUN_DIR/logs/next.log" || fail next.log
+  # The first request to each route compiles it. Warm the ones the map drives.
+  local path
+  for path in / /about /sound /software /login /dashboard; do
+    http_status "http://localhost:$WEB_PORT$path" 300 >/dev/null
+  done
+  echo "  ready: routes compiled"
+  cmd_doctor || fail next.log
+  trap - EXIT INT TERM
+  cmd_env
+}
+
+fail() {
+  echo "verify: launch failed. Last lines of $RUN_DIR/logs/$1:" >&2
+  tail -20 "$RUN_DIR/logs/$1" >&2
+  exit 1
+}
+
+# %q quoting, so a path with spaces or shell characters sources back intact.
+write_run_env() {
+  {
+    printf 'RUN_ID=%q\n' "$1"
+    printf 'RUN_DIR=%q\n' "$RUN_DIR"
+    printf 'MODE=%q\n' "$2"
+    printf 'CHECKOUT=%q\n' "$ROOT"
+    printf 'HEAD=%q\n' "$(git rev-parse --short HEAD)"
+    printf 'WEB_PORT=%q\n' "$WEB_PORT"
+    printf 'CONVEX_PORT=%q\n' "$CONVEX_PORT"
+    printf 'CONVEX_SITE_PORT=%q\n' "$CONVEX_SITE_PORT"
+    printf 'CONVEX_PGID=%q\n' "$CONVEX_PGID"
+    printf 'CONVEX_START=%q\n' "$CONVEX_START"
+    printf 'NEXT_PGID=%q\n' "$NEXT_PGID"
+    printf 'NEXT_START=%q\n' "$NEXT_START"
+    printf 'BROWSER_SESSION=%q\n' "$BROWSER_SESSION"
+  } >"$RUN_DIR/run.env"
+}
+
+cmd_env() {
+  load_run || die "no active instance. Run \`verify launch\`."
+  printf 'VERIFY_URL=%q\n' "http://localhost:$WEB_PORT"
+  printf 'VERIFY_CONVEX_URL=%q\n' "http://127.0.0.1:$CONVEX_PORT"
+  printf 'VERIFY_EVIDENCE=%q\n' "$RUN_DIR/evidence"
+  printf 'VERIFY_LOGS=%q\n' "$RUN_DIR/logs"
+  printf 'VERIFY_MODE=%q\n' "$MODE"
+  printf 'VERIFY_SESSION=%q\n' "$BROWSER_SESSION"
+}
+
+cmd_doctor() {
+  load_run || die "no active instance. Run \`verify launch\`."
+  local failed=0
+  check() {
+    if [ "$2" = ok ]; then printf '  ok    %s\n' "$1"; else
+      printf '  FAIL  %s (%s)\n' "$1" "$2"
+      failed=1
+    fi
+  }
+  owner_ok() {
+    local pid
+    pid=$(lsof -nP -iTCP:"$1" -sTCP:LISTEN -t 2>/dev/null | head -1 || true)
+    [ -n "$pid" ] || { echo "nothing listening"; return; }
+    [ "$(ps -o pgid= -p "$pid" | tr -d ' ')" = "$2" ] && echo ok || echo "port owned by pid $pid, not this run"
+  }
+
+  echo "run $RUN_ID, mode $MODE, started at $HEAD, checkout now at $(git rev-parse --short HEAD)"
+  check "convex dev process group $CONVEX_PGID" "$(group_ours "$CONVEX_PGID" "$CONVEX_START" && echo ok || echo "exited or not this run's")"
+  check "next dev process group $NEXT_PGID" "$(group_ours "$NEXT_PGID" "$NEXT_START" && echo ok || echo "exited or not this run's")"
+  check "port $CONVEX_PORT belongs to this run" "$(owner_ok "$CONVEX_PORT" "$CONVEX_PGID")"
+  check "port $WEB_PORT belongs to this run" "$(owner_ok "$WEB_PORT" "$NEXT_PGID")"
+  check ".env.local names this run's backend" \
+    "$(grep -q "^NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:$CONVEX_PORT" "$ENV_LOCAL" 2>/dev/null && echo ok || echo "wrong or missing")"
+  check "next dev uses this run's backend" \
+    "$(ps eww -g "$NEXT_PGID" 2>/dev/null | grep -q "NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:$CONVEX_PORT" && echo ok || echo "not in next dev's environment")"
+
+  local tracks
+  tracks=$(curl -s --max-time 10 -X POST "http://127.0.0.1:$CONVEX_PORT/api/query" \
+    -H 'content-type: application/json' -d '{"path":"tracks:list","args":{},"format":"json"}' |
+    grep -o '"title":"[^"]*"' | tr '\n' ' ' || true)
+  check "tracks:list returns the seeded tracks" "$(echo "$tracks" | grep -q preview_tone_a && echo ok || echo "got: ${tracks:-nothing}")"
+
+  local base="http://localhost:$WEB_PORT"
+  check "GET / is 200" "$(s=$(http_status "$base/" 60); [ "$s" = 200 ] && echo ok || echo "$s")"
+  local gate
+  gate=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 60 "$base/dashboard" || true)
+  check "GET /dashboard signed out is 307 to /login" "$([ "$gate" = "307 $base/login" ] && echo ok || echo "$gate")"
+  local software expected=200
+  [ "$MODE" = published-only ] && expected=404
+  software=$(http_status "$base/software" 60)
+  check "GET /software is $expected in mode $MODE" "$([ "$software" = "$expected" ] && echo ok || echo "$software")"
+  load_clerk_keys
+  check "Clerk key is a test key" "$([[ $NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY == pk_test_* ]] && echo ok || echo "not pk_test_")"
+  return "$failed"
+}
+
+case "${1:-}" in
+  launch) shift; cmd_launch "$@" ;;
+  doctor) cmd_doctor ;;
+  env) cmd_env ;;
+  browser)
+    shift
+    load_run || die "no active instance. Run \`verify launch\`."
+    browser "$@"
+    ;;
+  stop) load_run || die "no active instance"; teardown ;;
+  -h | --help | help | "") usage ;;
+  *) usage; exit 1 ;;
+esac
