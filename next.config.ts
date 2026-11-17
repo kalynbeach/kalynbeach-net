@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   // Prerenders each page's HTML at build, for the CDN to serve.
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    agentUpgrade: "security",
+  },
   // "Open image in new tab" shows optimizer images, such as screenshot.tsx's,
   // instead of downloading them. The attachment default guards SVGs, which
   // can't reach the optimizer here without dangerouslyAllowSVG.
