@@ -4,20 +4,31 @@ import coachella18 from "@/content/images/kkb-coachella-18.jpg";
 
 export const metadata = {
   title: "About",
+  description:
+    "Engineer and artist in Los Angeles. Building products, systems, agent workflows, and real-time creative software.",
 };
 
 <PageHeader {...metadata} />
 
 <Image hero src={coachella18} alt="Kalyn Beach at Coachella 2018" />
 
-My name is Kalyn Beach.
+My name is Kalyn Beach. I've been building software since 2010 and working professionally since 2015, moving across product architecture, systems design, interface craft, and delivery.
 
-I'm an engineer and an artist based in Los Angeles.
+I like work where engineering rigor meets expressive software: taking ambiguous, technically demanding problems and reducing them to systems that feel clear, dependable, and alive.
+
+Most recently, I led engineering on Gist GEO, an agentic AI product at ProRata AI, taking it from initial architecture through its alpha with first customers while helping a young team adopt disciplined engineering practices. Before that, I spent nine years across Demand Media, Leaf Group, and World of Good Brands scaling high-traffic publishing platforms, leading platform modernizations and production data migrations, building internal web-performance tooling, and shipping browser-based music apps.
+
+Outside of work, I make [music](/sound) and build my own instruments and infrastructure: a portable [agent workflow system](/software/agents), a [real-time audio engine](/software/kkb-audio), and the design system powering this site.
 
 ## Links
 
 <LinkList
   links={[
+    {
+      service: "Email",
+      label: "kalynbeach@gmail.com",
+      href: "mailto:kalynbeach@gmail.com",
+    },
     {
       service: "GitHub",
       label: "github.com/kalynbeach",
@@ -40,46 +51,3 @@ I'm an engineer and an artist based in Los Angeles.
     },
   ]}
 />
-
-<Draft>
-
-## Work
-
-I've been developing software since around 2010; professionally since 2015.
-
-<LinkList
-  links={[
-    {
-      service: "Projects",
-      label: "kkb, Kevelle, kkb-audio and this site",
-      href: "/software",
-    },
-    {
-      service: "Agents",
-      label: "How I build with AI agents",
-      href: "/software/agents",
-    },
-  ]}
-/>
-
-<LinkList
-  links={[
-    {
-      service: "Email",
-      label: "kalynbeach@gmail.com",
-      href: "mailto:kalynbeach@gmail.com",
-    },
-    {
-      service: "GitHub",
-      label: "kalynbeach",
-      href: "https://github.com/kalynbeach",
-    },
-    {
-      service: "LinkedIn",
-      label: "kalynbeach",
-      href: "https://www.linkedin.com/in/kalynbeach/",
-    },
-  ]}
-/>
-
-</Draft>

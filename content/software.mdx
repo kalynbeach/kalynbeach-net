@@ -1,15 +1,39 @@
-export const metadata = { title: "Software" };
+export const metadata = {
+  title: "Software",
+  description:
+    "Products, systems, agent workflows, design infrastructure, and real-time creative software.",
+};
 
 <PageHeader {...metadata} />
 
+I design and build software across architecture, interface craft, and delivery. Most of my current personal work focuses on governed AI agent workflows, design systems, and real-time audio and visual software.
+
 <Project slug="agents" />
-
-## Kevelle
-
-Placeholder. Kalyn will write this section.
 
 <Project slug="kkb-audio" />
 
+## Kevelle
+
+My personal design system, developed in my `kkb` monorepo and distributed as a shadcn registry at [registry.kkb.systems](https://registry.kkb.systems). It packages tokens, typography, typeset rules, accessible primitives, automated contrast and drift checks, and audio-visual blocks including the Phosphor WebGPU oscilloscope (with a WebGL2 fallback) and WavePlayer.
+
+Kevelle powers this site, my interface studies in [ui-lab](https://github.com/kalynbeach/ui-lab), and a suite of browser audio tools in `kkb` spanning an FFT spectrogram, an eight-voice AudioWorklet synth with Web MIDI, binaural beats, and an Ableton Live `.als` set viewer.
+
 ## kalynbeach.net
 
-Placeholder. Kalyn will write this section.
+This site, rebuilt in late 2026 on Kevelle. Public pages are authored in MDX and prerendered with draft and production gating, while the persistent waveform stage and music player stay live across route transitions and stream track and look updates from a private admin dashboard. The source is open at [github.com/kalynbeach/kalynbeach-net](https://github.com/kalynbeach/kalynbeach-net).
+
+## Background
+
+Before focusing on my own audio, design, and agent systems, I spent a decade building products and platforms for teams.
+
+### ProRata AI (2025–2026)
+
+Senior Software Engineer, Agentic Systems. Lead engineer on Gist GEO, taking ProRata's generative engine optimization product from initial architecture through its alpha with first customers. Owned its architecture, agentic workflows, and AI-reviewed CI, mentored junior engineers and interns into a shipping product team, and prototyped Ask Anything, the next version of ProRata's embeddable AI search widget.
+
+### World of Good Brands (2023–2024)
+
+Senior Software Engineer. Led the shift from legacy templates to TypeScript, React, and Next.js, designed and built the typed GraphQL data layer for the Zenith multi-brand platform, and owned the database, user, and places migration tooling behind the Only In Your State rebuild.
+
+### Leaf Group & Demand Media (2015–2023)
+
+Associate to Senior Software Engineer. Built and maintained high-traffic publishing properties including eHow, Sciencing, Bizfluent, Legal Beagle, and Garden Guides. Built and deployed the team's internal Lighthouse web-performance platform for a multi-site portfolio, driving fixes that brought sites to green Core Web Vitals, and proposed and shipped Music Notation and Chord Finder web apps with browser synth playback.

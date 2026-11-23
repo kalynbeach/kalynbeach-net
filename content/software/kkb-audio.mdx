@@ -1,3 +1,4 @@
+import { LinkList } from "@/components/site/link-list";
 import { Meta } from "@/components/site/page-header";
 import { Screenshot } from "@/components/site/screenshot";
 import { Steps } from "@/components/site/steps";
@@ -5,29 +6,39 @@ import { Steps } from "@/components/site/steps";
 export const metadata = {
   title: "kkb-audio",
   description:
-    "A Rust foundation for my sound, audio, and music software. One real-time render engine runs in the browser through WebAssembly and natively on macOS.",
+    "A portable real-time audio engine shared across the browser and macOS, built to keep sound rendering deterministic, allocation-free, and inspectable.",
 };
 
 <PageHeader {...metadata}>
-  <Meta>Rust / WebAssembly / TypeScript</Meta>
+  <Meta>Real-time audio engine / Browser (WebAssembly) &amp; macOS</Meta>
 </PageHeader>
 
-Each host handles its own files, devices, and lifecycle outside the engine.
+Sound software breaks down when file I/O, garbage collection, or interface updates bleed into the audio callback. `kkb-audio` isolates a single portable Rust render core from host concerns so the same engine runs in a browser `AudioWorklet` through fixed-memory WebAssembly and natively on macOS, while each host owns its own files, devices, and lifecycle.
+
+The engine compiles signal graphs into explicit execution plans, verifies partition-independent rendering across callback sizes, avoids heap allocations on the render path, and streams decoded audio across bounded lock-free or recycled-buffer channels. Each milestone ships with a written evidence record documenting what was verified and where the boundaries remain; the engine, player, and lab are actively developed experimental software rather than a finished consumer release.
+
+<Steps
+  label="How audio moves through the engine"
+  steps={[
+    {
+      step: "Prepare",
+      detail:
+        "A worker decodes WAV or MP3, converts sample rates, and bounds PCM",
+    },
+    {
+      step: "Render",
+      detail: "Allocation-free Rust/Wasm runs inside an AudioWorklet",
+    },
+    {
+      step: "Observe",
+      detail: "A WebGPU phosphor scope draws the rendered stereo signal",
+    },
+  ]}
+/>
 
 ## WavePlayer
 
-A local audio player built on the kkb-audio engine. It plays WAV and MP3 files, converts between 44.1 and 48 kHz, and supports seeking and A/B loops.
-
-Audio can't wait on a file read or a UI update. A worker decodes files and hands PCM to the Rust engine in an AudioWorklet, so file and interface work stay out of the render callback. A WebGPU oscilloscope draws the left and right channels as an XY trace.
-
-<Steps
-  label="How WavePlayer handles audio"
-  steps={[
-    { step: "Prepare", detail: "A worker decodes the file" },
-    { step: "Render", detail: "Rust/Wasm in an AudioWorklet" },
-    { step: "Observe", detail: "WebGPU draws the rendered signal" },
-  ]}
-/>
+An experimental local audio player built on the `kkb-audio` engine and live at [kkb-audio.vercel.app](https://kkb-audio.vercel.app). It plays local WAV (PCM16, PCM24, float32) and Rust-decoded MP3 files entirely in the browser with nothing uploaded, handles 44.1 to 48 kHz conversion, and supports preview-and-commit seeking, A/B loop regions, an independent full-track source waveform overview, and a WebGPU P31 phosphor XY oscilloscope.
 
 <Screenshot
   width={364}
@@ -41,4 +52,25 @@ Audio can't wait on a file read or a UI update. A worker decodes files and hands
     alt: "WavePlayer playing a stereo WAV, with a live green XY trace above the waveform and transport controls.",
   }}
   caption="WavePlayer with a synthetic stereo test file."
+/>
+
+## Engine lab and proofs
+
+Alongside WavePlayer, the app includes an interactive learning lab for inspecting the compiled oscillator graph, sample-timed gain events, and render-partition comparisons, plus standalone browser proofs for the bounded PCM transport and compiled execution plan.
+
+## Links
+
+<LinkList
+  links={[
+    {
+      service: "Live",
+      label: "kkb-audio.vercel.app",
+      href: "https://kkb-audio.vercel.app",
+    },
+    {
+      service: "Source",
+      label: "github.com/kalynbeach/kkb-audio",
+      href: "https://github.com/kalynbeach/kkb-audio",
+    },
+  ]}
 />

@@ -55,8 +55,8 @@ type StageNode = { kind: "stage"; label: string; route: "/" };
  * without a page is a section of content/software.mdx and is not listed.
  */
 const software = [
-  { slug: "agents", label: "Agents", published: false },
-  { slug: "kkb-audio", label: "kkb-audio", published: false },
+  { slug: "agents", label: "Agents", published: true },
+  { slug: "kkb-audio", label: "kkb-audio", published: true },
 ] as const;
 
 /** A software project's slug, published or not. */
@@ -77,7 +77,7 @@ const nav = [
     label: "Software",
     route: "/software",
     player: "follow",
-    published: false,
+    published: true,
     pages: software.map(({ slug, label, published }) => ({
       label,
       route: `/software/${slug}` as const,

@@ -347,91 +347,100 @@ describe("production", () => {
   });
 
   it.each(["/software", "/software/agents", "/software/kkb-audio"])(
-    "lays out unpublished %s as not found",
+    "lays out published %s as a page",
     (path) => {
       const { nav: _, ...layout } = site.resolve(path);
       expect(layout).toEqual({
         kind: "page",
-        player: null,
-        title: "Not found",
+        player: "follow",
+        title: null,
       });
     }
   );
 
-  it("draws nav rows for Home, About and Sound only", () => {
-    for (const path of ["/", "/about", "/software/agents"]) {
+  it("draws nav rows for published pages", () => {
+    for (const path of ["/", "/about", "/sound"]) {
       expect(
         site.resolve(path).nav.flatMap((row) => [row, ...row.rows]),
         path
       ).toMatchObject([
         { label: "Home" },
         { label: "About" },
+        { label: "Software" },
         { label: "Sound" },
       ]);
     }
+    expect(
+      site.resolve("/software/agents").nav.flatMap((row) => [row, ...row.rows])
+    ).toMatchObject([
+      { label: "Home" },
+      { label: "About" },
+      { label: "Software", state: "ancestor" },
+      { label: "Agents", state: "active" },
+      { label: "kkb-audio", state: "idle" },
+      { label: "Sound" },
+    ]);
     expect(site.resolve("/about").nav[1]).toMatchObject({
       label: "About",
       state: "active",
     });
   });
 
-  it("leaves unpublished pages out of Cmd+K", () => {
+  it("lists published pages in Cmd+K", () => {
     expect(site.commandItems.map(({ label }) => label)).toEqual([
       "Home",
       "About",
+      "Software",
+      "Software / Agents",
+      "Software / kkb-audio",
       "Sound",
       "Dashboard",
       "Lab",
     ]);
   });
 
-  it.each([
-    "/software",
-    "/software/agents",
-    "/software/kkb-audio",
-    "/software/no-such",
-  ])("404s unpublished %s before it renders", (path) => {
-    expect(site.gate(path, false)).toEqual(notFound);
-  });
+  it.each(["/software/no-such", "/software/agents/extra"])(
+    "404s unlisted %s before it renders",
+    (path) => {
+      expect(site.gate(path, false)).toEqual(notFound);
+    }
+  );
 
   it.each([
     ["/about", false, pass],
+    ["/software", false, pass],
+    ["/software/agents", false, pass],
+    ["/software/kkb-audio", false, pass],
     ["/dashboard", false, redirect("/login")],
     ["/login", true, redirect("/dashboard")],
   ])("still gates published %s (signed in: %s)", (path, signedIn, decision) => {
     expect(site.gate(path, signedIn)).toEqual(decision);
   });
 
-  it("builds no project pages and no routes for unpublished pages", () => {
-    expect(site.servedProjectSlugs).toEqual([]);
+  it("builds project pages and routes for published pages", () => {
+    expect(site.servedProjectSlugs).toEqual(["agents", "kkb-audio"]);
     expect(site.routes).toEqual([
       "/",
       "/about",
+      "/software",
+      "/software/agents",
+      "/software/kkb-audio",
       "/sound",
       "/dashboard",
       "/lab",
       "/login",
       "/auth/unauthorized",
     ]);
-    expect(site.served("/software")).toBe(false);
-    expect(site.served("/software/agents")).toBe(false);
+    expect(site.served("/software")).toBe(true);
+    expect(site.served("/software/agents")).toBe(true);
+    expect(site.served("/software/kkb-audio")).toBe(true);
     expect(site.served("/about")).toBe(true);
     expect(site.served("/sound")).toBe(true);
   });
 
-  it.each([["/software", () => import("@/app/software/page")]])(
-    "renders the 404 for unpublished %s, with no title",
-    async (_, load) => {
-      const route = await load();
-      expect(route.metadata).toEqual({});
-      expect(() => route.default()).toThrow(
-        expect.objectContaining({ digest: "NEXT_HTTP_ERROR_FALLBACK;404" })
-      );
-    }
-  );
-
   it.each([
     ["/about", () => import("@/app/about/page")],
+    ["/software", () => import("@/app/software/page")],
     ["/sound", () => import("@/app/sound/page")],
   ])("renders published %s with its title", async (_, load) => {
     const route = await load();
@@ -439,17 +448,15 @@ describe("production", () => {
     expect(() => route.default()).not.toThrow();
   });
 
-  it("404s every unpublished project slug", async () => {
+  it("generates published project slugs and 404s unlisted ones", async () => {
     const route = await import("@/app/software/[slug]/page");
     expect(route.generateStaticParams()).toEqual([
       { slug: "agents" },
       { slug: "kkb-audio" },
     ]);
-    for (const slug of ["agents", "kkb-audio", "no-such-project"]) {
-      await expect(
-        route.default({ params: Promise.resolve({ slug }) })
-      ).rejects.toMatchObject({ digest: "NEXT_HTTP_ERROR_FALLBACK;404" });
-    }
+    await expect(
+      route.default({ params: Promise.resolve({ slug: "no-such-project" }) })
+    ).rejects.toMatchObject({ digest: "NEXT_HTTP_ERROR_FALLBACK;404" });
   });
 
   it("drops draft sections", () => {
