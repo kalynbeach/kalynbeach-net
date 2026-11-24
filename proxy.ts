@@ -35,8 +35,5 @@ export const config = {
   matcher: [
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
-    // A slug that looks like a file, such as /software/no-such.js, still
-    // needs its 404. tests/site.test.ts checks every dynamic route is here.
-    "/software/:path*",
   ],
 };

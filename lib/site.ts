@@ -6,10 +6,10 @@
  * content page's title and lede live in its file in content/, with the rest
  * of its copy.
  *
- * Publishing: every page in the nav and every child page has a `published`
- * flag. Production serves only published pages, so an unpublished page has
- * no nav row, no Cmd+K item and no route, and its path resolves to the
- * not-found entry. Previews and dev serve every page. Home is always served.
+ * Publishing: every page in the nav has a `published` flag. Production serves
+ * only published pages, so an unpublished page has no nav row, no Cmd+K item
+ * and no route, and its path resolves to the not-found entry. Previews and
+ * dev serve every page. Home is always served.
  */
 export const siteName = "Kalyn Beach";
 
@@ -40,29 +40,11 @@ type Publishable = {
 type PageNode = Publishable & {
   kind: "page";
   player: PlayerRole;
-  /**
-   * Child pages, which take this page's player role. A child page is served
-   * only while this page is served.
-   */
-  pages?: readonly Publishable[];
 };
 
 type StageNode = { kind: "stage"; label: string; route: "/" };
 
-/**
- * Software projects with a page, in nav order. Each is
- * content/software/<slug>.mdx, served by app/software/[slug]. A project
- * without a page is a section of content/software.mdx and is not listed.
- */
-const software = [
-  { slug: "agents", label: "Agents", published: false },
-  { slug: "kkb-audio", label: "kkb-audio", published: false },
-] as const;
-
-/** A software project's slug, published or not. */
-export type ProjectSlug = (typeof software)[number]["slug"];
-
-/** The nav tree, top to bottom. Two levels at most. */
+/** The nav tree, top to bottom. */
 const nav = [
   { kind: "stage", label: "Home", route: "/" },
   {
@@ -77,12 +59,7 @@ const nav = [
     label: "Software",
     route: "/software",
     player: "follow",
-    published: false,
-    pages: software.map(({ slug, label, published }) => ({
-      label,
-      route: `/software/${slug}` as const,
-      published,
-    })),
+    published: true,
   },
   {
     kind: "page",
@@ -120,7 +97,6 @@ const system = [
 ] as const satisfies readonly Labeled[];
 
 type Node = (typeof nav)[number];
-type Parent = Extract<Node, { pages: unknown }>;
 
 /**
  * Every route that renders a page in the shell, served or not. A typo in a
@@ -128,7 +104,6 @@ type Parent = Extract<Node, { pages: unknown }>;
  */
 export type Route =
   | Node["route"]
-  | Parent["pages"][number]["route"]
   | (typeof admin)[number]["route"]
   | (typeof system)[number]["route"];
 
@@ -138,7 +113,7 @@ export type NavRow = {
   href: Route;
   /** ancestor: the parent of the active page. */
   state: "idle" | "active" | "ancestor";
-  /** A page's child rows while it or one of them is active. Empty otherwise. */
+  /** Child rows when nested navigation is active. */
   rows: readonly NavRow[];
 };
 
@@ -163,7 +138,6 @@ type Layout =
 export type SiteEntry = Layout & { nav: readonly NavRow[] };
 
 export type CommandItem = {
-  /** A child page carries its parent's label: "Software / Agents". */
   label: string;
   href: Route;
   section: "Pages" | "Admin";
@@ -185,10 +159,9 @@ const notFound: Layout = { kind: "page", player: null, title: "Not found" };
 const isServed = (page: Publishable) => page.published || !publishedOnly;
 
 /**
- * Every served page by route: nav order with each page before its children,
- * then admin, then system. An unserved page is left out, which removes its
- * nav row, its Cmd+K item and its route, and makes resolve() return the
- * not-found entry for it.
+ * Every served page by route: nav order, then admin, then system. An
+ * unserved page is left out, which removes its nav row, its Cmd+K item and
+ * its route, and makes resolve() return the not-found entry for it.
  */
 const index = new Map<string, Indexed>();
 for (const node of nav) {
@@ -200,22 +173,10 @@ for (const node of nav) {
     continue;
   }
   if (!isServed(node)) continue;
-  const layout: Layout = { kind: "page", player: node.player, title: null };
   index.set(node.route, {
-    layout,
+    layout: { kind: "page", player: node.player, title: null },
     command: { label: node.label, href: node.route, section: "Pages" },
   });
-  for (const page of "pages" in node ? node.pages : []) {
-    if (!isServed(page)) continue;
-    index.set(page.route, {
-      layout,
-      command: {
-        label: `${node.label} / ${page.label}`,
-        href: page.route,
-        section: "Pages",
-      },
-    });
-  }
 }
 for (const page of admin) {
   index.set(page.route, {
@@ -266,20 +227,10 @@ export type Gate =
 
 /** Every route the site map lists, served or not. */
 const listed: ReadonlySet<string> = new Set([
-  ...nav.flatMap((node) => [
-    node.route,
-    ...("pages" in node ? node.pages.map((page) => page.route) : []),
-  ]),
+  ...nav.map((node) => node.route),
   ...admin.map((page) => page.route),
   ...system.map((page) => page.route),
 ]);
-
-/**
- * Parents whose children are exactly their `pages`, such as /software. The
- * site map owns every path under one, so an unserved path there is a 404,
- * whatever the route files would do with an unlisted param.
- */
-const families = nav.flatMap((node) => ("pages" in node ? [node.route] : []));
 
 /**
  * The request gate. `signedIn` comes from the session cookie alone, so the
@@ -291,8 +242,6 @@ const families = nav.flatMap((node) => ("pages" in node ? [node.route] : []));
 export function gate(pathname: string, signedIn: boolean): Gate {
   let path: string;
   try {
-    // Next decodes a param before the page sees it, so /software/%61gents
-    // is the agents page. decodeURI keeps an encoded slash encoded.
     path = normalize(decodeURI(pathname));
   } catch {
     return { kind: "pass" }; // Malformed escapes: Next answers them itself.
@@ -305,41 +254,23 @@ export function gate(pathname: string, signedIn: boolean): Gate {
   if (path === signIn.route) {
     return signedIn ? { kind: "redirect", to: signIn.lands } : { kind: "pass" };
   }
-  const owned =
-    listed.has(path) || families.some((route) => path.startsWith(`${route}/`));
-  return owned && !index.has(path) ? { kind: "not-found" } : { kind: "pass" };
+  return listed.has(path) && !index.has(path)
+    ? { kind: "not-found" }
+    : { kind: "pass" };
 }
 
-/**
- * Every software project's slug, served or not: the static params of
- * app/software/[slug]. Cache Components needs at least one, and an unserved
- * project prerenders as the 404.
- */
-export const projectSlugs = software.map(({ slug }) => slug);
-
-export const servedProjectSlugs = software
-  .filter(({ slug }) => served(`/software/${slug}`))
-  .map(({ slug }) => slug);
-
-/** The served nav nodes and child rows, as seen from the active route. */
+/** The served nav nodes, as seen from the active route. */
 function navFor(active: string | null): readonly NavRow[] {
-  const row = (label: string, href: Route): NavRow => ({
-    label,
-    href,
-    state: href === active ? "active" : "idle",
-    rows: [],
-  });
   return nav.flatMap((node) => {
     if (!served(node.route)) return [];
-    const self = row(node.label, node.route);
-    if (!("pages" in node)) return [self];
-    const rows = node.pages
-      .filter((page) => served(page.route))
-      .map((page) => row(page.label, page.route));
-    if (self.state === "active") return [{ ...self, rows }];
-    return rows.some((page) => page.state === "active")
-      ? [{ ...self, state: "ancestor", rows }]
-      : [self];
+    return [
+      {
+        label: node.label,
+        href: node.route,
+        state: node.route === active ? "active" : "idle",
+        rows: [],
+      },
+    ];
   });
 }
 

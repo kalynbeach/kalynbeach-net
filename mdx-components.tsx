@@ -3,16 +3,14 @@ import type { MDXComponents } from "mdx/types";
 import Link from "next/link";
 import { Draft } from "@/components/site/draft";
 import { PageHeader } from "@/components/site/page-header";
-import { Project } from "@/components/site/project";
 
 /**
  * Every content/*.mdx body renders in Kevelle's typeset with the site's
  * preset, typeset-site in app/globals.css, which sets markdown in the site's
  * type scale. Typeset skips any subtree whose root has a data-slot, so a
  * component used in MDX keeps its own type by setting one. PageHeader (every
- * content file), Project (the Software index) and Draft (a section production
- * leaves out) are registered here; other components are imported by the file
- * that uses them.
+ * content file) and Draft (a section production leaves out) are registered
+ * here; other components are imported by the file that uses them.
  */
 const components = {
   wrapper: ({ children }: { children: ReactNode }) => (
@@ -27,7 +25,6 @@ const components = {
     ),
   Draft,
   PageHeader,
-  Project,
 } satisfies MDXComponents;
 
 export function useMDXComponents(): MDXComponents {

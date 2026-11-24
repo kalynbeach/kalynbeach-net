@@ -1,15 +1,45 @@
-export const metadata = { title: "Software" };
+import { Screenshot } from "@/components/site/screenshot";
+
+export const metadata = {
+  title: "Software",
+  description:
+    "Instruments, design systems, agent workflows, and web software.",
+};
 
 <PageHeader {...metadata} />
 
-<Project slug="agents" />
+## kkb-audio
+
+A portable real-time audio engine in Rust running in the browser through WebAssembly and natively on macOS, built around allocation-free rendering and lock-free streaming. It powers an experimental local WavePlayer with a WebGPU phosphor oscilloscope and an interactive engine lab at [kkb-audio.vercel.app](https://kkb-audio.vercel.app) ([source](https://github.com/kalynbeach/kkb-audio)).
+
+<Screenshot
+  width={364}
+  height={638}
+  light={{
+    src: "/images/software/kkb-audio/waveplayer-light.jpg",
+    alt: "WavePlayer paused on a stereo WAV, with a green XY trace above the waveform and transport controls.",
+  }}
+  dark={{
+    src: "/images/software/kkb-audio/waveplayer-dark.jpg",
+    alt: "WavePlayer playing a stereo WAV, with a live green XY trace above the waveform and transport controls.",
+  }}
+  caption="WavePlayer with a synthetic stereo test file."
+/>
 
 ## Kevelle
 
-Placeholder. Kalyn will write this section.
+My personal design system, distributed as a shadcn registry at [registry.kkb.systems](https://registry.kkb.systems). It lives in my `kkb` monorepo alongside a set of browser audio and visual experiments: a WebGPU oscilloscope and spectrogram, an AudioWorklet synth with Web MIDI, binaural beats, and an Ableton Live set viewer.
 
-<Project slug="kkb-audio" />
+## Agents
 
-## kalynbeach.net
+I've been building with AI agents since 2023, moving from early music tools to `@kkb/agents`: a portable setup of shared instructions, skills, evals, and a custom sync CLI shared across Claude Code, Codex, and Pi.
 
-Placeholder. Kalyn will write this section.
+## This site & ui-lab
+
+This site is built on Kevelle, with a persistent waveform stage and music player that stay live across routes ([source](https://github.com/kalynbeach/kalynbeach-net)). [ui-lab](https://github.com/kalynbeach/ui-lab) is a companion sandbox for WavePlayer variants and interface studies.
+
+## Practice
+
+I've been building software since 2010 and working with product teams since 2015: most recently leading engineering on Gist GEO at ProRata AI, after nine years across Leaf Group and World of Good Brands scaling web platforms, performance tooling, migrations, and browser music apps.
+
+More on [GitHub](https://github.com/kalynbeach) and [LinkedIn](https://www.linkedin.com/in/kalynbeach/).

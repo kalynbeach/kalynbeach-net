@@ -90,7 +90,7 @@ describe("placement", () => {
     ["/about", true, "narrow", { stage: false, frame: "bar", mark: "narrow" }],
     ["/about", true, null, { stage: false, frame: null, mark: null }],
     [
-      "/software/agents",
+      "/software",
       true,
       "desktop",
       { stage: false, frame: "mini", mark: "desktop" },
