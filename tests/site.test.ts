@@ -1,6 +1,5 @@
 // @vitest-environment node
 import { globSync, readFileSync, statSync } from "node:fs";
-import { basename } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -22,14 +21,7 @@ vi.mock("@/content/sound.mdx", () => ({
   default: () => null,
   metadata: { title: "Sound" },
 }));
-import {
-  commandItems,
-  gate,
-  pageMetadata,
-  servedProjectSlugs,
-  resolve,
-  routes,
-} from "@/lib/site";
+import { commandItems, gate, pageMetadata, resolve, routes } from "@/lib/site";
 
 /** app/(admin)/lab/page.tsx -> "/lab". Route groups drop out; the app root is "/". */
 function routeOf(file: string): string {
@@ -45,13 +37,6 @@ const pages = globSync("app/**/page.tsx").map((file) => ({
   route: routeOf(file),
 }));
 
-const served = (route: string) => {
-  if (route === "/software/[slug]") {
-    return servedProjectSlugs.map((slug) => `/software/${slug}`);
-  }
-  return [route];
-};
-
 const rows = (path: string) =>
   resolve(path).nav.flatMap((row) => [row, ...row.rows]);
 
@@ -61,9 +46,7 @@ const redirect = (to: string) => ({ kind: "redirect", to });
 
 describe("site map and page files", () => {
   it("has an entry for every route a page file serves and a page file for every entry", () => {
-    expect(new Set(pages.flatMap(({ route }) => served(route)))).toEqual(
-      new Set(routes)
-    );
+    expect(new Set(pages.map(({ route }) => route))).toEqual(new Set(routes));
   });
 
   it("has each page export its metadata from its own route's source", () => {
@@ -73,9 +56,7 @@ describe("site map and page files", () => {
       // Home keeps the root layout title.
       if (route === "/") continue;
       const source = readFileSync(file, "utf8");
-      const content = escape(
-        `@/content${route.replace("[slug]", "${slug}")}.mdx`
-      );
+      const content = escape(`@/content${route}.mdx`);
       const exports = [
         new RegExp(
           `export const metadata = pageMetadata\\("${escape(route)}"\\)`
@@ -84,38 +65,12 @@ describe("site map and page files", () => {
         new RegExp(
           `import [^;]*\\bmetadata\\b[^;]* from "${content}"[\\s\\S]*export const metadata\\b`
         ),
-        new RegExp(
-          `export async function generateMetadata[\\s\\S]*${content}|${content}[\\s\\S]*export async function generateMetadata`
-        ),
       ];
       expect(
         exports.some((pattern) => pattern.test(source)),
         `${file} exports metadata from pageMetadata("${route}") or its content file`
       ).toBe(true);
     }
-  });
-
-  it("has a content file for every project and a project for every content file", () => {
-    const files = globSync("content/software/*.mdx").map((file) =>
-      basename(file, ".mdx")
-    );
-    expect(files.toSorted()).toEqual(servedProjectSlugs.toSorted());
-  });
-
-  it("gives every project exactly one section on the Software index", () => {
-    const index = readFileSync("content/software.mdx", "utf8");
-    const sections = [...index.matchAll(/<Project\s+slug=["']([^"']+)["']/g)];
-    expect(sections.map(([, slug]) => slug).toSorted()).toEqual(
-      servedProjectSlugs.toSorted()
-    );
-  });
-
-  it("imports a project's whole content file only on its own page", () => {
-    const whole = /["'`][^"'`\n]*content\/software\/[^"'`\n]*\.mdx["'`]/;
-    const importers = globSync("{app,components,content,lib}/**/*.{ts,tsx,mdx}")
-      .concat("mdx-components.tsx")
-      .filter((file) => whole.test(readFileSync(file, "utf8")));
-    expect(importers).toEqual(["app/software/[slug]/page.tsx"]);
   });
 
   it("redirects old links to real pages", async () => {
@@ -132,7 +87,6 @@ describe("site map", () => {
     ["/", { kind: "stage" }],
     ["/about", { kind: "page", player: "follow", title: null }],
     ["/software", { kind: "page", player: "follow", title: null }],
-    ["/software/agents", { kind: "page", player: "follow", title: null }],
     ["/sound", { kind: "page", player: "full", title: null }],
     ["/dashboard", { kind: "wide" }],
     ["/lab", { kind: "wide" }],
@@ -145,41 +99,10 @@ describe("site map", () => {
     expect(layout).toEqual(expected);
   });
 
-  it("marks Software active and lists its projects on the index", () => {
-    const software = resolve("/software").nav.find(
-      (row) => row.label === "Software"
-    );
-    expect(software).toMatchObject({ state: "active", href: "/software" });
-    expect(
-      software?.rows.map(({ label, href, state }) => [label, href, state])
-    ).toEqual([
-      ["Agents", "/software/agents", "idle"],
-      ["kkb-audio", "/software/kkb-audio", "idle"],
-    ]);
-  });
-
-  it("expands Software and marks it as the ancestor on a project page", () => {
-    const software = resolve("/software/agents").nav.find(
-      (row) => row.label === "Software"
-    );
-    expect(software).toMatchObject({ state: "ancestor", href: "/software" });
-    expect(software?.rows.find((row) => row.state === "active")?.label).toBe(
-      "Agents"
-    );
-  });
-
-  it("collapses Software on other pages", () => {
-    const software = resolve("/sound").nav.find(
-      (row) => row.label === "Software"
-    );
-    expect(software).toMatchObject({ state: "idle", rows: [] });
-  });
-
   it.each([
     ["/", "Home"],
     ["/about", "About"],
     ["/software", "Software"],
-    ["/software/kkb-audio", "kkb-audio"],
     ["/sound/", "Sound"],
   ])("marks exactly one nav row active on %s", (path, label) => {
     const active = rows(path).filter((row) => row.state === "active");
@@ -203,8 +126,6 @@ describe("site map", () => {
       ["Home", "Pages"],
       ["About", "Pages"],
       ["Software", "Pages"],
-      ["Software / Agents", "Pages"],
-      ["Software / kkb-audio", "Pages"],
       ["Sound", "Pages"],
       ["Dashboard", "Admin"],
       ["Lab", "Admin"],
@@ -226,16 +147,11 @@ describe("gate", () => {
     ["/login", true, redirect("/dashboard")],
     ["/auth/unauthorized", true, pass],
     ["/software", false, pass],
-    ["/software/agents", false, pass],
-    ["/software/no-such", false, notFound],
-    ["/software/no-such", true, notFound],
-    ["/software/agents/extra", false, notFound],
-    ["/software/%61gents", false, pass],
-    ["/software/%E0%A4%A", false, pass],
     ["/about", false, pass],
     ["/", true, pass],
     // No route matches these, so Next answers them itself.
     ["/no-such-page", false, pass],
+    ["/software/no-such", false, pass],
     ["/robots.txt", false, pass],
     ["/api/anything", false, pass],
   ])("gates %s (signed in: %s)", (path, signedIn, decision) => {
@@ -346,20 +262,17 @@ describe("production", () => {
     vi.resetModules();
   });
 
-  it.each(["/software", "/software/agents", "/software/kkb-audio"])(
-    "lays out published %s as a page",
-    (path) => {
-      const { nav: _, ...layout } = site.resolve(path);
-      expect(layout).toEqual({
-        kind: "page",
-        player: "follow",
-        title: null,
-      });
-    }
-  );
+  it("lays out published /software as a page", () => {
+    const { nav: _, ...layout } = site.resolve("/software");
+    expect(layout).toEqual({
+      kind: "page",
+      player: "follow",
+      title: null,
+    });
+  });
 
   it("draws nav rows for published pages", () => {
-    for (const path of ["/", "/about", "/sound"]) {
+    for (const path of ["/", "/about", "/software", "/sound"]) {
       expect(
         site.resolve(path).nav.flatMap((row) => [row, ...row.rows]),
         path
@@ -370,16 +283,6 @@ describe("production", () => {
         { label: "Sound" },
       ]);
     }
-    expect(
-      site.resolve("/software/agents").nav.flatMap((row) => [row, ...row.rows])
-    ).toMatchObject([
-      { label: "Home" },
-      { label: "About" },
-      { label: "Software", state: "ancestor" },
-      { label: "Agents", state: "active" },
-      { label: "kkb-audio", state: "idle" },
-      { label: "Sound" },
-    ]);
     expect(site.resolve("/about").nav[1]).toMatchObject({
       label: "About",
       state: "active",
@@ -391,40 +294,27 @@ describe("production", () => {
       "Home",
       "About",
       "Software",
-      "Software / Agents",
-      "Software / kkb-audio",
       "Sound",
       "Dashboard",
       "Lab",
     ]);
   });
 
-  it.each(["/software/no-such", "/software/agents/extra"])(
-    "404s unlisted %s before it renders",
-    (path) => {
-      expect(site.gate(path, false)).toEqual(notFound);
-    }
-  );
-
   it.each([
     ["/about", false, pass],
     ["/software", false, pass],
-    ["/software/agents", false, pass],
-    ["/software/kkb-audio", false, pass],
+    ["/sound", false, pass],
     ["/dashboard", false, redirect("/login")],
     ["/login", true, redirect("/dashboard")],
   ])("still gates published %s (signed in: %s)", (path, signedIn, decision) => {
     expect(site.gate(path, signedIn)).toEqual(decision);
   });
 
-  it("builds project pages and routes for published pages", () => {
-    expect(site.servedProjectSlugs).toEqual(["agents", "kkb-audio"]);
+  it("builds routes for published pages", () => {
     expect(site.routes).toEqual([
       "/",
       "/about",
       "/software",
-      "/software/agents",
-      "/software/kkb-audio",
       "/sound",
       "/dashboard",
       "/lab",
@@ -432,8 +322,6 @@ describe("production", () => {
       "/auth/unauthorized",
     ]);
     expect(site.served("/software")).toBe(true);
-    expect(site.served("/software/agents")).toBe(true);
-    expect(site.served("/software/kkb-audio")).toBe(true);
     expect(site.served("/about")).toBe(true);
     expect(site.served("/sound")).toBe(true);
   });
@@ -446,17 +334,6 @@ describe("production", () => {
     const route = await load();
     expect(route.metadata).toHaveProperty("title");
     expect(() => route.default()).not.toThrow();
-  });
-
-  it("generates published project slugs and 404s unlisted ones", async () => {
-    const route = await import("@/app/software/[slug]/page");
-    expect(route.generateStaticParams()).toEqual([
-      { slug: "agents" },
-      { slug: "kkb-audio" },
-    ]);
-    await expect(
-      route.default({ params: Promise.resolve({ slug: "no-such-project" }) })
-    ).rejects.toMatchObject({ digest: "NEXT_HTTP_ERROR_FALLBACK;404" });
   });
 
   it("drops draft sections", () => {

@@ -1,39 +1,45 @@
+import { Screenshot } from "@/components/site/screenshot";
+
 export const metadata = {
   title: "Software",
   description:
-    "Products, systems, agent workflows, design infrastructure, and real-time creative software.",
+    "Instruments, design systems, agent workflows, and web software.",
 };
 
 <PageHeader {...metadata} />
 
-I design and build software across architecture, interface craft, and delivery. Most of my current personal work focuses on governed AI agent workflows, design systems, and real-time audio and visual software.
+## kkb-audio
 
-<Project slug="agents" />
+A portable real-time audio engine in Rust running in the browser through WebAssembly and natively on macOS, built around allocation-free rendering and lock-free streaming. It powers an experimental local WavePlayer with a WebGPU phosphor oscilloscope and an interactive engine lab at [kkb-audio.vercel.app](https://kkb-audio.vercel.app) ([source](https://github.com/kalynbeach/kkb-audio)).
 
-<Project slug="kkb-audio" />
+<Screenshot
+  width={364}
+  height={638}
+  light={{
+    src: "/images/software/kkb-audio/waveplayer-light.jpg",
+    alt: "WavePlayer paused on a stereo WAV, with a green XY trace above the waveform and transport controls.",
+  }}
+  dark={{
+    src: "/images/software/kkb-audio/waveplayer-dark.jpg",
+    alt: "WavePlayer playing a stereo WAV, with a live green XY trace above the waveform and transport controls.",
+  }}
+  caption="WavePlayer with a synthetic stereo test file."
+/>
 
 ## Kevelle
 
-My personal design system, developed in my `kkb` monorepo and distributed as a shadcn registry at [registry.kkb.systems](https://registry.kkb.systems). It packages tokens, typography, typeset rules, accessible primitives, automated contrast and drift checks, and audio-visual blocks including the Phosphor WebGPU oscilloscope (with a WebGL2 fallback) and WavePlayer.
+My personal design system, distributed as a shadcn registry at [registry.kkb.systems](https://registry.kkb.systems). It lives in my `kkb` monorepo alongside a set of browser audio and visual experiments: a WebGPU oscilloscope and spectrogram, an AudioWorklet synth with Web MIDI, binaural beats, and an Ableton Live set viewer.
 
-Kevelle powers this site, my interface studies in [ui-lab](https://github.com/kalynbeach/ui-lab), and a suite of browser audio tools in `kkb` spanning an FFT spectrogram, an eight-voice AudioWorklet synth with Web MIDI, binaural beats, and an Ableton Live `.als` set viewer.
+## Agents
 
-## kalynbeach.net
+I've been building with AI agents since 2023, moving from early music tools to `@kkb/agents`: a portable setup of shared instructions, skills, evals, and a custom sync CLI shared across Claude Code, Codex, and Pi.
 
-This site, rebuilt in late 2026 on Kevelle. Public pages are authored in MDX and prerendered with draft and production gating, while the persistent waveform stage and music player stay live across route transitions and stream track and look updates from a private admin dashboard. The source is open at [github.com/kalynbeach/kalynbeach-net](https://github.com/kalynbeach/kalynbeach-net).
+## This site & ui-lab
 
-## Background
+This site is built on Kevelle, with a persistent waveform stage and music player that stay live across routes ([source](https://github.com/kalynbeach/kalynbeach-net)). [ui-lab](https://github.com/kalynbeach/ui-lab) is a companion sandbox for WavePlayer variants and interface studies.
 
-Before focusing on my own audio, design, and agent systems, I spent a decade building products and platforms for teams.
+## Practice
 
-### ProRata AI (2025–2026)
+I've been building software since 2010 and working with product teams since 2015: most recently leading engineering on Gist GEO at ProRata AI, after nine years across Leaf Group and World of Good Brands scaling web platforms, performance tooling, migrations, and browser music apps.
 
-Senior Software Engineer, Agentic Systems. Lead engineer on Gist GEO, taking ProRata's generative engine optimization product from initial architecture through its alpha with first customers. Owned its architecture, agentic workflows, and AI-reviewed CI, mentored junior engineers and interns into a shipping product team, and prototyped Ask Anything, the next version of ProRata's embeddable AI search widget.
-
-### World of Good Brands (2023–2024)
-
-Senior Software Engineer. Led the shift from legacy templates to TypeScript, React, and Next.js, designed and built the typed GraphQL data layer for the Zenith multi-brand platform, and owned the database, user, and places migration tooling behind the Only In Your State rebuild.
-
-### Leaf Group & Demand Media (2015–2023)
-
-Associate to Senior Software Engineer. Built and maintained high-traffic publishing properties including eHow, Sciencing, Bizfluent, Legal Beagle, and Garden Guides. Built and deployed the team's internal Lighthouse web-performance platform for a multi-site portfolio, driving fixes that brought sites to green Core Web Vitals, and proposed and shipped Music Notation and Chord Finder web apps with browser synth playback.
+More on [GitHub](https://github.com/kalynbeach) and [LinkedIn](https://www.linkedin.com/in/kalynbeach/).

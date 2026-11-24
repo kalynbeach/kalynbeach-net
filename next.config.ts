@@ -36,12 +36,12 @@ const nextConfig: NextConfig = {
       { source: "/tech", destination: "/software", permanent: false },
       {
         source: "/tech/audio",
-        destination: "/software/kkb-audio",
+        destination: "/software",
         permanent: false,
       },
       {
         source: "/sound/wave-player",
-        destination: "/software/kkb-audio",
+        destination: "/software",
         permanent: false,
       },
     ];
